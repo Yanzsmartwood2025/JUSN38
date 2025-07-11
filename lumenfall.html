@@ -1,0 +1,1068 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, maximum-scale=1.0">
+    <title>LumenFall</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Lora:wght@400;700&display=swap" rel="stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/tone/14.7.77/Tone.js"></script>
+    <style>
+        :root {
+            --health-color: #e53e3e;
+            --mana-color: #3182ce;
+            --magic-color: #63b3ed;
+            --boss-health-color: #805ad5;
+            --bar-bg-color: rgba(0, 0, 0, 0.5);
+            --bar-border-color: rgba(255, 255, 255, 0.2);
+            --joystick-bg-color: rgba(255, 255, 255, 0.15);
+            --joystick-border-color: rgba(255, 255, 255, 0.3);
+            --joystick-knob-color: rgba(255, 255, 255, 0.4);
+        }
+        body, html {
+            margin: 0; padding: 0; width: 100%; height: 100%;
+            overflow: hidden; background-color: #0c0a18; font-family: 'Lora', serif;
+        }
+        #game-container { position: relative; width: 100%; height: 100%; cursor: none; }
+        canvas {
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            image-rendering: pixelated;
+        }
+        #background-canvas { z-index: 1; }
+        #midground-canvas { z-index: 2; }
+        #game-canvas { z-index: 3; }
+        #foreground-canvas { z-index: 4; }
+        #hud-container {
+            position: absolute; top: 20px; left: 20px; z-index: 10;
+            display: flex; flex-direction: column; gap: 10px;
+        }
+        .status-bar-container {
+            width: 250px; height: 25px; background-color: var(--bar-bg-color);
+            border-radius: 5px; border: 2px solid var(--bar-border-color);
+            padding: 3px; box-shadow: 0 0 10px rgba(0,0,0,0.5);
+        }
+        .status-bar {
+            width: 100%; height: 100%; border-radius: 3px;
+            transition: width 0.2s ease-out; box-shadow: inset 0 0 5px rgba(0,0,0,0.5);
+        }
+        #health-bar { background: var(--health-color); }
+        #mana-bar { background: var(--mana-color); }
+        #level-indicator {
+            position: absolute; top: 20px; right: 20px; z-index: 10;
+            color: white; font-size: 1.2rem; text-shadow: 0 2px 4px #000;
+        }
+        #boss-hud-container {
+            position: absolute; bottom: 20px; left: 50%; transform: translateX(-50%);
+            z-index: 10; display: none; flex-direction: column; align-items: center;
+            gap: 5px;
+        }
+        #boss-name {
+            color: white; font-size: 1.2rem; text-shadow: 0 2px 4px #000;
+        }
+        #boss-health-bar-container {
+            width: 400px; height: 20px; background-color: var(--bar-bg-color);
+            border-radius: 5px; border: 2px solid var(--bar-border-color);
+            padding: 3px; box-shadow: 0 0 10px rgba(0,0,0,0.5);
+        }
+        #boss-health-bar {
+            width: 100%; height: 100%; border-radius: 3px;
+            background: var(--boss-health-color);
+            transition: width 0.2s ease-out;
+        }
+        #menu-overlay {
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            background-color: rgba(0, 0, 0, 0.7); z-index: 20;
+            display: flex; align-items: center; justify-content: center;
+            color: white; flex-direction: column; gap: 20px;
+            text-shadow: 0 2px 4px #000;
+        }
+        #menu-overlay.hidden { display: none; }
+        .menu-button {
+            padding: 15px 30px; font-size: 1.5rem; background-color: var(--mana-color);
+            border: none; color: white; border-radius: 8px; cursor: pointer;
+            box-shadow: 0 4px #2c5282; transition: all 0.1s ease;
+        }
+        .menu-button:active { transform: translateY(2px); box-shadow: 0 2px #2c5282; }
+        
+        /* Touch Controls */
+        #touch-controls-layer {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            height: 220px;
+            z-index: 15;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 20px;
+            box-sizing: border-box;
+            pointer-events: none;
+        }
+        .joystick-base {
+            position: absolute;
+            width: 160px; 
+            height: 160px;
+            background-color: var(--joystick-bg-color);
+            border-radius: 50%;
+            border: 2px solid var(--joystick-border-color);
+            pointer-events: auto;
+        }
+        .joystick-knob {
+            position: absolute;
+            width: 80px; 
+            height: 80px;
+            background-color: var(--joystick-knob-color);
+            border-radius: 50%;
+            transform: translate(-50%, -50%);
+        }
+        #move-stick { bottom: 30px; left: 30px; }
+        
+        #action-buttons {
+            position: absolute;
+            bottom: 40px;
+            right: 30px;
+            display: flex;
+            gap: 20px;
+            align-items: center;
+            pointer-events: auto;
+        }
+        .action-button {
+            width: 90px; 
+            height: 90px;
+            background-color: rgba(255, 255, 255, 0.2);
+            border-radius: 50%;
+            border: 2px solid rgba(255, 255, 255, 0.4);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            user-select: none;
+            -webkit-user-select: none;
+        }
+        .action-button:active {
+            background-color: rgba(255, 255, 255, 0.4);
+        }
+        #jump-button {
+            font-size: 50px;
+            color: white;
+        }
+        #fire-button svg {
+            width: 50px;
+            height: 50px;
+        }
+        .back-button {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            z-index: 21; /* Encima del menú */
+            display: flex;
+            align-items: center;
+            padding: 8px 12px;
+            background-color: rgba(0,0,0,0.4);
+            color: #cbd5e0;
+            text-decoration: none;
+            border-radius: 8px;
+            transition: all 0.2s ease;
+        }
+        .back-button:hover {
+            background-color: rgba(0,0,0,0.6);
+        }
+    </style>
+</head>
+<body>
+    <div id="game-container">
+        <!-- Botón para volver al Taller -->
+        <a href="index.html" class="back-button">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M11 17l-5-5m0 0l5-5m-5 5h12" />
+            </svg>
+            Volver al Taller
+        </a>
+
+        <canvas id="background-canvas"></canvas>
+        <canvas id="midground-canvas"></canvas>
+        <canvas id="game-canvas"></canvas>
+        <canvas id="foreground-canvas"></canvas>
+
+        <div id="hud-container">
+            <div class="status-bar-container"><div id="health-bar" class="status-bar"></div></div>
+            <div class="status-bar-container"><div id="mana-bar" class="status-bar"></div></div>
+        </div>
+        <div id="level-indicator"></div>
+        <div id="boss-hud-container">
+            <div id="boss-name"></div>
+            <div id="boss-health-bar-container">
+                <div id="boss-health-bar" class="status-bar"></div>
+            </div>
+        </div>
+        
+        <div id="touch-controls-layer">
+            <div id="move-stick" class="joystick-base">
+                <div id="move-knob" class="joystick-knob" style="top: 50%; left: 50%;"></div>
+            </div>
+            <div id="action-buttons">
+                 <div id="fire-button" class="action-button">
+                    <svg viewBox="0 0 24 24" fill="var(--magic-color)" xmlns="http://www.w3.org/2000/svg" style="filter: drop-shadow(0 0 8px var(--magic-color));">
+                        <path d="M12 2C12 2 4.9 8.3 4.9 12.5C4.9 17.5 8.1 21 12 21s7.1-3.5 7.1-8.5C19.1 8.3 12 2 12 2Z" />
+                    </svg>
+                </div>
+                <div id="jump-button" class="action-button">▲</div>
+            </div>
+        </div>
+
+        <div id="menu-overlay">
+            <h1>LumenFall</h1>
+            <button id="start-button" class="menu-button">Empezar</button>
+        </div>
+    </div>
+
+    <script type="module">
+        // --- MÓDULO DE CONFIGURACIÓN (config.js) ---
+        const config = {
+            gravity: 0.6, playerSpeed: 5, jumpForce: -14,
+            initialHealth: 100, initialMana: 100, manaRegenRate: 0.1, magicOrbCost: 15,
+            magicOrbSpeed: 8,
+            playerShootCooldown: 15,
+            maxJumps: 2,
+            floatGravityMultiplier: 0.4,
+            levels: [
+                {
+                    id: 'level1', name: 'El Bosque Cian', width: 3500, height: 900,
+                    startPosition: { x: 150, y: 600 },
+                    bgColor: '#1a2d2d', platformColor: '#435e5e',
+                    platforms: [
+                        { x: 0, y: 800, width: 3500, height: 100 },
+                        { x: 400, y: 650, width: 200, height: 30 }, { x: 700, y: 550, width: 250, height: 30 },
+                        { x: 1100, y: 650, width: 150, height: 30 }, { x: 1400, y: 500, width: 300, height: 30 },
+                        { x: 1900, y: 600, width: 200, height: 30 }, { x: 2300, y: 450, width: 250, height: 30 },
+                    ],
+                    entities: [ 
+                        { type: 'door', x: 3000, y: 680, targetLevel: 'level2', color: '#38a169' }
+                    ]
+                },
+                 {
+                    id: 'level2', name: 'Las Cavernas Verdes', width: 2000, height: 1200,
+                    startPosition: { x: 150, y: 1000 },
+                    bgColor: '#162d1a', platformColor: '#435e43',
+                    platforms: [
+                        { x: 0, y: 1100, width: 2000, height: 100 },
+                        { x: 500, y: 950, width: 150, height: 20 }, { x: 800, y: 800, width: 150, height: 20 },
+                        { x: 1100, y: 650, width: 150, height: 20 }, { x: 800, y: 500, width: 150, height: 20 },
+                    ],
+                    entities: [ 
+                        { type: 'door', x: 100, y: 980, targetLevel: 'level1', color: '#435e5e' },
+                        { type: 'door', x: 1800, y: 980, targetLevel: 'level3', color: '#805ad5' }
+                    ]
+                },
+                {
+                    id: 'level3', name: 'Ruinas Púrpuras', width: 2800, height: 1000,
+                    startPosition: { x: 150, y: 800 },
+                    bgColor: '#2d162d', platformColor: '#5e435e',
+                    platforms: [
+                        { x: 0, y: 900, width: 2800, height: 100 },
+                        { x: 300, y: 750, width: 30, height: 150 }, { x: 500, y: 600, width: 30, height: 300 },
+                        { x: 800, y: 700, width: 200, height: 30 }, { x: 1200, y: 550, width: 200, height: 30 },
+                    ],
+                    entities: [ 
+                        { type: 'door', x: 100, y: 780, targetLevel: 'level2', color: '#435e43' },
+                        { type: 'door', x: 2600, y: 780, targetLevel: 'level4', color: '#d69e2e' } 
+                    ]
+                },
+                 {
+                    id: 'level4', name: 'Desierto Dorado', width: 4000, height: 800,
+                    startPosition: { x: 150, y: 600 },
+                    bgColor: '#2d2a16', platformColor: '#5e5a43',
+                    platforms: [ { x: 0, y: 700, width: 4000, height: 100 } ],
+                    entities: [ 
+                        { type: 'door', x: 100, y: 580, targetLevel: 'level3', color: '#5e435e' },
+                        { type: 'door', x: 3800, y: 580, targetLevel: 'level5', color: '#e53e3e' }
+                    ]
+                },
+                {
+                    id: 'level5', name: 'El Núcleo Carmesí', width: 2200, height: 1500,
+                    startPosition: { x: 150, y: 1300 },
+                    bgColor: '#2d1616', platformColor: '#5e4343',
+                    platforms: [
+                        { x: 0, y: 1400, width: 2200, height: 100 },
+                        { x: 200, y: 1250, width: 150, height: 20 }, { x: 400, y: 1100, width: 150, height: 20 },
+                        { x: 600, y: 950, width: 150, height: 20 }, { x: 800, y: 800, width: 150, height: 20 },
+                    ],
+                    entities: [ 
+                        { type: 'door', x: 100, y: 1280, targetLevel: 'level4', color: '#5e5a43' },
+                        { type: 'door', x: 2000, y: 1280, targetLevel: 'level6', color: '#805ad5' }
+                    ]
+                },
+                {
+                    id: 'level6', name: 'El Abismo', width: 1600, height: 900,
+                    startPosition: { x: 150, y: 700 },
+                    bgColor: '#060117', platformColor: '#2d233f',
+                    platforms: [
+                        { x: 0, y: 800, width: 1600, height: 100 },
+                    ],
+                    entities: [
+                        { type: 'door', x: 100, y: 680, targetLevel: 'level5', color: '#5e4343' },
+                        { type: 'boss', name: 'Espectro Ocular', x: 800, y: 400 }
+                    ]
+                }
+            ]
+        };
+
+        // --- GESTOR DE SPRITES ---
+        const SpriteManager = {
+            images: {},
+            async load(url, key) {
+                return new Promise((resolve, reject) => {
+                    const img = new Image();
+                    img.onload = () => {
+                        this.images[key] = img;
+                        console.log(`Sprite '${key}' cargado.`);
+                        resolve(img);
+                    };
+                    img.onerror = (err) => {
+                        console.error(`Error al cargar el sprite '${key}' desde ${url}`);
+                        reject(err);
+                    };
+                    img.src = url;
+                });
+            },
+            get(key) {
+                return this.images[key];
+            }
+        };
+        
+        // --- CLASE DE ANIMACIÓN ---
+        class Animation {
+            constructor({ spriteSheet, frameWidth, frameHeight, frameCount, frameRate, yOffset = 0, loop = true }) {
+                this.spriteSheet = spriteSheet;
+                this.frameWidth = frameWidth;
+                this.frameHeight = frameHeight;
+                this.frameCount = frameCount;
+                this.frameRate = frameRate; // frames per second
+                this.yOffset = yOffset;
+                this.loop = loop;
+                this.currentFrame = 0;
+                this.timer = 0;
+            }
+
+            update(deltaTime) {
+                this.timer += deltaTime;
+                if (this.timer > 1 / this.frameRate) {
+                    this.currentFrame++;
+                    if (this.currentFrame >= this.frameCount) {
+                        this.currentFrame = this.loop ? 0 : this.frameCount - 1;
+                    }
+                    this.timer = 0;
+                }
+            }
+
+            getCurrentFrame() {
+                return {
+                    x: this.currentFrame * this.frameWidth,
+                    y: this.yOffset,
+                    width: this.frameWidth,
+                    height: this.frameHeight
+                };
+            }
+            
+            reset() {
+                this.currentFrame = 0;
+                this.timer = 0;
+            }
+        }
+
+        // --- MÓDULO DE SONIDO ---
+        const Sound = {
+            shootSynth: null, jumpSynth: null, playerHitSynth: null, bossHitSynth: null,
+            isReady: false,
+
+            init() {
+                this.shootSynth = new Tone.Synth({ oscillator: { type: 'triangle' }, envelope: { attack: 0.01, decay: 0.1, sustain: 0.1, release: 0.1 } }).toDestination();
+                this.jumpSynth = new Tone.Synth({ oscillator: { type: 'sine' }, envelope: { attack: 0.01, decay: 0.2, sustain: 0, release: 0.2 } }).toDestination();
+                this.playerHitSynth = new Tone.NoiseSynth({ noise: { type: 'pink' }, envelope: { attack: 0.01, decay: 0.15, sustain: 0, release: 0.1 } }).toDestination();
+                this.bossHitSynth = new Tone.FMSynth({ envelope: { attack: 0.01, decay: 0.3, sustain: 0.1, release: 0.3 } }).toDestination();
+                this.isReady = true;
+            },
+
+            playShoot() { if (this.isReady) this.shootSynth.triggerAttackRelease('C5', '16n'); },
+            playJump() { if (this.isReady) this.jumpSynth.triggerAttackRelease('G5', '16n'); },
+            playPlayerHit() { if (this.isReady) this.playerHitSynth.triggerAttackRelease('8n'); },
+            playBossHit() { if (this.isReady) this.bossHitSynth.triggerAttackRelease('G2', '8n'); }
+        };
+
+
+        // --- MÓDULO DE ENTIDADES ---
+        class Player {
+            constructor(x, y) {
+                this.x = x; this.y = y;
+                this.vx = 0; this.vy = 0; this.health = config.initialHealth;
+                this.maxHealth = config.initialHealth; this.mana = config.initialMana;
+                this.maxMana = config.initialMana; this.isOnGround = false;
+                this.jumpsLeft = config.maxJumps;
+                this.shootCooldown = 0;
+                this.lastAimVector = { x: 1, y: 0 };
+                this.direction = 1; // 1 for right, -1 for left
+
+                this.spriteScale = 1.5;
+                this.animations = {};
+                this.currentAnimation = null;
+                this.state = 'idle'; 
+                
+                const playerSpriteSheet = SpriteManager.get('player');
+                if (playerSpriteSheet) {
+                    this.animations.idle = new Animation({
+                        spriteSheet: playerSpriteSheet,
+                        frameWidth: 64, frameHeight: 64, frameCount: 1, frameRate: 1
+                    });
+                    this.animations.run = new Animation({
+                        spriteSheet: playerSpriteSheet,
+                        frameWidth: 64, frameHeight: 64, frameCount: 4, frameRate: 8 
+                    });
+                    this.currentAnimation = this.animations.idle;
+                }
+                
+                this.width = (this.animations.idle?.frameWidth || 30) * this.spriteScale;
+                this.height = (this.animations.idle?.frameHeight || 60) * this.spriteScale;
+            }
+            
+            update(world, controls, particleSystem, deltaTime) {
+                if(this.shootCooldown > 0) this.shootCooldown--;
+                
+                if (controls.moveVector.x !== 0) {
+                    this.vx = controls.moveVector.x * config.playerSpeed;
+                    this.direction = this.vx > 0 ? 1 : -1;
+                } else {
+                    this.vx = 0;
+                }
+                
+                if(Math.abs(controls.moveVector.x) > 0.1 || Math.abs(controls.moveVector.y) > 0.1) {
+                    this.lastAimVector = { x: controls.moveVector.x, y: controls.moveVector.y };
+                } else {
+                    this.lastAimVector = { x: this.direction, y: 0 };
+                }
+
+                this.vy += config.gravity;
+                
+                if (controls.jumpHeld && this.vy > 0) {
+                    this.vy *= config.floatGravityMultiplier;
+                    particleSystem.emit(this.x + this.width / 2, this.y + this.height, 1, 'rgba(226, 232, 240, 0.4)', 0.3);
+                }
+                
+                this.x += this.vx;
+                this.y += this.vy;
+                
+                this.x = Math.max(0, Math.min(this.x, world.levelData.width - this.width));
+                this.y = Math.max(0, Math.min(this.y, world.levelData.height - this.height));
+
+                this.isOnGround = false;
+                world.platforms.forEach(platform => this.handlePlatformCollision(platform));
+                
+                if (this.mana < this.maxMana) this.mana += config.manaRegenRate;
+
+                if (!this.isOnGround) {
+                    this.state = this.vy < 0 ? 'jumping' : 'falling';
+                } else {
+                    if (this.vx !== 0) {
+                        this.state = 'running';
+                    } else {
+                        this.state = 'idle';
+                    }
+                }
+                
+                if (this.state === 'running') {
+                    this.currentAnimation = this.animations.run;
+                } else {
+                    this.currentAnimation = this.animations.idle;
+                }
+                this.currentAnimation?.update(deltaTime);
+            }
+
+            draw(ctx, camera) {
+                if (!this.currentAnimation) { 
+                    ctx.fillStyle = '#e2e8f0';
+                    ctx.fillRect(this.x - camera.x, this.y - camera.y, this.width, this.height);
+                    return;
+                }
+                
+                const frame = this.currentAnimation.getCurrentFrame();
+                const drawX = this.x - camera.x;
+                const drawY = this.y - camera.y;
+
+                ctx.save();
+                if (this.direction === -1) {
+                    ctx.scale(-1, 1);
+                    ctx.drawImage(
+                        this.currentAnimation.spriteSheet,
+                        frame.x, frame.y, frame.width, frame.height,
+                        -drawX - this.width, drawY, this.width, this.height
+                    );
+                } else {
+                    ctx.drawImage(
+                        this.currentAnimation.spriteSheet,
+                        frame.x, frame.y, frame.width, frame.height,
+                        drawX, drawY, this.width, this.height
+                    );
+                }
+                ctx.restore();
+            }
+            
+            jump(particleSystem) { 
+                if (this.jumpsLeft > 0) {
+                    this.vy = config.jumpForce;
+                    this.jumpsLeft--;
+                    this.isOnGround = false;
+                    Sound.playJump();
+                    const particleColor = this.jumpsLeft === 1 ? 'rgba(255, 255, 255, 0.7)' : 'rgba(150, 150, 255, 0.8)';
+                    particleSystem.emit(this.x + this.width / 2, this.y + this.height, 10, particleColor, 0.8);
+                }
+            }
+            castMagicOrb(orbs, particleSystem) {
+                if (this.mana >= config.magicOrbCost && this.shootCooldown <= 0) {
+                    this.mana -= config.magicOrbCost;
+                    this.shootCooldown = config.playerShootCooldown;
+                    Sound.playShoot();
+                    
+                    const orb = new MagicOrb(this.x + this.width / 2, this.y + this.height / 2, this.lastAimVector);
+                    orbs.push(orb);
+                    particleSystem.emit(this.x + this.width / 2, this.y + this.height / 2, 15, 'var(--magic-color)', 1);
+                }
+            }
+            handlePlatformCollision(platform) {
+                if (this.x < platform.x + platform.width && this.x + this.width > platform.x &&
+                    this.y < platform.y + platform.height && this.y + this.height > platform.y) {
+                    if (this.vy >= 0 && (this.y + this.height - this.vy) <= platform.y) {
+                         this.y = platform.y - this.height;
+                         this.vy = 0;
+                         if (!this.isOnGround) {
+                             this.isOnGround = true;
+                             this.jumpsLeft = config.maxJumps;
+                         }
+                    }
+                    else if (this.y + this.height > platform.y + 10) {
+                        if (this.vx < 0 && this.x < platform.x + platform.width) {
+                            this.x = platform.x + platform.width;
+                            this.vx = 0;
+                        }
+                        else if (this.vx > 0 && this.x + this.width > platform.x) {
+                            this.x = platform.x - this.width;
+                            this.vx = 0;
+                        }
+                    }
+                    if (this.vy < 0 && this.y > platform.y + platform.height - (this.vy)) {
+                        this.y = platform.y + platform.height;
+                        this.vy = 0;
+                    }
+                }
+            }
+            takeDamage(amount) {
+                this.health = Math.max(0, this.health - amount);
+                Sound.playPlayerHit();
+            }
+        }
+
+        class MagicOrb {
+             constructor(x, y, direction) {
+                this.x = x; this.y = y; this.radius = 8;
+                this.vx = direction.x * config.magicOrbSpeed;
+                this.vy = direction.y * config.magicOrbSpeed;
+                this.life = 240; 
+            }
+            update() { 
+                this.x += this.vx;
+                this.y += this.vy;
+                this.life--;
+            }
+            draw(ctx, camera) {
+                ctx.beginPath();
+                ctx.arc(this.x - camera.x, this.y - camera.y, this.radius, 0, Math.PI * 2);
+                ctx.fillStyle = 'var(--magic-color)';
+                ctx.shadowColor = 'var(--magic-color)';
+                ctx.shadowBlur = 15;
+                ctx.fill();
+                ctx.closePath();
+                ctx.shadowBlur = 0;
+            }
+        }
+        
+        class Portal {
+            constructor(x, y, targetLevel, color) {
+                this.x = x; this.y = y; this.width = 80; this.height = 120;
+                this.targetLevel = targetLevel;
+                this.color = color;
+            }
+            draw(ctx, camera, levelName) {
+                const glowColor = this.color.replace(')', ', 0.7)').replace('rgb', 'rgba');
+                ctx.fillStyle = this.color.replace(')', ', 0.3)').replace('rgb', 'rgba');
+                ctx.strokeStyle = glowColor;
+                ctx.lineWidth = 3; ctx.shadowColor = glowColor; ctx.shadowBlur = 20;
+                
+                ctx.fillRect(this.x - camera.x, this.y - camera.y, this.width, this.height);
+                ctx.strokeRect(this.x - camera.x, this.y - camera.y, this.width, this.height);
+
+                ctx.shadowBlur = 0; ctx.lineWidth = 1;
+
+                if (levelName) {
+                    ctx.fillStyle = "white";
+                    ctx.font = "16px Lora";
+                    ctx.textAlign = "center";
+                    ctx.fillText(levelName, this.x + this.width / 2 - camera.x, this.y - 15 - camera.y);
+                }
+            }
+        }
+
+        class OcularSpecter {
+            constructor(x, y, name) {
+                this.name = name; this.x = x; this.y = y;
+                this.width = 100; this.height = 100;
+                this.health = 500; this.maxHealth = 500;
+                this.projectiles = []; this.state = 'APPEARING';
+                this.stateTimer = 60; this.alpha = 0;
+            }
+            update(player, world, particleSystem) {
+                this.stateTimer--;
+
+                if (this.state === 'IDLE' && this.stateTimer <= 0) {
+                    this.state = 'APPEARING';
+                    this.x = Math.random() * (world.levelData.width - 400) + 200;
+                    this.y = Math.random() * (world.levelData.height / 2) + 100;
+                    this.stateTimer = 60;
+                } else if (this.state === 'APPEARING') {
+                    this.alpha = Math.min(1, this.alpha + 0.02);
+                    if (this.stateTimer <= 0) { this.state = 'ATTACKING'; this.stateTimer = 180; }
+                } else if (this.state === 'ATTACKING') {
+                    if (this.stateTimer % 30 === 0) { this.projectiles.push(new EnemyProjectile(this.x, this.y + this.height / 2)); }
+                    if (this.stateTimer <= 0) { this.state = 'DISAPPEARING'; this.stateTimer = 60; }
+                } else if (this.state === 'DISAPPEARING') {
+                    this.alpha = Math.max(0, this.alpha - 0.02);
+                    if (this.stateTimer <= 0) { this.state = 'IDLE'; this.stateTimer = 120; }
+                } else if (this.state === 'HURT') {
+                     if (this.stateTimer <= 0) { this.state = 'DISAPPEARING'; this.stateTimer = 30; }
+                } else if (this.state === 'DEFEATED') {
+                    this.alpha -= 0.01;
+                    if(Math.random() > 0.5) particleSystem.emit(this.x + Math.random() * this.width, this.y + Math.random() * this.height, 2, 'var(--boss-health-color)', 2);
+                }
+
+                this.projectiles.forEach((p, i) => { p.update(); if (p.y > world.levelData.height) this.projectiles.splice(i, 1); });
+            }
+            draw(ctx, camera) {
+                if (this.alpha <= 0) return;
+                ctx.save();
+                ctx.globalAlpha = this.alpha;
+                if (this.state === 'HURT' && this.stateTimer % 10 < 5) { ctx.filter = 'brightness(2)'; }
+                ctx.fillStyle = 'rgba(128, 90, 213, 0.7)';
+                ctx.shadowColor = 'rgba(128, 90, 213, 1)';
+                ctx.shadowBlur = 30;
+                ctx.beginPath();
+                ctx.ellipse(this.x - camera.x, this.y - camera.y, this.width / 2, this.height / 2, 0, 0, Math.PI * 2);
+                ctx.fill();
+                if (this.state === 'ATTACKING' || this.state === 'HURT') {
+                    ctx.fillStyle = '#FFFFFF';
+                    ctx.beginPath();
+                    ctx.arc(this.x - camera.x, this.y - camera.y, 15, 0, Math.PI * 2);
+                    ctx.fill();
+                    ctx.fillStyle = '#e53e3e';
+                    ctx.beginPath();
+                    ctx.arc(this.x - camera.x, this.y - camera.y, 8, 0, Math.PI * 2);
+                    ctx.fill();
+                }
+                ctx.restore();
+                this.projectiles.forEach(p => p.draw(ctx, camera));
+            }
+            takeDamage(amount, world) {
+                if (this.state !== 'ATTACKING') return false;
+                this.health -= amount;
+                Sound.playBossHit();
+                if (this.health <= 0) {
+                    this.health = 0; this.state = 'DEFEATED'; this.stateTimer = 300;
+                    world.addEntity(new Portal(world.levelData.width / 2 - 40, world.levelData.height - 220, 'level1', '#FFFFFF'));
+                } else {
+                    this.state = 'HURT'; this.stateTimer = 30;
+                }
+                return true;
+            }
+        }
+
+        class EnemyProjectile {
+            constructor(x, y) {
+                this.x = x; this.y = y; this.radius = 6; this.speed = 4;
+            }
+            update() { this.y += this.speed; }
+            draw(ctx, camera) {
+                ctx.fillStyle = 'var(--boss-health-color)';
+                ctx.shadowColor = 'var(--boss-health-color)';
+                ctx.shadowBlur = 10;
+                ctx.beginPath();
+                ctx.arc(this.x - camera.x, this.y - camera.y, this.radius, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.shadowBlur = 0;
+            }
+        }
+
+        class Particle {
+            constructor(x, y, color, life) {
+                this.x = x; this.y = y;
+                this.vx = (Math.random() - 0.5) * 4; this.vy = (Math.random() - 0.5) * 4;
+                this.life = life * 60; this.initialLife = this.life;
+                this.radius = Math.random() * 3 + 1; this.color = color;
+            }
+            update() { this.x += this.vx; this.y += this.vy; this.vy += 0.05; this.life--; }
+            draw(ctx, camera) {
+                ctx.globalAlpha = Math.max(0, this.life / this.initialLife);
+                ctx.beginPath();
+                ctx.arc(this.x - camera.x, this.y - camera.y, this.radius, 0, Math.PI * 2);
+                ctx.fillStyle = this.color; ctx.fill();
+                ctx.closePath();
+                ctx.globalAlpha = 1;
+            }
+        }
+        class ParticleSystem {
+            constructor() { this.particles = []; }
+            emit(x, y, count, color, life) {
+                for (let i = 0; i < count; i++) this.particles.push(new Particle(x, y, color, life));
+            }
+            update() {
+                for (let i = this.particles.length - 1; i >= 0; i--) {
+                    this.particles[i].update();
+                    if (this.particles[i].life <= 0) this.particles.splice(i, 1);
+                }
+            }
+            draw(ctx, camera) { this.particles.forEach(p => p.draw(ctx, camera)); }
+        }
+
+        class World {
+            constructor() {
+                this.levelData = null; this.platforms = []; this.entities = []; this.boss = null;
+            }
+            loadLevel(levelData) {
+                this.levelData = levelData;
+                this.platforms = levelData.platforms.map(p => ({...p, color: levelData.platformColor}));
+                this.entities = [];
+                this.boss = null;
+                levelData.entities.forEach(e => {
+                    if (e.type === 'door') {
+                        const targetLevelData = config.levels.find(l => l.id === e.targetLevel);
+                        this.entities.push(new Portal(e.x, e.y, e.targetLevel, e.color || targetLevelData.platformColor));
+                    } else if (e.type === 'boss') {
+                        this.boss = new OcularSpecter(e.x, e.y, e.name);
+                    }
+                });
+                this.generateStars();
+            }
+            addEntity(entity) { this.entities.push(entity); }
+            generateStars() {
+                this.stars = [];
+                for(let i=0; i<100; i++) {
+                    this.stars.push({
+                        x: Math.random() * this.levelData.width,
+                        y: Math.random() * this.levelData.height,
+                        r: Math.random() * 2,
+                        parallax: Math.random() * 0.5 + 0.1
+                    });
+                }
+            }
+            draw(ctx, bgCtx, midCtx, camera) {
+                bgCtx.clearRect(0, 0, bgCtx.canvas.width, bgCtx.canvas.height);
+                midCtx.clearRect(0, 0, midCtx.canvas.width, midCtx.canvas.height);
+                if (!this.levelData) return;
+                
+                bgCtx.fillStyle = this.levelData.bgColor;
+                bgCtx.fillRect(0, 0, bgCtx.canvas.width, bgCtx.canvas.height);
+
+                midCtx.fillStyle = 'rgba(255, 255, 255, 0.7)';
+                this.stars.forEach(star => {
+                    const x = (star.x - camera.x * star.parallax) % midCtx.canvas.width;
+                    const y = (star.y - camera.y * star.parallax * 0.1) % midCtx.canvas.height;
+                    midCtx.beginPath(); 
+                    midCtx.arc(x < 0 ? x + midCtx.canvas.width : x, y, star.r, 0, Math.PI * 2); 
+                    midCtx.fill();
+                });
+
+                ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height);
+                this.platforms.forEach(platform => {
+                    ctx.fillStyle = platform.color;
+                    ctx.fillRect(platform.x - camera.x, platform.y - camera.y, platform.width, platform.height);
+                });
+                if (this.boss) { this.boss.draw(ctx, camera); }
+                this.entities.forEach(entity => {
+                    if (entity instanceof Portal) {
+                        const targetLevelData = config.levels.find(l => l.id === entity.targetLevel);
+                        entity.draw(ctx, camera, targetLevelData ? targetLevelData.name : '');
+                    }
+                });
+            }
+        }
+        
+        class Camera {
+            constructor(target, world) {
+                this.target = target; this.world = world;
+                this.x = 0; this.y = 0;
+                this.width = window.innerWidth; this.height = window.innerHeight;
+            }
+            update() {
+                const targetX = this.target.x - this.width / 2 + this.target.width / 2;
+                const targetY = this.target.y - this.height / 2 + this.target.height / 2;
+                this.x += (targetX - this.x) * 0.1; 
+                this.y += (targetY - this.y) * 0.1;
+                
+                if (this.world.levelData) {
+                    this.x = Math.max(0, Math.min(this.x, this.world.levelData.width - this.width));
+                    this.y = Math.max(0, Math.min(this.y, this.world.levelData.height - this.height));
+                }
+            }
+        }
+
+        const healthBar = document.getElementById('health-bar'), manaBar = document.getElementById('mana-bar');
+        const levelIndicator = document.getElementById('level-indicator');
+        const bossHud = document.getElementById('boss-hud-container');
+        const bossName = document.getElementById('boss-name');
+        const bossHealthBar = document.getElementById('boss-health-bar');
+
+        function updateHUD(player, world) {
+            healthBar.style.width = `${(player.health / player.maxHealth) * 100}%`;
+            manaBar.style.width = `${(player.mana / player.maxMana) * 100}%`;
+            if(world.levelData) levelIndicator.textContent = world.levelData.name;
+
+            if (world.boss && world.boss.state !== 'DEFEATED' && world.boss.alpha > 0) {
+                bossHud.style.display = 'flex';
+                bossName.textContent = world.boss.name;
+                bossHealthBar.style.width = `${(world.boss.health / world.boss.maxHealth) * 100}%`;
+            } else {
+                bossHud.style.display = 'none';
+            }
+        }
+
+        const controls = { 
+            moveVector: { x: 0, y: 0 },
+            firePressed: false,
+            jumpPressed: false, 
+            jumpHeld: false
+        };
+
+        function initControls() {
+            window.addEventListener('keydown', e => {
+                if (e.repeat) return;
+                if (e.key === 'a' || e.key === 'ArrowLeft') controls.moveVector.x = -1;
+                else if (e.key === 'd' || e.key === 'ArrowRight') controls.moveVector.x = 1;
+                else if (e.key === 'w' || e.key === 'ArrowUp') controls.moveVector.y = -1;
+                else if (e.key === 's' || e.key === 'ArrowDown') controls.moveVector.y = 1;
+                
+                if (e.key === ' ') { controls.jumpPressed = true; controls.jumpHeld = true; }
+                if (e.key === 'j') controls.firePressed = true;
+            });
+            window.addEventListener('keyup', e => {
+                if ((e.key === 'a' || e.key === 'ArrowLeft') && controls.moveVector.x === -1) controls.moveVector.x = 0;
+                if ((e.key === 'd' || e.key === 'ArrowRight') && controls.moveVector.x === 1) controls.moveVector.x = 0;
+                if ((e.key === 'w' || e.key === 'ArrowUp') && controls.moveVector.y === -1) controls.moveVector.y = 0;
+                if ((e.key === 's' || e.key === 'ArrowDown') && controls.moveVector.y === 1) controls.moveVector.y = 0;
+                if (e.key === ' ') controls.jumpHeld = false;
+                if (e.key === 'j') controls.firePressed = false;
+            });
+
+            const jumpBtn = document.getElementById('jump-button');
+            jumpBtn.addEventListener('touchstart', e => { e.preventDefault(); controls.jumpPressed = true; controls.jumpHeld = true; });
+            jumpBtn.addEventListener('touchend', e => { e.preventDefault(); controls.jumpHeld = false; });
+            
+            const fireBtn = document.getElementById('fire-button');
+            fireBtn.addEventListener('touchstart', e => { e.preventDefault(); controls.firePressed = true; });
+            fireBtn.addEventListener('touchend', e => { e.preventDefault(); controls.firePressed = false; });
+
+            function setupJoystick(stickElement, knobElement, controlVector) {
+                let stickData = { id: null, active: false };
+                stickElement.addEventListener('touchstart', e => {
+                    e.preventDefault();
+                    stickData.id = e.changedTouches[0].identifier;
+                    stickData.active = true;
+                }, { passive: false });
+                window.addEventListener('touchmove', e => {
+                    if (!stickData.active) return;
+                    let touch = Array.from(e.changedTouches).find(t => t.identifier === stickData.id);
+                    if (!touch) return;
+                    const rect = stickElement.getBoundingClientRect();
+                    const centerX = rect.left + rect.width / 2;
+                    const centerY = rect.top + rect.height / 2;
+                    let dx = touch.clientX - centerX;
+                    let dy = touch.clientY - centerY;
+                    const dist = Math.sqrt(dx * dx + dy * dy);
+                    const maxDist = rect.width / 2 - knobElement.offsetWidth / 2;
+                    if (dist > maxDist) { dx = (dx / dist) * maxDist; dy = (dy / dist) * maxDist; }
+                    knobElement.style.left = `${50 + (dx / (rect.width/2)) * 50}%`;
+                    knobElement.style.top = `${50 + (dy / (rect.height/2)) * 50}%`;
+                    const normalizedDist = Math.min(1, dist / maxDist);
+                    controlVector.x = (dx / dist) * normalizedDist || 0;
+                    controlVector.y = (dy / dist) * normalizedDist || 0;
+                }, { passive: false });
+                const endTouch = (e) => {
+                    let touch = Array.from(e.changedTouches).find(t => t.identifier === stickData.id);
+                    if (!touch) return;
+                    stickData.active = false;
+                    knobElement.style.left = '50%';
+                    knobElement.style.top = '50%';
+                    controlVector.x = 0;
+                    controlVector.y = 0;
+                };
+                window.addEventListener('touchend', endTouch);
+                window.addEventListener('touchcancel', endTouch);
+            }
+            setupJoystick(document.getElementById('move-stick'), document.getElementById('move-knob'), controls.moveVector);
+        }
+
+        const gameCanvas = document.getElementById('game-canvas'), gameCtx = gameCanvas.getContext('2d');
+        const bgCanvas = document.getElementById('background-canvas'), bgCtx = bgCanvas.getContext('2d');
+        const midCanvas = document.getElementById('midground-canvas'), midCtx = midCanvas.getContext('2d');
+        let player, world, camera, particleSystem, magicOrbs;
+        let gameRunning = false;
+        let portalCooldown = 0;
+        let lastTimestamp = 0;
+
+        async function init() {
+            resizeCanvas();
+
+            // <-- ¡IMPORTANTE! CAMBIA ESTA LÍNEA POR LA URL DE TU HOJA DE SPRITES -->
+            // La ruta debe ser relativa, apuntando a tu carpeta de assets.
+            const playerSpriteURL = 'assets/images/hoja_sprites_lumenfall.png';
+            
+            try {
+                await SpriteManager.load(playerSpriteURL, 'player');
+            } catch (err) {
+                console.error("No se pudo cargar la hoja de sprites del jugador. Se usará una forma básica.");
+            }
+
+            world = new World();
+            player = new Player(0, 0); 
+            camera = new Camera(player, world);
+            particleSystem = new ParticleSystem();
+            magicOrbs = [];
+            changeLevel('level1', null);
+            initControls();
+            
+            document.getElementById('start-button').onclick = async () => {
+                try {
+                    await Tone.start();
+                    Sound.init();
+                } catch (e) {
+                    console.error("Could not start audio context:", e);
+                }
+                document.getElementById('menu-overlay').classList.add('hidden');
+                gameRunning = true;
+                lastTimestamp = performance.now();
+                requestAnimationFrame(gameLoop);
+            };
+        }
+
+        function getLevelIndex(levelId) {
+            if (!levelId) return -1;
+            return config.levels.findIndex(l => l.id === levelId);
+        }
+        
+        function changeLevel(destinationLevelId, originLevelId) {
+            const destinationLevelData = config.levels.find(l => l.id === destinationLevelId);
+            if (!destinationLevelData) return;
+
+            const originIndex = getLevelIndex(originLevelId);
+            const destinationIndex = getLevelIndex(destinationLevelId);
+
+            world.loadLevel(destinationLevelData);
+
+            if (originLevelId && destinationIndex < originIndex) {
+                const arrivalPortal = world.entities.find(e => e instanceof Portal && e.targetLevel === originLevelId);
+                if (arrivalPortal) {
+                    player.y = arrivalPortal.y + arrivalPortal.height - player.height;
+                    player.x = arrivalPortal.x + (arrivalPortal.width / 2) - (player.width / 2);
+                } else {
+                    player.x = destinationLevelData.startPosition.x;
+                    player.y = destinationLevelData.startPosition.y;
+                }
+            } else {
+                player.x = destinationLevelData.startPosition.x;
+                player.y = destinationLevelData.startPosition.y;
+            }
+
+            player.vx = 0; player.vy = 0;
+            player.jumpsLeft = config.maxJumps;
+            magicOrbs = [];
+            portalCooldown = 30;
+            
+            camera.x = player.x - camera.width / 2;
+            camera.y = player.y - camera.height / 2;
+            camera.update();
+        }
+
+        function checkCollisions() {
+            if (world.boss) {
+                magicOrbs.forEach((orb, orbIndex) => {
+                    if (world.boss.state === 'ATTACKING') {
+                        const dx = orb.x - world.boss.x;
+                        const dy = orb.y - world.boss.y;
+                        if (Math.sqrt(dx * dx + dy * dy) < orb.radius + world.boss.width / 2) {
+                           if (world.boss.takeDamage(10, world)) {
+                               particleSystem.emit(orb.x, orb.y, 25, 'var(--magic-color)', 1.5);
+                               magicOrbs.splice(orbIndex, 1);
+                           }
+                        }
+                    }
+                });
+                world.boss.projectiles.forEach((proj, projIndex) => {
+                    if (player.x < proj.x + proj.radius && player.x + player.width > proj.x - proj.radius &&
+                        player.y < proj.y + proj.radius && player.y + player.height > proj.y - proj.radius) {
+                        player.takeDamage(10);
+                        particleSystem.emit(proj.x, proj.y, 15, 'var(--boss-health-color)', 1);
+                        world.boss.projectiles.splice(projIndex, 1);
+                    }
+                });
+            }
+            if (portalCooldown > 0) return;
+            const originLevelId = world.levelData.id;
+            for (const entity of world.entities) {
+                if (entity instanceof Portal && 
+                    player.x < entity.x + entity.width && player.x + player.width > entity.x &&
+                    player.y < entity.y + entity.height && player.y + player.height > entity.y) {
+                    changeLevel(entity.targetLevel, originLevelId);
+                    break; 
+                }
+            }
+        }
+
+        function gameLoop(timestamp) {
+            if (!gameRunning) return;
+            
+            const deltaTime = (timestamp - lastTimestamp) / 1000; 
+            lastTimestamp = timestamp;
+
+            if (portalCooldown > 0) portalCooldown--;
+
+            if (controls.jumpPressed) { player.jump(particleSystem); controls.jumpPressed = false; }
+            if (controls.firePressed) { player.castMagicOrb(magicOrbs, particleSystem); }
+            
+            player.update(world, controls, particleSystem, deltaTime);
+            if (world.boss) { world.boss.update(player, world, particleSystem); }
+            camera.update();
+            particleSystem.update();
+            magicOrbs.forEach((orb, i) => { orb.update(); if (orb.life <= 0) magicOrbs.splice(i, 1); });
+            
+            checkCollisions();
+            
+            world.draw(gameCtx, bgCtx, midCtx, camera);
+            particleSystem.draw(gameCtx, camera);
+            magicOrbs.forEach(orb => orb.draw(gameCtx, camera));
+            player.draw(gameCtx, camera);
+            
+            updateHUD(player, world);
+            requestAnimationFrame(gameLoop);
+        }
+
+        function resizeCanvas() {
+            [gameCanvas, bgCanvas, midCanvas].forEach(c => { 
+                c.width = window.innerWidth; 
+                c.height = window.innerHeight; 
+            });
+            if (camera) { 
+                camera.width = window.innerWidth; 
+                camera.height = window.innerHeight; 
+            }
+        }
+
+        window.addEventListener('load', init);
+        window.addEventListener('resize', resizeCanvas);
+    </script>
+</body>
+</html>
