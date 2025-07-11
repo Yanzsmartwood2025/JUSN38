@@ -308,7 +308,6 @@
             ]
         };
 
-        // --- GESTOR DE SPRITES ---
         const SpriteManager = {
             images: {},
             async load(url, key) {
@@ -331,14 +330,13 @@
             }
         };
         
-        // --- CLASE DE ANIMACIÓN ---
         class Animation {
             constructor({ spriteSheet, frameWidth, frameHeight, frameCount, frameRate, yOffset = 0, loop = true }) {
                 this.spriteSheet = spriteSheet;
                 this.frameWidth = frameWidth;
                 this.frameHeight = frameHeight;
                 this.frameCount = frameCount;
-                this.frameRate = frameRate; // frames per second
+                this.frameRate = frameRate; 
                 this.yOffset = yOffset;
                 this.loop = loop;
                 this.currentFrame = 0;
@@ -371,7 +369,6 @@
             }
         }
 
-        // --- MÓDULO DE SONIDO ---
         const Sound = {
             shootSynth: null, jumpSynth: null, playerHitSynth: null, bossHitSynth: null,
             isReady: false,
@@ -391,7 +388,6 @@
         };
 
 
-        // --- MÓDULO DE ENTIDADES ---
         class Player {
             constructor(x, y) {
                 this.x = x; this.y = y;
@@ -401,22 +397,39 @@
                 this.jumpsLeft = config.maxJumps;
                 this.shootCooldown = 0;
                 this.lastAimVector = { x: 1, y: 0 };
-                this.direction = 1; // 1 for right, -1 for left
+                this.direction = 1;
 
-                this.spriteScale = 1.5;
+                this.spriteScale = 2.0; // Puedes hacer el sprite más grande o pequeño con esto
                 this.animations = {};
                 this.currentAnimation = null;
                 this.state = 'idle'; 
                 
                 const playerSpriteSheet = SpriteManager.get('player');
                 if (playerSpriteSheet) {
+                    // --- ¡¡¡IMPORTANTE!!! AJUSTA ESTOS VALORES ---
+                    // Estos números deben coincidir con tu hoja de sprites.
+                    const spriteConfig = {
+                        frameWidth: 64,  // Ancho en píxeles de UN SOLO fotograma de tu animación
+                        frameHeight: 64, // Alto en píxeles de UN SOLO fotograma
+                        
+                        // Animación de estar quieto (idle)
+                        idle_frameCount: 1, // ¿Cuántos fotogramas tiene tu animación de estar quieto?
+                        
+                        // Animación de correr (run)
+                        run_frameCount: 4,  // ¿Cuántos fotogramas tiene tu animación de correr?
+                        run_frameRate: 8,   // Velocidad de la animación (8 fotogramas por segundo)
+                    };
+                    // ------------------------------------------------
+
                     this.animations.idle = new Animation({
                         spriteSheet: playerSpriteSheet,
-                        frameWidth: 64, frameHeight: 64, frameCount: 1, frameRate: 1
+                        frameWidth: spriteConfig.frameWidth, frameHeight: spriteConfig.frameHeight, 
+                        frameCount: spriteConfig.idle_frameCount, frameRate: 1
                     });
                     this.animations.run = new Animation({
                         spriteSheet: playerSpriteSheet,
-                        frameWidth: 64, frameHeight: 64, frameCount: 4, frameRate: 8 
+                        frameWidth: spriteConfig.frameWidth, frameHeight: spriteConfig.frameHeight, 
+                        frameCount: spriteConfig.run_frameCount, frameRate: spriteConfig.run_frameRate
                     });
                     this.currentAnimation = this.animations.idle;
                 }
@@ -478,8 +491,9 @@
             }
 
             draw(ctx, camera) {
+                // Si la animación no se pudo cargar, dibuja un cuadrado morado como respaldo.
                 if (!this.currentAnimation) { 
-                    ctx.fillStyle = '#e2e8f0';
+                    ctx.fillStyle = 'purple';
                     ctx.fillRect(this.x - camera.x, this.y - camera.y, this.width, this.height);
                     return;
                 }
@@ -917,8 +931,6 @@
         async function init() {
             resizeCanvas();
 
-            // <-- ¡IMPORTANTE! CAMBIA ESTA LÍNEA POR LA URL DE TU HOJA DE SPRITES -->
-            // La ruta debe ser relativa, apuntando a tu carpeta de assets.
             const playerSpriteURL = 'assets/images/hoja_sprites_lumenfall.png';
             
             try {
