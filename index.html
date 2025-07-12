@@ -53,9 +53,15 @@
              backdrop-filter: blur(5px);
              -webkit-backdrop-filter: blur(5px);
         }
+        /* Style for the ad container */
+        .ad-container {
+            min-height: 100px; /* Minimum height so it's visible even if the ad doesn't load */
+            max-width: 970px; /* Standard max width for leaderboards */
+            margin: 0 auto; /* Center the container */
+        }
     </style>
 </head>
-<body class="min-h-screen flex items-center justify-center p-4">
+<body class="min-h-screen flex flex-col items-center justify-center p-4">
 
     <div class="w-full max-w-7xl mx-auto">
         <!-- Encabezado -->
@@ -89,8 +95,8 @@
                 <p class="text-slate-400 mt-1">Herramienta para desarrolladores.</p>
             </a>
             
-            <!-- NUEVO BOTÓN: Fórmula 1 -->
-            <a href="formula_1.html" class="glass-card rounded-lg p-6 block text-center ad-link">
+            <!-- Botón 4: Fórmula 1 -->
+            <a href="formula-1.html" class="glass-card rounded-lg p-6 block text-center ad-link">
                 <div class="flex justify-center mb-4"><svg class="w-16 h-16 text-green-400 icon-glow" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M3 3v1.5M3 21v-6m0 0l2.77-.693a9 9 0 016.208.682l.108.054a9 9 0 006.086.71l3.114-.732a48.524 48.524 0 01-.005-10.499l-3.11.732a9 9 0 01-6.085-.711l-.108-.054a9 9 0 00-6.208-.682L3 4.5M3 15V4.5" /></svg></div>
                 <h2 class="text-2xl font-bold text-white">Fórmula 1</h2>
                 <p class="text-slate-400 mt-1">Simulador de carreras 3D.</p>
@@ -125,6 +131,26 @@
             </a>
 
         </main>
+
+        <!-- ========= INICIO: CONTENEDOR DE ANUNCIO DE ADSENSE ========= -->
+        <footer class="w-full mt-16 mb-8">
+            <div class="ad-container bg-gray-900/50 rounded-lg p-4 text-center border border-gray-700">
+                <p class="text-slate-500 text-sm mb-2">-- Publicidad --</p>
+                <!-- Bloque de Anuncios de Display -->
+                <!-- IMPORTANTE: Reemplaza 'TU_AD_SLOT_ID' con el ID de bloque de anuncios que generes en tu cuenta de AdSense. -->
+                <ins class="adsbygoogle"
+                     style="display:block"
+                     data-ad-client="ca-pub-2224408518904582"
+                     data-ad-slot="TU_AD_SLOT_ID" 
+                     data-ad-format="auto"
+                     data-full-width-responsive="true"></ins>
+                <script>
+                     (adsbygoogle = window.adsbygoogle || []).push({});
+                </script>
+            </div>
+        </footer>
+        <!-- ========= FIN: CONTENEDOR DE ANUNCIO DE ADSENSE ========= -->
+
     </div>
 
     <!-- Modal "Próximamente" -->
@@ -149,7 +175,6 @@
         function showInterstitialAd() {
             console.log("Intentando mostrar anuncio para:", destinationUrl);
             
-            // Esta función se ejecutará después del anuncio
             const navigateToDestination = () => {
                 if (destinationUrl && destinationUrl !== '#') {
                     window.open(destinationUrl, linkTarget);
@@ -158,22 +183,17 @@
                 }
             };
 
-            // Preparamos la llamada al anuncio intersticial
             if (window.adsbygoogle) {
                 try {
-                    // Esta es la función que llama al anuncio.
-                    // AdSense se encarga de mostrarlo si está listo.
                     (adsbygoogle = window.adsbygoogle || []).push({
                         google_ad_client: "ca-pub-2224408518904582",
                         enable_page_level_ads: true,
-                        // El callback 'adDismissed' se ejecuta cuando el usuario cierra el anuncio
                         adDismissed: navigateToDestination,
-                        // 'adNotShown' se ejecuta si Google decide no mostrar un anuncio
                         adNotShown: navigateToDestination
                     });
                 } catch (e) {
                     console.error("Error al mostrar el anuncio:", e);
-                    navigateToDestination(); // Si hay un error, navegamos igualmente.
+                    navigateToDestination();
                 }
             } else {
                 console.log("AdSense no listo, navegando directamente.");
