@@ -2,7 +2,7 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
     <title>Jusn38 - Centro de Creación Digital</title>
     
     <!-- Metatags y Estilos -->
@@ -10,344 +10,497 @@
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <link rel="apple-touch-icon" href="https://raw.githubusercontent.com/Yanzsmartwood2025/Runacoffee/main/public/assets/imagenes/logo_jusn38.png">
-    <link rel="manifest" href="manifest.json">
-    <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-2224408518904582" crossorigin="anonymous"></script>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@500;700&display=swap" rel="stylesheet">
     
     <style>
-        /* Estilos generales */
+        @keyframes pulse-glow {
+            0%, 100% { 
+                box-shadow: 0 0 50px rgba(255, 255, 255, 0.5), 0 0 25px rgba(255, 255, 255, 0.3); 
+                filter: brightness(1.1);
+            }
+            50% { 
+                box-shadow: 0 0 120px rgba(255, 255, 255, 1), 0 0 80px rgba(255, 255, 255, 0.8), 0 0 40px rgba(255, 255, 255, 0.6);
+                filter: brightness(1.5);
+            }
+        }
+
         body { 
             font-family: 'Rajdhani', sans-serif; 
             background-color: #0c0a18; 
-            background-image: radial-gradient(circle at top right, rgba(74, 222, 128, 0.1), transparent 40%), radial-gradient(circle at bottom left, rgba(59, 130, 246, 0.1), transparent 40%); 
+            background-image: radial-gradient(circle at top right, rgba(255, 255, 255, 0.05), transparent 40%), radial-gradient(circle at bottom left, rgba(59, 130, 246, 0.1), transparent 40%); 
             color: #cbd5e0;
-            padding-top: 80px; /* Espacio para la barra de navegación fija */
+            margin: 0;
+            overflow: hidden;
+            -webkit-user-select: none; user-select: none;
         }
         
-        /* Barra de navegación fija */
-        .top-navbar {
-            background: rgba(12, 10, 24, 0.6);
-            backdrop-filter: blur(15px);
-            -webkit-backdrop-filter: blur(15px);
-            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        #scene-container {
+            position: absolute; top: 0; left: 0;
+            width: 100vw; height: 100vh;
+            cursor: grab;
+            touch-action: none;
+        }
+        #scene-container:active { cursor: grabbing; }
+
+        .project-card-3d {
+            width: 320px;
+            height: 240px;
+            transition: all 0.3s ease;
+            cursor: pointer;
+            box-shadow: 0 0 15px rgba(0,0,0,0.5);
+            position: relative;
+            overflow: hidden;
+            -webkit-touch-callout: none;
+        }
+        .project-card-3d.focused {
+            box-shadow: 0 0 30px rgba(255, 255, 255, 0.3), 0 0 15px rgba(255, 255, 255, 0.2);
+            border-color: rgba(255, 255, 255, 0.4);
+        }
+        .project-card-3d.card-charging {
+            border-color: rgba(255, 255, 255, 0.9);
+            animation: pulse-glow 1.5s infinite;
+        }
+        .project-card-3d.card-active {
+            box-shadow: 0 0 100px rgba(255, 255, 255, 1), 0 0 60px rgba(255, 255, 255, 0.7);
+            border-color: rgba(255, 255, 255, 1);
+            transform: scale(1.05);
         }
 
-        /* Estilo de vidrio para los menús y tarjetas */
-        .glass-card, .modal-content, .side-menu-content, .user-dropdown-content { 
-            background: rgba(26, 32, 44, 0.75); 
-            backdrop-filter: blur(15px); 
-            -webkit-backdrop-filter: blur(15px); 
-            border: 1px solid rgba(255, 255, 255, 0.1); 
-            transition: all 0.3s ease; 
+        .glass-card { 
+            background: rgba(12, 10, 24, 0.5);
+            backdrop-filter: blur(4px); -webkit-backdrop-filter: blur(4px); 
+            border: 1px solid rgba(255, 255, 255, 0.2); 
         }
-        .glass-card:hover { 
-            background: rgba(45, 55, 72, 0.8); 
-            border-color: rgba(74, 222, 128, 0.5); 
-            transform: translateY(-8px); 
-            box-shadow: 0 0 25px rgba(74, 222, 128, 0.2); 
-        }
-        .neon-text { text-shadow: 0 0 5px rgba(74, 222, 128, 0.8), 0 0 10px rgba(74, 222, 128, 0.6); }
-        .icon-glow { filter: drop-shadow(0 0 8px rgba(74, 222, 128, 0.7)); }
-        .modal-overlay, .menu-overlay { 
-            background: rgba(12, 10, 24, 0.8); 
-            backdrop-filter: blur(5px); 
-            -webkit-backdrop-filter: blur(5px); 
-        }
-        .ad-container { min-height: 100px; max-width: 970px; margin: 0 auto; }
         
-        /* Botones de login y perfil */
-        #user-profile-button img { border-radius: 50%; }
-        #logout-button { background-color: #ef4444; color: white; padding: 8px 12px; border-radius: 8px; font-size: 0.875rem; font-weight: bold; transition: background-color 0.2s; cursor: pointer; text-align: center; width: 100%;}
-        #logout-button:hover { background-color: #dc2626; }
-        #login-button { background-color: #2563eb; color: white; padding: 8px 12px; border-radius: 8px; font-size: 0.875rem; font-weight: bold; transition: background-color 0.2s; display: flex; align-items: center; justify-content: center; gap: 8px; cursor: pointer; width: 100%; }
-        #login-button:hover { background-color: #1d4ed8; }
-        .menu-button { cursor: pointer; padding: 8px; }
+        .card-video-bg {
+            position: absolute; top: 0; left: 0;
+            width: 100%; height: 100%; object-fit: cover;
+            z-index: 1; opacity: 0.5; transition: opacity 0.3s ease;
+        }
+        .project-card-3d:hover .card-video-bg { opacity: 0.8; }
+
+        .card-content {
+            position: relative; z-index: 2; width: 100%; height: 100%;
+            display: flex; flex-direction: column; align-items: center; justify-content: center;
+            text-shadow: 0 2px 4px rgba(0,0,0,0.7);
+        }
     </style>
 </head>
 <body>
+    <div id="scene-container"></div>
 
-    <!-- Barra de Navegación Fija -->
-    <header class="top-navbar fixed top-0 left-0 right-0 z-50 h-16">
-        <nav class="container mx-auto px-4 h-full flex justify-between items-center">
-            <!-- Lado Izquierdo: Botón de Menú -->
-            <div id="open-menu-button" class="menu-button">
-                <svg class="w-6 h-6 text-slate-300" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
-                    <path stroke-linecap="round" stroke-linejoin="round" d="M3.75 6.75h16.5M3.75 12h16.5m-16.5 5.25h16.5" />
-                </svg>
+    <div id="html-elements" style="display: none;">
+        <!-- El HTML de las 7 pantallas no cambia -->
+        <a href="caja_de_herramientas.html" class="project-card-3d">
+            <div class="glass-card rounded-lg w-full h-full">
+                <video class="card-video-bg" autoplay loop muted playsinline><source src="https://videos.pexels.com/video-files/853875/853875-hd_1280_720_25fps.mp4" type="video/mp4"></video>
+                <div class="card-content p-6 text-center">
+                    <div class="flex justify-center mb-4"><svg class="w-12 h-12 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M11.42 15.17L17.25 21A2.652 2.652 0 0021 17.25l-5.877-5.877M11.42 15.17l2.472-2.472a3.375 3.375 0 000-4.773L11.42 5.42a3.375 3.375 0 00-4.773 0L2.25 9.828a3.375 3.375 0 000 4.773l2.472 2.472M11.42 15.17L5.877 21" /></svg></div>
+                    <h2 class="text-xl font-bold text-white">Caja de Herramientas</h2>
+                    <p class="text-slate-300 mt-1 text-sm">Generadores y utilidades.</p>
+                </div>
             </div>
-
-            <!-- Lado Derecho: Sección de Usuario (Contenedor del Dropdown) -->
-            <div id="user-section-container" class="relative">
-                <!-- El contenido se genera dinámicamente con JavaScript -->
+        </a>
+        <a href="lumenfall.html" class="project-card-3d">
+            <div class="glass-card rounded-lg w-full h-full">
+                <video class="card-video-bg" autoplay loop muted playsinline><source src="https://videos.pexels.com/video-files/4784400/4784400-hd_1280_720_30fps.mp4" type="video/mp4"></video>
+                <div class="card-content p-6 text-center">
+                    <div class="flex justify-center mb-4"><svg class="w-12 h-12 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M10.5 6h9.75M10.5 6a1.5 1.5 0 11-3 0m3 0a1.5 1.5 0 10-3 0M3.75 6H7.5m3 12h9.75m-9.75 0a1.5 1.5 0 01-3 0m3 0a1.5 1.5 0 00-3 0m-3.75 0H7.5m9-6h3.75m-3.75 0a1.5 1.5 0 01-3 0m3 0a1.5 1.5 0 00-3 0m-9.75 0h9.75" /></svg></div>
+                    <h2 class="text-xl font-bold text-white">Lumenfall</h2>
+                    <p class="text-slate-300 mt-1 text-sm">Prototipo de juego de defensa.</p>
+                </div>
             </div>
-        </nav>
-    </header>
-    
-    <!-- Menú Lateral Deslizante (Oculto por defecto) -->
-    <div id="menu-overlay" class="fixed inset-0 z-40 menu-overlay hidden"></div>
-    <div id="side-menu" class="side-menu-content fixed top-0 left-0 w-72 h-full z-50 transform -translate-x-full transition-transform duration-300 ease-in-out">
-        <div class="p-4">
-            <div class="flex justify-between items-center mb-6">
-                <h2 class="text-2xl font-bold text-green-400 neon-text">Menú</h2>
-                <button id="close-menu-button" class="p-2">
-                    <svg class="w-6 h-6 text-slate-300" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" /></svg>
-                </button>
+        </a>
+        <a href="formula-1.html" class="project-card-3d">
+            <div class="glass-card rounded-lg w-full h-full">
+                <video class="card-video-bg" autoplay loop muted playsinline><source src="https://videos.pexels.com/video-files/2103949/2103949-hd_1280_720_24fps.mp4" type="video/mp4"></video>
+                <div class="card-content p-6 text-center">
+                     <div class="flex justify-center mb-4"><svg class="w-12 h-12 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M3 3v1.5M3 21v-6m0 0l2.77-.693a9 9 0 016.208.682l.108.054a9 9 0 006.086.71l3.114-.732a48.524 48.524 0 01-.005-10.499l-3.11.732a9 9 0 01-6.085-.711l-.108-.054a9 9 0 00-6.208-.682L3 4.5M3 15V4.5" /></svg></div>
+                    <h2 class="text-xl font-bold text-white">Fórmula 1</h2>
+                    <p class="text-slate-300 mt-1 text-sm">Simulador de carreras 3D.</p>
+                </div>
             </div>
-            <nav id="side-menu-nav" class="flex flex-col gap-3">
-                <!-- Los enlaces se agregarán aquí dinámicamente -->
-            </nav>
-        </div>
+        </a>
+        <a href="https://runacoffee.vercel.app" target="_blank" class="project-card-3d">
+            <div class="glass-card rounded-lg w-full h-full">
+                <video class="card-video-bg" autoplay loop muted playsinline><source src="https://videos.pexels.com/video-files/3254013/3254013-hd_1280_720_30fps.mp4" type="video/mp4"></video>
+                <div class="card-content p-6 text-center">
+                     <div class="flex justify-center mb-4"><svg class="w-12 h-12 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M13.5 21v-7.5A.75.75 0 0114.25 12h.01a.75.75 0 01.75.75v7.5m-4.5 0v-7.5A.75.75 0 009.75 12h.01a.75.75 0 00-.75.75v7.5m-4.5 0v-7.5A.75.75 0 015.25 12h.01a.75.75 0 01.75.75v7.5m-4.5 0V9A.75.75 0 012.25 8.25h19.5A.75.75 0 0122.5 9v12m-18 0a.75.75 0 00.75.75h16.5a.75.75 0 00.75-.75m-18 0v-7.5A.75.75 0 015.25 12h13.5a.75.75 0 01.75.75v7.5" /></svg></div>
+                    <h2 class="text-xl font-bold text-white">Runa Coffee</h2>
+                    <p class="text-slate-300 mt-1 text-sm">Alianza estratégica.</p>
+                </div>
+            </div>
+        </a>
+        <a href="https://yanz-smart-wood.vercel.app" target="_blank" class="project-card-3d">
+            <div class="glass-card rounded-lg w-full h-full">
+                <video class="card-video-bg" autoplay loop muted playsinline><source src="https://videos.pexels.com/video-files/4491882/4491882-hd_1280_720_25fps.mp4" type="video/mp4"></video>
+                <div class="card-content p-6 text-center">
+                    <div class="flex justify-center mb-4"><svg class="w-12 h-12 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M15.362 5.214A8.252 8.252 0 0112 21 8.25 8.25 0 016.038 7.048 8.287 8.287 0 009 9.6a8.983 8.983 0 013.361-6.867 8.21 8.21 0 00-2.433 2.471z" /><path stroke-linecap="round" stroke-linejoin="round" d="M12 18a3.75 3.75 0 00.495-7.467 5.99 5.99 0 00-1.925 3.546 5.974 5.974 0 01-2.133-1.001A3.75 3.75 0 0012 18z" /></svg></div>
+                    <h2 class="text-xl font-bold text-white">Yan'z Smart Wood</h2>
+                    <p class="text-slate-300 mt-1 text-sm">Diseño y tecnología.</p>
+                </div>
+            </div>
+        </a>
+        <a href="#" class="project-card-3d">
+            <div class="glass-card rounded-lg w-full h-full">
+                <video class="card-video-bg" autoplay loop muted playsinline><source src="https://videos.pexels.com/video-files/3994383/3994383-hd_1280_720_25fps.mp4" type="video/mp4"></video>
+                <div class="card-content p-6 text-center">
+                     <div class="flex justify-center mb-4"><svg class="w-12 h-12 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M9.813 15.904L9 18.75l-.813-2.846a4.5 4.5 0 00-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 003.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 003.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 00-3.09 3.09zM18.259 8.715L18 9.75l-.259-1.035a3.375 3.375 0 00-2.455-2.456L14.25 6l1.036-.259a3.375 3.375 0 002.455-2.456L18 2.25l.259 1.035a3.375 3.375 0 002.456 2.456L21.75 6l-1.035.259a3.375 3.375 0 00-2.456 2.456zM16.898 20.624l-.219.219a1.5 1.5 0 01-2.121 0l-.219-.219a1.5 1.5 0 010-2.121l.219-.219a1.5 1.5 0 012.121 0l.219.219a1.5 1.5 0 010 2.121z" /></svg></div>
+                    <h2 class="text-xl font-bold text-white">IA "Aria"</h2>
+                    <p class="text-slate-300 mt-1 text-sm">Experimentos con IA.</p>
+                </div>
+            </div>
+        </a>
+        <a href="#" class="project-card-3d">
+            <div class="glass-card rounded-lg w-full h-full">
+                <video class="card-video-bg" autoplay loop muted playsinline><source src="https://videos.pexels.com/video-files/3194234/3194234-hd_1280_720_25fps.mp4" type="video/mp4"></video>
+                <div class="card-content p-6 text-center">
+                     <div class="flex justify-center mb-4"><svg class="w-12 h-12 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 11-18 0 9 9 0 0118 0z" /></svg></div>
+                    <h2 class="text-xl font-bold text-white">Publicidad</h2>
+                    <p class="text-slate-300 mt-1 text-sm">Nuestros patrocinadores.</p>
+                </div>
+            </div>
+        </a>
     </div>
 
-
-    <div class="w-full max-w-7xl mx-auto px-4">
-        <!-- Encabezado Principal -->
-        <section class="text-center mb-12">
-            <img src="https://raw.githubusercontent.com/Yanzsmartwood2025/Runacoffee/main/public/assets/imagenes/logo_jusn38.png" alt="Logo Jusn38" class="w-24 h-24 mx-auto mb-4 icon-glow">
-            <h1 class="text-5xl md:text-7xl font-bold text-green-400 neon-text">JUSN38</h1>
-            <p class="text-slate-400 mt-2 text-lg">Un centro de mando para la creación de experiencias digitales.</p>
-        </section>
-
-        <!-- Contenedor de Botones -->
-        <main id="project-grid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-            <!-- Botón 1: Caja de Herramientas -->
-            <a href="caja_de_herramientas.html" class="glass-card rounded-lg p-6 block text-center ad-link">
-                <div class="flex justify-center mb-4"><svg class="w-16 h-16 text-green-400 icon-glow" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M11.42 15.17L17.25 21A2.652 2.652 0 0021 17.25l-5.877-5.877M11.42 15.17l2.472-2.472a3.375 3.375 0 000-4.773L11.42 5.42a3.375 3.375 0 00-4.773 0L2.25 9.828a3.375 3.375 0 000 4.773l2.472 2.472M11.42 15.17L5.877 21" /></svg></div>
-                <h2 class="text-2xl font-bold text-white">Caja de Herramientas</h2>
-                <p class="text-slate-400 mt-1">Generadores, calculadoras y utilidades.</p>
-            </a>
-
-            <!-- Botón 2: Lumenfall (Juego) -->
-            <a href="lumenfall.html" class="glass-card rounded-lg p-6 block text-center ad-link">
-                <div class="flex justify-center mb-4"><svg class="w-16 h-16 text-green-400 icon-glow" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M10.5 6h9.75M10.5 6a1.5 1.5 0 11-3 0m3 0a1.5 1.5 0 10-3 0M3.75 6H7.5m3 12h9.75m-9.75 0a1.5 1.5 0 01-3 0m3 0a1.5 1.5 0 00-3 0m-3.75 0H7.5m9-6h3.75m-3.75 0a1.5 1.5 0 01-3 0m3 0a1.5 1.5 0 00-3 0m-9.75 0h9.75" /></svg></div>
-                <h2 class="text-2xl font-bold text-white">Lumenfall</h2>
-                <p class="text-slate-400 mt-1">Prototipo de juego de defensa.</p>
-            </a>
-            
-            <!-- Botón 4: Fórmula 1 -->
-            <a href="formula-1.html" class="glass-card rounded-lg p-6 block text-center ad-link">
-                <div class="flex justify-center mb-4"><svg class="w-16 h-16 text-green-400 icon-glow" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M3 3v1.5M3 21v-6m0 0l2.77-.693a9 9 0 016.208.682l.108.054a9 9 0 006.086.71l3.114-.732a48.524 48.524 0 01-.005-10.499l-3.11.732a9 9 0 01-6.085-.711l-.108-.054a9 9 0 00-6.208-.682L3 4.5M3 15V4.5" /></svg></div>
-                <h2 class="text-2xl font-bold text-white">Fórmula 1</h2>
-                <p class="text-slate-400 mt-1">Simulador de carreras 3D.</p>
-            </a>
-
-            <!-- Botón 5: Runa Coffee -->
-            <a href="https://runacoffee.vercel.app" target="_blank" class="glass-card rounded-lg p-6 block text-center ad-link">
-                <div class="flex justify-center mb-4"><svg class="w-16 h-16 text-green-400 icon-glow" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M13.5 21v-7.5A.75.75 0 0114.25 12h.01a.75.75 0 01.75.75v7.5m-4.5 0v-7.5A.75.75 0 009.75 12h.01a.75.75 0 00-.75.75v7.5m-4.5 0v-7.5A.75.75 0 015.25 12h.01a.75.75 0 01.75.75v7.5m-4.5 0V9A.75.75 0 012.25 8.25h19.5A.75.75 0 0122.5 9v12m-18 0a.75.75 0 00.75.75h16.5a.75.75 0 00.75-.75m-18 0v-7.5A.75.75 0 015.25 12h13.5a.75.75 0 01.75.75v7.5" /></svg></div>
-                <h2 class="text-2xl font-bold text-white">Runa Coffee</h2>
-                <p class="text-slate-400 mt-1">Alianza estratégica con café de especialidad.</p>
-            </a>
-
-            <!-- Botón 6: Yan'z Smart Wood -->
-            <a href="https://yanz-smart-wood.vercel.app" target="_blank" class="glass-card rounded-lg p-6 block text-center ad-link">
-                <div class="flex justify-center mb-4"><svg class="w-16 h-16 text-green-400 icon-glow" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M15.362 5.214A8.252 8.252 0 0112 21 8.25 8.25 0 016.038 7.048 8.287 8.287 0 009 9.6a8.983 8.983 0 013.361-6.867 8.21 8.21 0 00-2.433 2.471z" /><path stroke-linecap="round" stroke-linejoin="round" d="M12 18a3.75 3.75 0 00.495-7.467 5.99 5.99 0 00-1.925 3.546 5.974 5.974 0 01-2.133-1.001A3.75 3.75 0 0012 18z" /></svg></div>
-                <h2 class="text-2xl font-bold text-white">Yan'z Smart Wood</h2>
-                <p class="text-slate-400 mt-1">Diseño y tecnología en madera.</p>
-            </a>
-
-            <!-- Botón 7: Pruebas de IA "Aria" (En Construcción) -->
-            <a href="#" class="glass-card rounded-lg p-6 block text-center ad-link">
-                 <div class="flex justify-center mb-4"><svg class="w-16 h-16 text-green-400 icon-glow" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M9.813 15.904L9 18.75l-.813-2.846a4.5 4.5 0 00-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 003.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 003.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 00-3.09 3.09zM18.259 8.715L18 9.75l-.259-1.035a3.375 3.375 0 00-2.455-2.456L14.25 6l1.036-.259a3.375 3.375 0 002.455-2.456L18 2.25l.259 1.035a3.375 3.375 0 002.456 2.456L21.75 6l-1.035.259a3.375 3.375 0 00-2.456 2.456zM16.898 20.624l-.219.219a1.5 1.5 0 01-2.121 0l-.219-.219a1.5 1.5 0 010-2.121l.219-.219a1.5 1.5 0 012.121 0l.219.219a1.5 1.5 0 010 2.121z" /></svg></div>
-                <h2 class="text-2xl font-bold text-white">IA "Aria"</h2>
-                <p class="text-slate-400 mt-1">Experimentos con IA generativa.</p>
-            </a>
-            
-            <!-- Botón 8 (En Construcción) -->
-            <a href="#" class="glass-card rounded-lg p-6 block text-center ad-link">
-                <div class="flex justify-center mb-4"><svg class="w-16 h-16 text-slate-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M21.75 6.75v10.5a2.25 2.25 0 01-2.25 2.25h-15a2.25 2.25 0 01-2.25-2.25V6.75m19.5 0A2.25 2.25 0 0019.5 4.5h-15a2.25 2.25 0 00-2.25 2.25m19.5 0v.243a2.25 2.25 0 01-1.07 1.916l-7.5 4.615a2.25 2.25 0 01-2.36 0L3.32 8.91a2.25 2.25 0 01-1.07-1.916V6.75" /></svg></div>
-                <h2 class="text-2xl font-bold text-slate-300">Contacto</h2>
-                <p class="text-slate-500 mt-1">Hablemos de alianzas.</p>
-            </a>
-        </main>
-
-        <!-- Contenedor de Anuncio -->
-        <footer class="w-full mt-16 mb-8">
-            <div class="ad-container bg-gray-900/50 rounded-lg p-4 text-center border border-gray-700">
-                <p class="text-slate-500 text-sm mb-2">-- Publicidad --</p>
-                <ins class="adsbygoogle" style="display:block" data-ad-client="ca-pub-2224408518904582" data-ad-slot="TU_AD_SLOT_ID" data-ad-format="auto" data-full-width-responsive="true"></ins>
-                <script>(adsbygoogle = window.adsbygoogle || []).push({});</script>
-            </div>
-        </footer>
-    </div>
-
-    <!-- Modal "Próximamente" -->
-    <div id="coming-soon-modal" class="fixed inset-0 modal-overlay flex items-center justify-center p-4 hidden z-50">
-        <div class="modal-content rounded-lg p-8 text-center max-w-sm w-full">
-            <h3 class="text-3xl font-bold text-white mb-4">En Construcción</h3>
-            <p class="text-slate-300 mb-6">Este distrito de nuestro universo aún está en desarrollo. ¡Vuelve pronto para ver las maravillas que estamos creando!</p>
-            <button id="close-modal-button" class="bg-green-500 text-white font-bold py-2 px-6 rounded-lg hover:bg-green-600 transition-colors">Entendido</button>
-        </div>
-    </div>
+    <script async src="https://unpkg.com/es-module-shims@1.6.3/dist/es-module-shims.js"></script>
+    <script type="importmap">
+    { "imports": { 
+        "three": "https://cdn.jsdelivr.net/npm/three@0.157.0/build/three.module.js", 
+        "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.157.0/examples/jsm/" 
+    } }
+    </script>
 
     <script type="module">
-        // --- LÓGICA DE LA INTERFAZ (MENÚS, MODAL, ETC.) ---
-        
-        // Elementos del DOM
-        const projectGrid = document.getElementById('project-grid');
-        const modal = document.getElementById('coming-soon-modal');
-        const closeModalButton = document.getElementById('close-modal-button');
-        const openMenuButton = document.getElementById('open-menu-button');
-        const closeMenuButton = document.getElementById('close-menu-button');
-        const sideMenu = document.getElementById('side-menu');
-        const menuOverlay = document.getElementById('menu-overlay');
-        const sideMenuNav = document.getElementById('side-menu-nav');
-        const userSectionContainer = document.getElementById('user-section-container');
+        import * as THREE from 'three';
+        import { CSS3DRenderer, CSS3DObject } from 'three/addons/renderers/CSS3DRenderer.js';
 
-        // --- Lógica del Menú Lateral ---
-        function toggleSideMenu(show) {
-            if (show) {
-                sideMenu.classList.remove('-translate-x-full');
-                menuOverlay.classList.remove('hidden');
-            } else {
-                sideMenu.classList.add('-translate-x-full');
-                menuOverlay.classList.add('hidden');
+        let camera, scene, renderer, cssScene, cssRenderer, coreObject;
+        const carouselGroup = new THREE.Group();
+        const tentaclesGroup = new THREE.Group();
+        const clock = new THREE.Clock();
+        
+        let focusedObject = null;
+        
+        let isPointerDown = false, isDragging = false;
+        let startPointerX = 0, startRotationY = 0, velocityY = 0;
+        const deceleration = 0.95;
+        
+        let longPressTimeout = null;
+        let isHolding = false;
+        let heldObject = null;
+
+        init();
+        animate();
+
+        function init() {
+            const container = document.getElementById('scene-container');
+            camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 1, 5000);
+            
+            scene = new THREE.Scene();
+            cssScene = new THREE.Scene();
+            
+            const coreGeometry = new THREE.IcosahedronGeometry(150, 3);
+            const textureLoader = new THREE.TextureLoader();
+            const coreTexture = textureLoader.load('https://i.imgur.com/uN2cNW6.jpeg');
+            coreTexture.wrapS = THREE.RepeatWrapping;
+            coreTexture.wrapT = THREE.RepeatWrapping;
+            const coreMaterial = new THREE.MeshBasicMaterial({ 
+                map: coreTexture, blending: THREE.AdditiveBlending,
+                transparent: true, opacity: 0.9, side: THREE.BackSide
+            });
+            coreObject = new THREE.Mesh(coreGeometry, coreMaterial);
+            scene.add(coreObject);
+
+            renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+            renderer.setPixelRatio(window.devicePixelRatio);
+            renderer.setSize(window.innerWidth, window.innerHeight);
+            container.appendChild(renderer.domElement);
+
+            cssRenderer = new CSS3DRenderer();
+            cssRenderer.setSize(window.innerWidth, window.innerHeight);
+            cssRenderer.domElement.style.position = 'absolute';
+            cssRenderer.domElement.style.top = 0;
+            container.appendChild(cssRenderer.domElement);
+
+            const elements = document.querySelectorAll('#html-elements .project-card-3d');
+            elements.forEach((element, i) => {
+                const cssObject = new CSS3DObject(element);
+                cssObject.userData.id = i;
+                carouselGroup.add(cssObject);
+            });
+            cssScene.add(carouselGroup);
+            
+            scene.add(tentaclesGroup);
+
+            updateLayout();
+            createTentacles();
+
+            container.addEventListener('pointerdown', onPointerDown);
+            container.addEventListener('pointermove', onPointerMove);
+            container.addEventListener('pointerup', onPointerUp);
+            container.addEventListener('pointerleave', onPointerUp);
+            container.addEventListener('contextmenu', (event) => event.preventDefault());
+            window.addEventListener('resize', onWindowResize);
+        }
+
+        function updateLayout() {
+            const isMobile = window.innerWidth < 768;
+            const radius = isMobile ? 700 : 850;
+            const cardScale = isMobile ? 0.8 : 1.0;
+            camera.position.z = isMobile ? 1200 : 1000;
+
+            carouselGroup.children.forEach((object, i) => {
+                const numElements = carouselGroup.children.length;
+                const angle = (i / numElements) * Math.PI * 2;
+                object.position.x = Math.sin(angle) * radius;
+                object.position.z = Math.cos(angle) * radius;
+                object.scale.set(cardScale, cardScale, cardScale);
+            });
+        }
+
+        function createTentacles() {
+            while(tentaclesGroup.children.length > 0){
+                const tentacle = tentaclesGroup.children[0];
+                tentaclesGroup.remove(tentacle);
+                tentacle.geometry.dispose();
+                tentacle.material.dispose();
+            }
+
+            carouselGroup.children.forEach((targetObject, i) => {
+                const material = new THREE.MeshBasicMaterial({ 
+                    color: 0xffffff,
+                    transparent: true, 
+                    opacity: 0.15,
+                    blending: THREE.AdditiveBlending
+                });
+
+                const restingRadius = 250;
+                const angle = (Math.random() - 0.5) * Math.PI;
+                const restingPoint = new THREE.Vector3(
+                    Math.cos(angle) * restingRadius,
+                    (Math.random() - 0.5) * 200,
+                    Math.sin(angle) * restingRadius
+                );
+
+                const curve = new THREE.CatmullRomCurve3([
+                    new THREE.Vector3(0,0,0), 
+                    restingPoint.clone().multiplyScalar(0.5),
+                    restingPoint
+                ]);
+                const geometry = new THREE.TubeGeometry(curve, 32, 2, 8, false);
+                
+                const tentacle = new THREE.Mesh(geometry, material);
+                tentacle.userData.targetId = i;
+                tentacle.userData.restingPoint = restingPoint;
+                tentacle.userData.midPointBase = curve.points[1].clone();
+                tentacle.userData.animationOffset = Math.random() * Math.PI * 2;
+                tentacle.userData.pulseAnimation = null;
+                tentaclesGroup.add(tentacle);
+            });
+        }
+        
+        function updateTentacleGeometry(tentacle, time) {
+            const curve = tentacle.geometry.parameters.path;
+            const midPoint = curve.points[1];
+            const baseMidPoint = tentacle.userData.midPointBase;
+            const offset = tentacle.userData.animationOffset;
+
+            midPoint.x = baseMidPoint.x + Math.sin(time * 0.7 + offset) * 30;
+            midPoint.y = baseMidPoint.y + Math.cos(time * 0.5 + offset) * 40;
+            midPoint.z = baseMidPoint.z + Math.sin(time * 0.6 + offset) * 30;
+
+            const newGeom = new THREE.TubeGeometry(curve, 32, 2, 8, false);
+            tentacle.geometry.dispose();
+            tentacle.geometry = newGeom;
+        }
+
+        function engageTentacle(tentacle, targetObject) {
+            if (!tentacle) return;
+
+            if (coreObject) {
+                gsap.to(coreObject.scale, {
+                    x: 1.1, y: 1.1, z: 1.1,
+                    duration: 0.15, yoyo: true,
+                    repeat: 1, ease: "power2.inOut"
+                });
+            }
+
+            const targetPosition = targetObject.position.clone();
+            targetPosition.y -= 120; 
+
+            const curve = tentacle.geometry.parameters.path;
+            gsap.to(curve.points[2], {
+                x: targetPosition.x, y: targetPosition.y, z: targetPosition.z,
+                duration: 0.5, ease: "power3.out",
+            });
+
+            tentacle.userData.pulseAnimation = gsap.to(tentacle.material, { 
+                opacity: 1.0,
+                duration: 0.3, yoyo: true, repeat: -1, ease: "sine.inOut" 
+            });
+        }
+
+        function disengageTentacle(tentacle) {
+            if (!tentacle) return;
+            
+            if (tentacle.userData.pulseAnimation) tentacle.userData.pulseAnimation.kill();
+
+            const restingPoint = tentacle.userData.restingPoint;
+            const curve = tentacle.geometry.parameters.path;
+            gsap.to(curve.points[2], {
+                x: restingPoint.x, y: restingPoint.y, z: restingPoint.z,
+                duration: 0.8, ease: "elastic.out(1, 0.5)",
+            });
+            gsap.to(tentacle.material, { opacity: 0.15, duration: 0.5 });
+        }
+
+        function animate() {
+            requestAnimationFrame(animate);
+            const delta = clock.getDelta();
+            const time = clock.getElapsedTime();
+            
+            if (coreObject) {
+                coreObject.rotation.y += delta * 0.2;
+                coreObject.material.map.offset.y = time * 0.05;
+            }
+
+            if (!isPointerDown) {
+                 if (Math.abs(velocityY) > 0.0001) {
+                    carouselGroup.rotation.y += velocityY;
+                    tentaclesGroup.rotation.y += velocityY;
+                    velocityY *= deceleration;
+                } else {
+                    velocityY = 0;
+                }
+            }
+            
+            let maxDot = -2;
+            let newlyFocusedObject = null;
+            carouselGroup.children.forEach(object => {
+                object.lookAt(camera.position);
+                const worldPosition = new THREE.Vector3();
+                object.getWorldPosition(worldPosition);
+                const cameraDirection = new THREE.Vector3(0, 0, -1).applyQuaternion(camera.quaternion);
+                const objectDirection = worldPosition.sub(camera.position).normalize();
+                const dot = cameraDirection.dot(objectDirection);
+
+                if (dot > maxDot) {
+                    maxDot = dot;
+                    newlyFocusedObject = object;
+                }
+                if (object !== heldObject) {
+                    object.element.classList.remove('focused');
+                }
+            });
+
+            if (newlyFocusedObject && newlyFocusedObject !== focusedObject) {
+                focusedObject = newlyFocusedObject;
+            }
+            if(focusedObject && !isHolding) focusedObject.element.classList.add('focused');
+
+            tentaclesGroup.children.forEach(tentacle => {
+                updateTentacleGeometry(tentacle, time);
+            });
+
+            renderer.render(scene, camera);
+            cssRenderer.render(cssScene, camera);
+        }
+        
+        const gsapScript = document.createElement('script');
+        gsapScript.src = 'https://cdnjs.cloudflare.com/ajax/libs/gsap/3.11.4/gsap.min.js';
+        document.body.appendChild(gsapScript);
+
+        function onPointerDown(event) {
+            isPointerDown = true;
+            isDragging = false;
+            startPointerX = event.clientX;
+            startRotationY = carouselGroup.rotation.y;
+            velocityY = 0;
+
+            const element = event.target.closest('.project-card-3d');
+            if (element) {
+                heldObject = carouselGroup.children.find(o => o.element === element);
+                
+                if (heldObject) {
+                    isHolding = true;
+                    element.classList.add('card-charging');
+                    
+                    const tentacle = tentaclesGroup.children.find(t => t.userData.targetId === heldObject.userData.id);
+                    engageTentacle(tentacle, heldObject);
+
+                    longPressTimeout = setTimeout(() => {
+                        if (isHolding && heldObject) {
+                            element.classList.remove('card-charging');
+                            element.classList.add('card-active');
+                            
+                            if (element.target === '_blank') {
+                                window.open(element.href, '_blank');
+                            } else {
+                                window.location.href = element.href;
+                            }
+                        }
+                    }, 2000);
+                }
             }
         }
 
-        openMenuButton.addEventListener('click', () => toggleSideMenu(true));
-        closeMenuButton.addEventListener('click', () => toggleSideMenu(false));
-        menuOverlay.addEventListener('click', () => toggleSideMenu(false));
-        
-        // Poblar el menú lateral dinámicamente
-        const projectLinks = projectGrid.querySelectorAll('.ad-link');
-        projectLinks.forEach(link => {
-            const title = link.querySelector('h2').textContent;
-            const newLink = document.createElement('a');
-            newLink.href = link.href;
-            newLink.target = link.target;
-            newLink.className = 'text-slate-300 hover:text-green-400 hover:bg-slate-700/50 p-3 rounded-md transition-colors duration-200';
-            newLink.textContent = title;
-            if (link.href.endsWith('#')) {
-                 newLink.addEventListener('click', (e) => {
-                    e.preventDefault();
-                    toggleSideMenu(false);
-                    modal.classList.remove('hidden');
-                });
-            }
-            sideMenuNav.appendChild(newLink);
-        });
+        function onPointerMove(event) {
+            if (!isPointerDown) return;
+            const deltaX = event.clientX - startPointerX;
 
-
-        // --- Lógica del Modal "Próximamente" ---
-        projectGrid.addEventListener('click', function(event) {
-            const link = event.target.closest('.ad-link');
-            if (!link) return;
+            // --- LÓGICA DE ROTACIÓN INMEDIATA (SENSIBILIDAD RESTAURADA) ---
+            const rotationFactor = 0.005; 
+            const newRotation = startRotationY + (deltaX * rotationFactor);
+            velocityY = newRotation - carouselGroup.rotation.y;
+            carouselGroup.rotation.y = newRotation;
+            tentaclesGroup.rotation.y = newRotation;
             
-            if (link.getAttribute('href') === '#') {
-                event.preventDefault();
-                modal.classList.remove('hidden');
-            }
-        });
-
-        closeModalButton.addEventListener('click', () => modal.classList.add('hidden'));
-        modal.addEventListener('click', (event) => {
-            if (event.target === modal) modal.classList.add('hidden');
-        });
-
-        // --- LÓGICA DE FIREBASE Y AUTENTICACIÓN (CON MENÚ DESPLEGABLE) ---
-        
-        // Usamos delegación de eventos en el contenedor principal del documento
-        document.body.addEventListener('click', async (event) => {
-            // Manejador para el botón de perfil/usuario
-            const userProfileButton = event.target.closest('#user-profile-button');
-            if (userProfileButton) {
-                const userDropdown = document.getElementById('user-dropdown');
-                if (userDropdown) {
-                    userDropdown.classList.toggle('hidden');
+            // Si el movimiento es significativo, se considera un arrastre
+            // y se cancela la acción de "mantener presionado".
+            if (Math.abs(deltaX) > 15) {
+                isDragging = true;
+                if (isHolding) {
+                    clearTimeout(longPressTimeout);
+                    isHolding = false;
+                    if (heldObject) {
+                        heldObject.element.classList.remove('card-charging');
+                        const tentacle = tentaclesGroup.children.find(t => t.userData.targetId === heldObject.userData.id);
+                        disengageTentacle(tentacle);
+                        heldObject = null;
+                    }
                 }
-                return; // Detenemos la ejecución para no interferir con otros clics
+            }
+        }
+
+        function onPointerUp(event) {
+            clearTimeout(longPressTimeout);
+            if (isHolding) {
+                isHolding = false;
+                if (heldObject) {
+                    heldObject.element.classList.remove('card-charging');
+                    const tentacle = tentaclesGroup.children.find(t => t.userData.targetId === heldObject.userData.id);
+                    disengageTentacle(tentacle);
+                }
             }
             
-            // Manejador para el botón de login
-            const loginButton = event.target.closest('#login-button');
-            if (loginButton) {
-                try {
-                    const { auth, googleProvider, signInWithPopup } = await import('./firebase-init.js');
-                    await signInWithPopup(auth, googleProvider);
-                } catch (e) {
-                    console.error("Error al intentar iniciar sesión:", e);
-                }
-                return;
-            }
+            isPointerDown = false;
+            // CAMBIO: Reseteamos 'isDragging' para permitir que la próxima interacción sea un tap/hold
+            isDragging = false; 
+            heldObject = null;
+        }
 
-            // Manejador para el botón de logout
-            const logoutButton = event.target.closest('#logout-button');
-            if (logoutButton) {
-                 try {
-                    const { auth, signOut } = await import('./firebase-init.js');
-                    await signOut(auth);
-                } catch (e) {
-                    console.error("Error al intentar cerrar sesión:", e);
-                }
-                return;
-            }
-            
-            // Lógica para cerrar el dropdown si se hace clic afuera
-            const userDropdown = document.getElementById('user-dropdown');
-            if (userDropdown && !userDropdown.classList.contains('hidden')) {
-                // Si el clic no fue dentro del contenedor de la sección de usuario, lo cerramos
-                if (!userSectionContainer.contains(event.target)) {
-                    userDropdown.classList.add('hidden');
-                }
-            }
-        });
-
-
-        // Función que renderiza la sección de usuario según el estado de autenticación
-        const renderUserSection = (user) => {
-            if (user && !user.isAnonymous) {
-                // --- VISTA DE USUARIO AUTENTICADO ---
-                userSectionContainer.innerHTML = `
-                    <button id="user-profile-button" class="w-10 h-10 block rounded-full overflow-hidden border-2 border-transparent hover:border-green-400 transition">
-                        <img src="${user.photoURL}" alt="Foto de ${user.displayName}" class="w-full h-full object-cover">
-                    </button>
-                    <div id="user-dropdown" class="user-dropdown-content absolute top-full right-0 mt-3 w-64 rounded-lg p-4 shadow-lg hidden z-50">
-                        <div class="flex items-center gap-3 mb-4 pb-3 border-b border-slate-600">
-                            <img src="${user.photoURL}" alt="" class="w-10 h-10 rounded-full">
-                            <div>
-                                <p class="font-bold text-white truncate">${user.displayName}</p>
-                                <p class="text-sm text-slate-400 truncate">${user.email}</p>
-                            </div>
-                        </div>
-                        <button id="logout-button">Cerrar Sesión</button>
-                    </div>
-                `;
-            } else {
-                // --- VISTA DE USUARIO NO AUTENTICADO ---
-                userSectionContainer.innerHTML = `
-                    <button id="user-profile-button" class="w-10 h-10 flex items-center justify-center bg-slate-700 rounded-full hover:bg-slate-600 transition">
-                        <svg class="w-6 h-6 text-slate-400" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M15.75 6a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0zM4.501 20.118a7.5 7.5 0 0114.998 0A17.933 17.933 0 0112 21.75c-2.676 0-5.216-.584-7.499-1.632z" /></svg>
-                    </button>
-                    <div id="user-dropdown" class="user-dropdown-content absolute top-full right-0 mt-3 w-64 rounded-lg p-4 shadow-lg hidden z-50">
-                        <p class="text-slate-300 text-center mb-4">¡Bienvenido! Ingresa para una mejor experiencia.</p>
-                        <button id="login-button">
-                            <svg class="w-5 h-5" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48"><path fill="#FFC107" d="M43.611,20.083H42V20H24v8h11.303c-1.649,4.657-6.08,8-11.303,8c-6.627,0-12-5.373-12-12c0-6.627,5.373-12,12-12c3.059,0,5.842,1.154,7.961,3.039l5.657-5.657C34.046,6.053,29.268,4,24,4C12.955,4,4,12.955,4,24s8.955,20,20,20s20-8.955,20-20C44,22.659,43.862,21.35,43.611,20.083z"></path><path fill="#FF3D00" d="M6.306,14.691l6.571,4.819C14.655,15.108,18.961,12,24,12c3.059,0,5.842,1.154,7.961,3.039l5.657-5.657C34.046,6.053,29.268,4,24,4C16.318,4,9.656,8.337,6.306,14.691z"></path><path fill="#4CAF50" d="M24,44c5.166,0,9.86-1.977,13.409-5.192l-6.19-5.238C29.211,35.091,26.715,36,24,36c-5.222,0-9.619-3.317-11.283-7.946l-6.522,5.025C9.505,39.556,16.227,44,24,44z"></path><path fill="#1976D2" d="M43.611,20.083H42V20H24v8h11.303c-0.792,2.237-2.231,4.166-4.087,5.574l6.19,5.238C42.022,35.244,44,30.036,44,24C44,22.659,43.862,21.35,43.611,20.083z"></path></svg>
-                            <span>Ingresar con Google</span>
-                        </button>
-                    </div>
-                `;
-            }
-        };
-
-        // Función inicial para configurar Firebase
-        const initializeAuth = async () => {
-            try {
-                const { auth, onAuthStateChanged } = await import('./firebase-init.js');
-                onAuthStateChanged(auth, renderUserSection);
-            } catch (error) {
-                console.warn("No se pudo cargar 'firebase-init.js'. La funcionalidad de login está desactivada.");
-                renderUserSection(null); // Renderiza el estado de "no logueado"
-                 userSectionContainer.querySelector('#user-profile-button').classList.add('opacity-50', 'cursor-not-allowed');
-                 userSectionContainer.querySelector('#user-profile-button').title = 'La configuración de Firebase no está completa.';
-            }
-        };
-
-        // Iniciar todo al cargar la página
-        initializeAuth();
-
+        function onWindowResize() {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+            cssRenderer.setSize(window.innerWidth, window.innerHeight);
+            updateLayout();
+            createTentacles();
+        }
     </script>
 </body>
 </html>
