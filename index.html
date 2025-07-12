@@ -5,156 +5,169 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Jusn38 - Centro de Creación Digital</title>
     
-    <!-- PWA (Progressive Web App) Meta Tags -->
+    <!-- Metatags y Estilos -->
     <meta name="theme-color" content="#0c0a18">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <link rel="apple-touch-icon" href="https://raw.githubusercontent.com/Yanzsmartwood2025/Runacoffee/main/public/assets/imagenes/logo_jusn38.png">
     <link rel="manifest" href="manifest.json">
-
-    <!-- CÓDIGO DE GOOGLE ADSENSE (TU LLAVE PERSONAL) -->
-    <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-2224408518904582"
-         crossorigin="anonymous"></script>
-
-    <!-- Scripts y Estilos -->
+    <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-2224408518904582" crossorigin="anonymous"></script>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@500;700&display=swap" rel="stylesheet">
+    
     <style>
-        body {
-            font-family: 'Rajdhani', sans-serif;
-            background-color: #0c0a18;
-            background-image: radial-gradient(circle at top right, rgba(74, 222, 128, 0.1), transparent 40%),
-                              radial-gradient(circle at bottom left, rgba(59, 130, 246, 0.1), transparent 40%);
+        /* Estilos generales */
+        body { 
+            font-family: 'Rajdhani', sans-serif; 
+            background-color: #0c0a18; 
+            background-image: radial-gradient(circle at top right, rgba(74, 222, 128, 0.1), transparent 40%), radial-gradient(circle at bottom left, rgba(59, 130, 246, 0.1), transparent 40%); 
             color: #cbd5e0;
+            padding-top: 80px; /* Espacio para la barra de navegación fija */
         }
-        .glass-card, .modal-content {
-            background: rgba(26, 32, 44, 0.6);
+        
+        /* Barra de navegación fija */
+        .top-navbar {
+            background: rgba(12, 10, 24, 0.6);
             backdrop-filter: blur(15px);
             -webkit-backdrop-filter: blur(15px);
-            border: 1px solid rgba(255, 255, 255, 0.1);
-            transition: all 0.3s ease;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
         }
-        .glass-card:hover {
-            background: rgba(45, 55, 72, 0.7);
-            border-color: rgba(74, 222, 128, 0.5);
-            transform: translateY(-8px);
-            box-shadow: 0 0 25px rgba(74, 222, 128, 0.2);
+
+        /* Estilo de vidrio para los menús y tarjetas */
+        .glass-card, .modal-content, .side-menu-content, .user-dropdown-content { 
+            background: rgba(26, 32, 44, 0.75); 
+            backdrop-filter: blur(15px); 
+            -webkit-backdrop-filter: blur(15px); 
+            border: 1px solid rgba(255, 255, 255, 0.1); 
+            transition: all 0.3s ease; 
         }
-        .neon-text {
-            text-shadow: 0 0 5px rgba(74, 222, 128, 0.8), 0 0 10px rgba(74, 222, 128, 0.6);
+        .glass-card:hover { 
+            background: rgba(45, 55, 72, 0.8); 
+            border-color: rgba(74, 222, 128, 0.5); 
+            transform: translateY(-8px); 
+            box-shadow: 0 0 25px rgba(74, 222, 128, 0.2); 
         }
-        .icon-glow {
-            filter: drop-shadow(0 0 8px rgba(74, 222, 128, 0.7));
+        .neon-text { text-shadow: 0 0 5px rgba(74, 222, 128, 0.8), 0 0 10px rgba(74, 222, 128, 0.6); }
+        .icon-glow { filter: drop-shadow(0 0 8px rgba(74, 222, 128, 0.7)); }
+        .modal-overlay, .menu-overlay { 
+            background: rgba(12, 10, 24, 0.8); 
+            backdrop-filter: blur(5px); 
+            -webkit-backdrop-filter: blur(5px); 
         }
-        .modal-overlay {
-             background: rgba(12, 10, 24, 0.8);
-             backdrop-filter: blur(5px);
-             -webkit-backdrop-filter: blur(5px);
-        }
-        /* Style for the ad container */
-        .ad-container {
-            min-height: 100px; /* Minimum height so it's visible even if the ad doesn't load */
-            max-width: 970px; /* Standard max width for leaderboards */
-            margin: 0 auto; /* Center the container */
-        }
+        .ad-container { min-height: 100px; max-width: 970px; margin: 0 auto; }
+        
+        /* Botones de login y perfil */
+        #user-profile-button img { border-radius: 50%; }
+        #logout-button { background-color: #ef4444; color: white; padding: 8px 12px; border-radius: 8px; font-size: 0.875rem; font-weight: bold; transition: background-color 0.2s; cursor: pointer; text-align: center; width: 100%;}
+        #logout-button:hover { background-color: #dc2626; }
+        #login-button { background-color: #2563eb; color: white; padding: 8px 12px; border-radius: 8px; font-size: 0.875rem; font-weight: bold; transition: background-color 0.2s; display: flex; align-items: center; justify-content: center; gap: 8px; cursor: pointer; width: 100%; }
+        #login-button:hover { background-color: #1d4ed8; }
+        .menu-button { cursor: pointer; padding: 8px; }
     </style>
 </head>
-<body class="min-h-screen flex flex-col items-center justify-center p-4">
+<body>
 
-    <div class="w-full max-w-7xl mx-auto">
-        <!-- Encabezado -->
-        <header class="text-center mb-12">
+    <!-- Barra de Navegación Fija -->
+    <header class="top-navbar fixed top-0 left-0 right-0 z-50 h-16">
+        <nav class="container mx-auto px-4 h-full flex justify-between items-center">
+            <!-- Lado Izquierdo: Botón de Menú -->
+            <div id="open-menu-button" class="menu-button">
+                <svg class="w-6 h-6 text-slate-300" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M3.75 6.75h16.5M3.75 12h16.5m-16.5 5.25h16.5" />
+                </svg>
+            </div>
+
+            <!-- Lado Derecho: Sección de Usuario (Contenedor del Dropdown) -->
+            <div id="user-section-container" class="relative">
+                <!-- El contenido se genera dinámicamente con JavaScript -->
+            </div>
+        </nav>
+    </header>
+    
+    <!-- Menú Lateral Deslizante (Oculto por defecto) -->
+    <div id="menu-overlay" class="fixed inset-0 z-40 menu-overlay hidden"></div>
+    <div id="side-menu" class="side-menu-content fixed top-0 left-0 w-72 h-full z-50 transform -translate-x-full transition-transform duration-300 ease-in-out">
+        <div class="p-4">
+            <div class="flex justify-between items-center mb-6">
+                <h2 class="text-2xl font-bold text-green-400 neon-text">Menú</h2>
+                <button id="close-menu-button" class="p-2">
+                    <svg class="w-6 h-6 text-slate-300" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" /></svg>
+                </button>
+            </div>
+            <nav id="side-menu-nav" class="flex flex-col gap-3">
+                <!-- Los enlaces se agregarán aquí dinámicamente -->
+            </nav>
+        </div>
+    </div>
+
+
+    <div class="w-full max-w-7xl mx-auto px-4">
+        <!-- Encabezado Principal -->
+        <section class="text-center mb-12">
             <img src="https://raw.githubusercontent.com/Yanzsmartwood2025/Runacoffee/main/public/assets/imagenes/logo_jusn38.png" alt="Logo Jusn38" class="w-24 h-24 mx-auto mb-4 icon-glow">
             <h1 class="text-5xl md:text-7xl font-bold text-green-400 neon-text">JUSN38</h1>
             <p class="text-slate-400 mt-2 text-lg">Un centro de mando para la creación de experiencias digitales.</p>
-        </header>
+        </section>
 
         <!-- Contenedor de Botones -->
         <main id="project-grid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-            
-            <!-- Botón 1: Caja de Herramientas -->
+             <!-- Los botones de proyectos van aquí como antes -->
             <a href="caja_de_herramientas.html" class="glass-card rounded-lg p-6 block text-center ad-link">
                 <div class="flex justify-center mb-4"><svg class="w-16 h-16 text-green-400 icon-glow" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M11.42 15.17L17.25 21A2.652 2.652 0 0021 17.25l-5.877-5.877M11.42 15.17l2.472-2.472a3.375 3.375 0 000-4.773L11.42 5.42a3.375 3.375 0 00-4.773 0L2.25 9.828a3.375 3.375 0 000 4.773l2.472 2.472M11.42 15.17L5.877 21" /></svg></div>
                 <h2 class="text-2xl font-bold text-white">Caja de Herramientas</h2>
                 <p class="text-slate-400 mt-1">Generadores, calculadoras y utilidades.</p>
             </a>
-
-            <!-- Botón 2: Lumenfall (Juego) -->
             <a href="lumenfall.html" class="glass-card rounded-lg p-6 block text-center ad-link">
                 <div class="flex justify-center mb-4"><svg class="w-16 h-16 text-green-400 icon-glow" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M10.5 6h9.75M10.5 6a1.5 1.5 0 11-3 0m3 0a1.5 1.5 0 10-3 0M3.75 6H7.5m3 12h9.75m-9.75 0a1.5 1.5 0 01-3 0m3 0a1.5 1.5 0 00-3 0m-3.75 0H7.5m9-6h3.75m-3.75 0a1.5 1.5 0 01-3 0m3 0a1.5 1.5 0 00-3 0m-9.75 0h9.75" /></svg></div>
                 <h2 class="text-2xl font-bold text-white">Lumenfall</h2>
                 <p class="text-slate-400 mt-1">Prototipo de juego de defensa.</p>
             </a>
-
-            <!-- Botón 3: Generador de Sprites -->
             <a href="generador_sprites.html" class="glass-card rounded-lg p-6 block text-center ad-link">
                 <div class="flex justify-center mb-4"><svg class="w-16 h-16 text-green-400 icon-glow" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M8.25 3v1.5M4.5 8.25H3m18 0h-1.5M4.5 12H3m18 0h-1.5m-15 3.75H3m18 0h-1.5M8.25 19.5V21M12 3v1.5m0 15V21m3.75-18v1.5M19.5 8.25h-1.5m-15 3.75h1.5m15 0h1.5m-15 3.75h1.5m15 0h1.5M12 19.5v-1.5m3.75-15h-1.5m-15 3.75H6m15 0h-1.5m-15 3.75H6m15 0h-1.5m-15 3.75H6m15 0h-1.5" /></svg></div>
                 <h2 class="text-2xl font-bold text-white">Generador de Sprites</h2>
                 <p class="text-slate-400 mt-1">Herramienta para desarrolladores.</p>
             </a>
-            
-            <!-- Botón 4: Fórmula 1 -->
             <a href="formula-1.html" class="glass-card rounded-lg p-6 block text-center ad-link">
                 <div class="flex justify-center mb-4"><svg class="w-16 h-16 text-green-400 icon-glow" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M3 3v1.5M3 21v-6m0 0l2.77-.693a9 9 0 016.208.682l.108.054a9 9 0 006.086.71l3.114-.732a48.524 48.524 0 01-.005-10.499l-3.11.732a9 9 0 01-6.085-.711l-.108-.054a9 9 0 00-6.208-.682L3 4.5M3 15V4.5" /></svg></div>
                 <h2 class="text-2xl font-bold text-white">Fórmula 1</h2>
                 <p class="text-slate-400 mt-1">Simulador de carreras 3D.</p>
             </a>
-
-            <!-- Botón 5: Runa Coffee -->
             <a href="https://runacoffee.vercel.app" target="_blank" class="glass-card rounded-lg p-6 block text-center ad-link">
                 <div class="flex justify-center mb-4"><svg class="w-16 h-16 text-green-400 icon-glow" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M13.5 21v-7.5A.75.75 0 0114.25 12h.01a.75.75 0 01.75.75v7.5m-4.5 0v-7.5A.75.75 0 009.75 12h.01a.75.75 0 00-.75.75v7.5m-4.5 0v-7.5A.75.75 0 015.25 12h.01a.75.75 0 01.75.75v7.5m-4.5 0V9A.75.75 0 012.25 8.25h19.5A.75.75 0 0122.5 9v12m-18 0a.75.75 0 00.75.75h16.5a.75.75 0 00.75-.75m-18 0v-7.5A.75.75 0 015.25 12h13.5a.75.75 0 01.75.75v7.5" /></svg></div>
                 <h2 class="text-2xl font-bold text-white">Runa Coffee</h2>
                 <p class="text-slate-400 mt-1">Alianza estratégica con café de especialidad.</p>
             </a>
-
-            <!-- Botón 6: Yan'z Smart Wood -->
             <a href="https://yanz-smart-wood.vercel.app" target="_blank" class="glass-card rounded-lg p-6 block text-center ad-link">
                 <div class="flex justify-center mb-4"><svg class="w-16 h-16 text-green-400 icon-glow" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M15.362 5.214A8.252 8.252 0 0112 21 8.25 8.25 0 016.038 7.048 8.287 8.287 0 009 9.6a8.983 8.983 0 013.361-6.867 8.21 8.21 0 00-2.433 2.471z" /><path stroke-linecap="round" stroke-linejoin="round" d="M12 18a3.75 3.75 0 00.495-7.467 5.99 5.99 0 00-1.925 3.546 5.974 5.974 0 01-2.133-1.001A3.75 3.75 0 0012 18z" /></svg></div>
                 <h2 class="text-2xl font-bold text-white">Yan'z Smart Wood</h2>
                 <p class="text-slate-400 mt-1">Diseño y tecnología en madera.</p>
             </a>
-
-            <!-- Botón 7: Pruebas de IA "Aria" (En Construcción) -->
             <a href="#" class="glass-card rounded-lg p-6 block text-center ad-link">
                  <div class="flex justify-center mb-4"><svg class="w-16 h-16 text-green-400 icon-glow" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M9.813 15.904L9 18.75l-.813-2.846a4.5 4.5 0 00-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 003.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 003.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 00-3.09 3.09zM18.259 8.715L18 9.75l-.259-1.035a3.375 3.375 0 00-2.455-2.456L14.25 6l1.036-.259a3.375 3.375 0 002.455-2.456L18 2.25l.259 1.035a3.375 3.375 0 002.456 2.456L21.75 6l-1.035.259a3.375 3.375 0 00-2.456 2.456zM16.898 20.624l-.219.219a1.5 1.5 0 01-2.121 0l-.219-.219a1.5 1.5 0 010-2.121l.219-.219a1.5 1.5 0 012.121 0l.219.219a1.5 1.5 0 010 2.121z" /></svg></div>
                 <h2 class="text-2xl font-bold text-white">IA "Aria"</h2>
                 <p class="text-slate-400 mt-1">Experimentos con IA generativa.</p>
             </a>
-            
-            <!-- Botón 8 (En Construcción) -->
             <a href="#" class="glass-card rounded-lg p-6 block text-center ad-link">
                 <div class="flex justify-center mb-4"><svg class="w-16 h-16 text-slate-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M21.75 6.75v10.5a2.25 2.25 0 01-2.25 2.25h-15a2.25 2.25 0 01-2.25-2.25V6.75m19.5 0A2.25 2.25 0 0019.5 4.5h-15a2.25 2.25 0 00-2.25 2.25m19.5 0v.243a2.25 2.25 0 01-1.07 1.916l-7.5 4.615a2.25 2.25 0 01-2.36 0L3.32 8.91a2.25 2.25 0 01-1.07-1.916V6.75" /></svg></div>
                 <h2 class="text-2xl font-bold text-slate-300">Contacto</h2>
                 <p class="text-slate-500 mt-1">Hablemos de alianzas.</p>
             </a>
-
         </main>
 
-        <!-- ========= INICIO: CONTENEDOR DE ANUNCIO DE ADSENSE ========= -->
+        <!-- Contenedor de Anuncio -->
         <footer class="w-full mt-16 mb-8">
             <div class="ad-container bg-gray-900/50 rounded-lg p-4 text-center border border-gray-700">
                 <p class="text-slate-500 text-sm mb-2">-- Publicidad --</p>
-                <!-- Bloque de Anuncios de Display -->
-                <!-- IMPORTANTE: Reemplaza 'TU_AD_SLOT_ID' con el ID de bloque de anuncios que generes en tu cuenta de AdSense. -->
-                <ins class="adsbygoogle"
-                     style="display:block"
-                     data-ad-client="ca-pub-2224408518904582"
-                     data-ad-slot="TU_AD_SLOT_ID" 
-                     data-ad-format="auto"
-                     data-full-width-responsive="true"></ins>
-                <script>
-                     (adsbygoogle = window.adsbygoogle || []).push({});
-                </script>
+                <ins class="adsbygoogle" style="display:block" data-ad-client="ca-pub-2224408518904582" data-ad-slot="TU_AD_SLOT_ID" data-ad-format="auto" data-full-width-responsive="true"></ins>
+                <script>(adsbygoogle = window.adsbygoogle || []).push({});</script>
             </div>
         </footer>
-        <!-- ========= FIN: CONTENEDOR DE ANUNCIO DE ADSENSE ========= -->
-
     </div>
 
     <!-- Modal "Próximamente" -->
-    <div id="coming-soon-modal" class="fixed inset-0 modal-overlay flex items-center justify-center p-4 hidden">
+    <div id="coming-soon-modal" class="fixed inset-0 modal-overlay flex items-center justify-center p-4 hidden z-50">
         <div class="modal-content rounded-lg p-8 text-center max-w-sm w-full">
             <h3 class="text-3xl font-bold text-white mb-4">En Construcción</h3>
             <p class="text-slate-300 mb-6">Este distrito de nuestro universo aún está en desarrollo. ¡Vuelve pronto para ver las maravillas que estamos creando!</p>
@@ -163,64 +176,171 @@
     </div>
 
     <script type="module">
-        // --- LÓGICA PARA ANUNCIOS Y MODALES ---
-
+        // --- LÓGICA DE LA INTERFAZ (MENÚS, MODAL, ETC.) ---
+        
+        // Elementos del DOM
         const projectGrid = document.getElementById('project-grid');
         const modal = document.getElementById('coming-soon-modal');
         const closeModalButton = document.getElementById('close-modal-button');
-        let destinationUrl = '';
-        let linkTarget = '_self';
+        const openMenuButton = document.getElementById('open-menu-button');
+        const closeMenuButton = document.getElementById('close-menu-button');
+        const sideMenu = document.getElementById('side-menu');
+        const menuOverlay = document.getElementById('menu-overlay');
+        const sideMenuNav = document.getElementById('side-menu-nav');
+        const userSectionContainer = document.getElementById('user-section-container');
 
-        // Función para mostrar el anuncio intersticial
-        function showInterstitialAd() {
-            console.log("Intentando mostrar anuncio para:", destinationUrl);
-            
-            const navigateToDestination = () => {
-                if (destinationUrl && destinationUrl !== '#') {
-                    window.open(destinationUrl, linkTarget);
-                } else if (destinationUrl === '#') {
-                    modal.classList.remove('hidden');
-                }
-            };
-
-            if (window.adsbygoogle) {
-                try {
-                    (adsbygoogle = window.adsbygoogle || []).push({
-                        google_ad_client: "ca-pub-2224408518904582",
-                        enable_page_level_ads: true,
-                        adDismissed: navigateToDestination,
-                        adNotShown: navigateToDestination
-                    });
-                } catch (e) {
-                    console.error("Error al mostrar el anuncio:", e);
-                    navigateToDestination();
-                }
+        // --- Lógica del Menú Lateral ---
+        function toggleSideMenu(show) {
+            if (show) {
+                sideMenu.classList.remove('-translate-x-full');
+                menuOverlay.classList.remove('hidden');
             } else {
-                console.log("AdSense no listo, navegando directamente.");
-                navigateToDestination();
+                sideMenu.classList.add('-translate-x-full');
+                menuOverlay.classList.add('hidden');
             }
         }
 
-        // Añadimos un "listener" al contenedor principal
+        openMenuButton.addEventListener('click', () => toggleSideMenu(true));
+        closeMenuButton.addEventListener('click', () => toggleSideMenu(false));
+        menuOverlay.addEventListener('click', () => toggleSideMenu(false));
+        
+        // Poblar el menú lateral dinámicamente
+        const projectLinks = projectGrid.querySelectorAll('.ad-link');
+        projectLinks.forEach(link => {
+            const title = link.querySelector('h2').textContent;
+            const newLink = document.createElement('a');
+            newLink.href = link.href;
+            newLink.target = link.target;
+            newLink.className = 'text-slate-300 hover:text-green-400 hover:bg-slate-700/50 p-3 rounded-md transition-colors duration-200';
+            newLink.textContent = title;
+            if (link.href.endsWith('#')) {
+                 newLink.addEventListener('click', (e) => {
+                    e.preventDefault();
+                    toggleSideMenu(false);
+                    modal.classList.remove('hidden');
+                });
+            }
+            sideMenuNav.appendChild(newLink);
+        });
+
+
+        // --- Lógica del Modal "Próximamente" ---
         projectGrid.addEventListener('click', function(event) {
             const link = event.target.closest('.ad-link');
             if (!link) return;
-
-            event.preventDefault(); 
-            destinationUrl = link.getAttribute('href');
-            linkTarget = link.getAttribute('target') || '_self';
-            showInterstitialAd();
-        });
-
-        // Lógica para cerrar el modal
-        closeModalButton.addEventListener('click', () => {
-            modal.classList.add('hidden');
-        });
-        modal.addEventListener('click', (event) => {
-            if (event.target === modal) {
-                modal.classList.add('hidden');
+            
+            if (link.getAttribute('href') === '#') {
+                event.preventDefault();
+                modal.classList.remove('hidden');
             }
         });
+
+        closeModalButton.addEventListener('click', () => modal.classList.add('hidden'));
+        modal.addEventListener('click', (event) => {
+            if (event.target === modal) modal.classList.add('hidden');
+        });
+
+        // --- LÓGICA DE FIREBASE Y AUTENTICACIÓN (CON MENÚ DESPLEGABLE) ---
+        
+        // Usamos delegación de eventos en el contenedor principal del documento
+        document.body.addEventListener('click', async (event) => {
+            // Manejador para el botón de perfil/usuario
+            const userProfileButton = event.target.closest('#user-profile-button');
+            if (userProfileButton) {
+                const userDropdown = document.getElementById('user-dropdown');
+                if (userDropdown) {
+                    userDropdown.classList.toggle('hidden');
+                }
+                return; // Detenemos la ejecución para no interferir con otros clics
+            }
+            
+            // Manejador para el botón de login
+            const loginButton = event.target.closest('#login-button');
+            if (loginButton) {
+                try {
+                    const { auth, googleProvider, signInWithPopup } = await import('./firebase-init.js');
+                    await signInWithPopup(auth, googleProvider);
+                } catch (e) {
+                    console.error("Error al intentar iniciar sesión:", e);
+                }
+                return;
+            }
+
+            // Manejador para el botón de logout
+            const logoutButton = event.target.closest('#logout-button');
+            if (logoutButton) {
+                 try {
+                    const { auth, signOut } = await import('./firebase-init.js');
+                    await signOut(auth);
+                } catch (e) {
+                    console.error("Error al intentar cerrar sesión:", e);
+                }
+                return;
+            }
+            
+            // Lógica para cerrar el dropdown si se hace clic afuera
+            const userDropdown = document.getElementById('user-dropdown');
+            if (userDropdown && !userDropdown.classList.contains('hidden')) {
+                // Si el clic no fue dentro del contenedor de la sección de usuario, lo cerramos
+                if (!userSectionContainer.contains(event.target)) {
+                    userDropdown.classList.add('hidden');
+                }
+            }
+        });
+
+
+        // Función que renderiza la sección de usuario según el estado de autenticación
+        const renderUserSection = (user) => {
+            if (user && !user.isAnonymous) {
+                // --- VISTA DE USUARIO AUTENTICADO ---
+                userSectionContainer.innerHTML = `
+                    <button id="user-profile-button" class="w-10 h-10 block rounded-full overflow-hidden border-2 border-transparent hover:border-green-400 transition">
+                        <img src="${user.photoURL}" alt="Foto de ${user.displayName}" class="w-full h-full object-cover">
+                    </button>
+                    <div id="user-dropdown" class="user-dropdown-content absolute top-full right-0 mt-3 w-64 rounded-lg p-4 shadow-lg hidden z-50">
+                        <div class="flex items-center gap-3 mb-4 pb-3 border-b border-slate-600">
+                            <img src="${user.photoURL}" alt="" class="w-10 h-10 rounded-full">
+                            <div>
+                                <p class="font-bold text-white truncate">${user.displayName}</p>
+                                <p class="text-sm text-slate-400 truncate">${user.email}</p>
+                            </div>
+                        </div>
+                        <button id="logout-button">Cerrar Sesión</button>
+                    </div>
+                `;
+            } else {
+                // --- VISTA DE USUARIO NO AUTENTICADO ---
+                userSectionContainer.innerHTML = `
+                    <button id="user-profile-button" class="w-10 h-10 flex items-center justify-center bg-slate-700 rounded-full hover:bg-slate-600 transition">
+                        <svg class="w-6 h-6 text-slate-400" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M15.75 6a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0zM4.501 20.118a7.5 7.5 0 0114.998 0A17.933 17.933 0 0112 21.75c-2.676 0-5.216-.584-7.499-1.632z" /></svg>
+                    </button>
+                    <div id="user-dropdown" class="user-dropdown-content absolute top-full right-0 mt-3 w-64 rounded-lg p-4 shadow-lg hidden z-50">
+                        <p class="text-slate-300 text-center mb-4">¡Bienvenido! Ingresa para una mejor experiencia.</p>
+                        <button id="login-button">
+                            <svg class="w-5 h-5" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48"><path fill="#FFC107" d="M43.611,20.083H42V20H24v8h11.303c-1.649,4.657-6.08,8-11.303,8c-6.627,0-12-5.373-12-12c0-6.627,5.373-12,12-12c3.059,0,5.842,1.154,7.961,3.039l5.657-5.657C34.046,6.053,29.268,4,24,4C12.955,4,4,12.955,4,24s8.955,20,20,20s20-8.955,20-20C44,22.659,43.862,21.35,43.611,20.083z"></path><path fill="#FF3D00" d="M6.306,14.691l6.571,4.819C14.655,15.108,18.961,12,24,12c3.059,0,5.842,1.154,7.961,3.039l5.657-5.657C34.046,6.053,29.268,4,24,4C16.318,4,9.656,8.337,6.306,14.691z"></path><path fill="#4CAF50" d="M24,44c5.166,0,9.86-1.977,13.409-5.192l-6.19-5.238C29.211,35.091,26.715,36,24,36c-5.222,0-9.619-3.317-11.283-7.946l-6.522,5.025C9.505,39.556,16.227,44,24,44z"></path><path fill="#1976D2" d="M43.611,20.083H42V20H24v8h11.303c-0.792,2.237-2.231,4.166-4.087,5.574l6.19,5.238C42.022,35.244,44,30.036,44,24C44,22.659,43.862,21.35,43.611,20.083z"></path></svg>
+                            <span>Ingresar con Google</span>
+                        </button>
+                    </div>
+                `;
+            }
+        };
+
+        // Función inicial para configurar Firebase
+        const initializeAuth = async () => {
+            try {
+                const { auth, onAuthStateChanged } = await import('./firebase-init.js');
+                onAuthStateChanged(auth, renderUserSection);
+            } catch (error) {
+                console.warn("No se pudo cargar 'firebase-init.js'. La funcionalidad de login está desactivada.");
+                renderUserSection(null); // Renderiza el estado de "no logueado"
+                 userSectionContainer.querySelector('#user-profile-button').classList.add('opacity-50', 'cursor-not-allowed');
+                 userSectionContainer.querySelector('#user-profile-button').title = 'La configuración de Firebase no está completa.';
+            }
+        };
+
+        // Iniciar todo al cargar la página
+        initializeAuth();
+
     </script>
 </body>
 </html>
