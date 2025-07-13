@@ -27,6 +27,24 @@
             }
         }
 
+        @keyframes screen-shake {
+            0% { transform: translate(1px, 1px) rotate(0deg); }
+            10% { transform: translate(-1px, -2px) rotate(-1deg); }
+            20% { transform: translate(-3px, 0px) rotate(1deg); }
+            30% { transform: translate(3px, 2px) rotate(0deg); }
+            40% { transform: translate(1px, -1px) rotate(1deg); }
+            50% { transform: translate(-1px, 2px) rotate(-1deg); }
+            60% { transform: translate(-3px, 1px) rotate(0deg); }
+            70% { transform: translate(3px, 1px) rotate(-1deg); }
+            80% { transform: translate(-1px, -1px) rotate(1deg); }
+            90% { transform: translate(1px, 2px) rotate(0deg); }
+            100% { transform: translate(0, 0) rotate(0deg); }
+        }
+
+        .shaking {
+            animation: screen-shake 0.5s;
+        }
+
         body { 
             font-family: 'Rajdhani', sans-serif; 
             background-color: #0c0a18; 
@@ -178,7 +196,8 @@
         import * as THREE from 'three';
         import { CSS3DRenderer, CSS3DObject } from 'three/addons/renderers/CSS3DRenderer.js';
 
-        let camera, scene, renderer, cssScene, cssRenderer, coreObject;
+        // --- Declaración de variables globales ---
+        let camera, scene, renderer, cssScene, cssRenderer, coreObject, sceneContainer;
         const carouselGroup = new THREE.Group();
         const tentaclesGroup = new THREE.Group();
         const clock = new THREE.Clock();
@@ -192,12 +211,15 @@
         let longPressTimeout = null;
         let isHolding = false;
         let heldObject = null;
+        let vibrationInterval = null;
 
-        init();
-        animate();
+        function main() {
+            init();
+            animate();
+        }
 
         function init() {
-            const container = document.getElementById('scene-container');
+            sceneContainer = document.getElementById('scene-container');
             camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 1, 5000);
             
             scene = new THREE.Scene();
@@ -218,13 +240,13 @@
             renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
             renderer.setPixelRatio(window.devicePixelRatio);
             renderer.setSize(window.innerWidth, window.innerHeight);
-            container.appendChild(renderer.domElement);
+            sceneContainer.appendChild(renderer.domElement);
 
             cssRenderer = new CSS3DRenderer();
             cssRenderer.setSize(window.innerWidth, window.innerHeight);
             cssRenderer.domElement.style.position = 'absolute';
             cssRenderer.domElement.style.top = 0;
-            container.appendChild(cssRenderer.domElement);
+            sceneContainer.appendChild(cssRenderer.domElement);
 
             const elements = document.querySelectorAll('#html-elements .project-card-3d');
             elements.forEach((element, i) => {
@@ -239,11 +261,11 @@
             updateLayout();
             createTentacles();
 
-            container.addEventListener('pointerdown', onPointerDown);
-            container.addEventListener('pointermove', onPointerMove);
-            container.addEventListener('pointerup', onPointerUp);
-            container.addEventListener('pointerleave', onPointerUp);
-            container.addEventListener('contextmenu', (event) => event.preventDefault());
+            sceneContainer.addEventListener('pointerdown', onPointerDown);
+            sceneContainer.addEventListener('pointermove', onPointerMove);
+            sceneContainer.addEventListener('pointerup', onPointerUp);
+            sceneContainer.addEventListener('pointerleave', onPointerUp);
+            sceneContainer.addEventListener('contextmenu', (event) => event.preventDefault());
             window.addEventListener('resize', onWindowResize);
         }
 
@@ -414,6 +436,24 @@
         gsapScript.src = 'https://cdnjs.cloudflare.com/ajax/libs/gsap/3.11.4/gsap.min.js';
         document.body.appendChild(gsapScript);
 
+        function triggerVibration(pattern) {
+            if ('vibrate' in navigator) {
+                try {
+                    navigator.vibrate(pattern);
+                } catch (e) {
+                    console.log("Vibration failed.", e);
+                }
+            }
+        }
+
+        function stopContinuousVibration() {
+            if (vibrationInterval) {
+                clearInterval(vibrationInterval);
+                vibrationInterval = null;
+            }
+            triggerVibration(0);
+        }
+
         function onPointerDown(event) {
             isPointerDown = true;
             isDragging = false;
@@ -432,16 +472,31 @@
                     const tentacle = tentaclesGroup.children.find(t => t.userData.targetId === heldObject.userData.id);
                     engageTentacle(tentacle, heldObject);
 
+                    stopContinuousVibration();
+                    vibrationInterval = setInterval(() => {
+                        triggerVibration(50);
+                    }, 120);
+
                     longPressTimeout = setTimeout(() => {
                         if (isHolding && heldObject) {
+                            stopContinuousVibration();
+                            triggerVibration(200); 
+
+                            sceneContainer.classList.add('shaking');
+                            sceneContainer.addEventListener('animationend', () => {
+                                sceneContainer.classList.remove('shaking');
+                            }, { once: true });
+
                             element.classList.remove('card-charging');
                             element.classList.add('card-active');
                             
-                            if (element.target === '_blank') {
-                                window.open(element.href, '_blank');
-                            } else {
-                                window.location.href = element.href;
-                            }
+                            setTimeout(() => {
+                                if (element.target === '_blank') {
+                                    window.open(element.href, '_blank');
+                                } else {
+                                    window.location.href = element.href;
+                                }
+                            }, 200);
                         }
                     }, 2000);
                 }
@@ -452,19 +507,17 @@
             if (!isPointerDown) return;
             const deltaX = event.clientX - startPointerX;
 
-            // --- LÓGICA DE ROTACIÓN INMEDIATA (SENSIBILIDAD RESTAURADA) ---
             const rotationFactor = 0.005; 
             const newRotation = startRotationY + (deltaX * rotationFactor);
             velocityY = newRotation - carouselGroup.rotation.y;
             carouselGroup.rotation.y = newRotation;
             tentaclesGroup.rotation.y = newRotation;
             
-            // Si el movimiento es significativo, se considera un arrastre
-            // y se cancela la acción de "mantener presionado".
             if (Math.abs(deltaX) > 15) {
                 isDragging = true;
                 if (isHolding) {
                     clearTimeout(longPressTimeout);
+                    stopContinuousVibration();
                     isHolding = false;
                     if (heldObject) {
                         heldObject.element.classList.remove('card-charging');
@@ -478,6 +531,8 @@
 
         function onPointerUp(event) {
             clearTimeout(longPressTimeout);
+            stopContinuousVibration();
+
             if (isHolding) {
                 isHolding = false;
                 if (heldObject) {
@@ -488,7 +543,6 @@
             }
             
             isPointerDown = false;
-            // CAMBIO: Reseteamos 'isDragging' para permitir que la próxima interacción sea un tap/hold
             isDragging = false; 
             heldObject = null;
         }
@@ -501,6 +555,9 @@
             updateLayout();
             createTentacles();
         }
+
+        // CORRECCIÓN FINAL: Esperar a que toda la página esté cargada para iniciar.
+        window.addEventListener('load', main);
     </script>
 </body>
 </html>
