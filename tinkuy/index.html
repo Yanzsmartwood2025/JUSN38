@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>JUSN38: TINKUY</title>
+    
+    <!-- Enlace al archivo de estilos CSS -->
+    <link rel="stylesheet" href="style.css">
+    
+    <!-- Librerías Externas -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Cinzel+Decorative:wght@700&display=swap" rel="stylesheet">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/tone/14.7.77/Tone.js"></script>
+</head>
+<body>
+    <div id="game-container">
+        <!-- Menú Principal -->
+        <div id="main-menu" class="overlay">
+            <h1>JUSN38: TINKUY</h1>
+            <div id="menu-items">
+                <div class="menu-item active" data-action="fight">Luchar</div>
+                <div class="menu-item" data-action="rounds">Rondas <span class="menu-option-values">&lt; 3 &gt;</span></div>
+                <div class="menu-item" data-action="time">Tiempo <span class="menu-option-values">&lt; 99 &gt;</span></div>
+                <div class="menu-item" data-action="settings">Ajustes</div>
+            </div>
+        </div>
+        
+        <!-- Pantalla de Selección de Personajes -->
+        <div id="char-select-screen" class="overlay" style="display: none;">
+            <h2 id="char-select-title">Elige a tu Luchador</h2>
+            <div id="p1-preview" class="player-preview">
+                <div id="p1-portrait" class="preview-portrait"></div>
+                <div id="p1-name" class="preview-name"></div>
+            </div>
+            <div id="char-grid"></div>
+            <div id="p2-preview" class="player-preview">
+                <div id="p2-portrait" class="preview-portrait"></div>
+                <div id="p2-name" class="preview-name"></div>
+            </div>
+        </div>
+
+        <!-- Pantalla de Fin de Partida -->
+        <div id="game-over-screen" class="overlay" style="display: none;">
+            <h1 id="game-over-title">GAME OVER</h1>
+            <p id="winner-text"></p>
+            <p id="countdown-text"></p>
+        </div>
+        <div id="round-display"></div>
+
+        <!-- UI del Juego -->
+        <div id="ui-container" style="visibility: hidden;">
+            <div class="player-hud">
+                <div class="health-bar-container"><div id="player1-health" class="health-bar"></div></div>
+                <div class="power-bar-container"><div id="player1-power" class="power-bar"></div></div>
+                <div id="player1-name-hud" class="player-name"></div>
+                <div id="p1-round-wins" class="round-wins"></div>
+            </div>
+            <div class="player-hud right">
+                <div class="health-bar-container"><div id="player2-health" class="health-bar"></div></div>
+                <div class="power-bar-container"><div id="player2-power" class="power-bar"></div></div>
+                <div id="player2-name-hud" class="player-name right"></div>
+                <div id="p2-round-wins" class="round-wins" style="justify-content: flex-end;"></div>
+            </div>
+        </div>
+        <div id="timer-container" style="visibility: hidden;"><span id="timer">99</span></div>
+        
+        <!-- Controles en Pantalla -->
+        <div id="controls-container">
+             <div class="control-group">
+                 <div class="d-pad">
+                     <div id="p1-up" class="control-button up">↑</div>
+                     <div id="p1-left" class="control-button left">←</div>
+                     <div id="p1-down" class="control-button down">↓</div>
+                     <div id="p1-right" class="control-button right">→</div>
+                 </div>
+                 <div class="action-buttons">
+                     <div id="p1-punch" class="control-button action-button">G</div>
+                     <div id="p1-kick" class="control-button action-button">P</div>
+                 </div>
+             </div>
+             <div class="control-group">
+                 <div class="action-buttons">
+                     <div id="p2-punch" class="control-button action-button">G</div>
+                     <div id="p2-kick" class="control-button action-button">P</div>
+                 </div>
+                 <div class="d-pad">
+                     <div id="p2-up" class="control-button up">↑</div>
+                     <div id="p2-left" class="control-button left">←</div>
+                     <div id="p2-down" class="control-button down">↓</div>
+                     <div id="p2-right" class="control-button right">→</div>
+                 </div>
+             </div>
+        </div>
+    </div>
+
+    <!-- Enlace al archivo JavaScript del juego -->
+    <script type="module" src="game.js"></script>
+</body>
+</html>
