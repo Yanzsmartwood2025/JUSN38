@@ -1,3 +1,5 @@
+Jusn38 V8
+
 <!DOCTYPE html>
 <html lang="es">
 <head>
@@ -250,11 +252,6 @@
         lightningTexture.wrapT = THREE.RepeatWrapping;
 
         const sparkTexture = textureLoader.load('https://i.imgur.com/e40Lcf5.png');
-        // --- MODIFICACIÓN CLAVE: Textura para el cable ---
-        const cableTexture = textureLoader.load('https://i.imgur.com/v1hA51A.jpg');
-        cableTexture.wrapS = THREE.RepeatWrapping;
-        cableTexture.wrapT = THREE.RepeatWrapping;
-
 
         function main() {
             init();
@@ -279,10 +276,9 @@
                 }
             );
 
-            const ambientLight = new THREE.AmbientLight(0xffffff, 0.5); // Reducir un poco la luz ambiente
+            const ambientLight = new THREE.AmbientLight(0xffffff, 0.8);
             scene.add(ambientLight);
-            const pointLight = new THREE.PointLight(0x88aaff, 1.5, 3000); // Aumentar intensidad y alcance
-            pointLight.position.set(0, 100, 0);
+            const pointLight = new THREE.PointLight(0x88aaff, 2, 2000);
             scene.add(pointLight);
 
             initSparks();
@@ -312,7 +308,7 @@
             const anchorMaterial = new THREE.MeshBasicMaterial({ color: 0xff0000, wireframe: true });
             tentacleAnchor = new THREE.Mesh(anchorGeometry, anchorMaterial);
             
-            tentacleAnchor.position.set(0, -400, -400);
+            tentacleAnchor.position.set(0, -500, -400);
             tentacleAnchor.rotation.x = -Math.PI / 2;
             tentacleAnchor.visible = false; 
             tentaclesGroup.add(tentacleAnchor);
@@ -320,6 +316,7 @@
             updateLayout();
             createTentacles();
 
+            // --- Event Listeners ---
             sceneContainer.addEventListener('pointerdown', onPointerDown);
             sceneContainer.addEventListener('pointermove', onPointerMove);
             sceneContainer.addEventListener('pointerup', onPointerUp);
@@ -408,7 +405,6 @@
             });
         }
 
-        // --- MODIFICACIÓN CLAVE: Creación de tentáculos con nueva apariencia ---
         function createTentacles() {
              tentaclesGroup.children.filter(child => child.isGroup).forEach(t => tentaclesGroup.remove(t));
 
@@ -419,77 +415,68 @@
                 const tentacleGroup = new THREE.Group();
                 
                 const originPoint = new THREE.Vector3(
-                    (Math.random() - 0.5) * 200, 0, (Math.random() - 0.5) * 200
+                    (Math.random() - 0.5) * 200,
+                    0,
+                    (Math.random() - 0.5) * 200,
                 ).applyMatrix4(tentacleAnchor.matrixWorld);
 
                 const restingAngle = (i / numTentacles) * Math.PI * 2 + (Math.random() - 0.5) * 0.5;
                 const restingRadius = 1200 + Math.random() * 200;
                 const restingPoint = new THREE.Vector3(
-                     Math.cos(restingAngle) * restingRadius, (Math.random() - 0.5) * 800, Math.sin(restingAngle) * restingRadius - 400
+                     Math.cos(restingAngle) * restingRadius,
+                     (Math.random() - 0.5) * 800,
+                     Math.sin(restingAngle) * restingRadius - 400
                 );
                 
                 const segments = [];
                 for (let j = 0; j < numSegments; j++) {
-                    segments.push(new THREE.Vector3().lerpVectors(originPoint, restingPoint, j / (numSegments - 1)));
+                    const point = new THREE.Vector3().lerpVectors(originPoint, restingPoint, j / (numSegments - 1));
+                    segments.push(point);
                 }
                 
                 const curve = new THREE.CatmullRomCurve3(segments);
-
-                // 1. Cuerpo del cable (exterior)
-                const tubeRadius = 6;
-                const cableGeometry = new THREE.TubeGeometry(curve, 32, tubeRadius, 8, false);
-                const cableMaterial = new THREE.MeshStandardMaterial({
-                    map: cableTexture,
-                    roughness: 0.7,
-                    metalness: 0.3
-                });
-                const cableShell = new THREE.Mesh(cableGeometry, cableMaterial);
-
-                // 2. Núcleo de energía (interior)
-                const coreGeometry = new THREE.TubeGeometry(curve, 32, tubeRadius * 0.5, 8, false);
-                const coreMaterial = new THREE.MeshBasicMaterial({ color: 0x00aaff, blending: THREE.AdditiveBlending });
-                const energyCore = new THREE.Mesh(coreGeometry, coreMaterial);
-
-                // 3. Chispas (exterior)
-                const electricityGeometry = new THREE.TubeGeometry(curve, 32, tubeRadius * 1.2, 8, false);
+                const coreGeometry = new THREE.TubeGeometry(curve, 32, 6, 8, false);
+                const coreMaterial = new THREE.MeshPhongMaterial({ color: 0x00aaff, transparent: true, opacity: 0.6 });
+                const innerCore = new THREE.Mesh(coreGeometry, coreMaterial);
+                
+                const electricityGeometry = new THREE.TubeGeometry(curve, 32, 6.2, 8, false);
                 const electricityMaterial = new THREE.MeshBasicMaterial({ map: lightningTexture, blending: THREE.AdditiveBlending, transparent: true, depthWrite: false, opacity: 0.8 });
                 const electricityEffect = new THREE.Mesh(electricityGeometry, electricityMaterial);
 
-                // 4. Anillos conectores
-                const ringsGroup = new THREE.Group();
-                const ringGeometry = new THREE.CylinderGeometry(tubeRadius * 1.5, tubeRadius * 1.5, 4, 16);
-                const ringMaterial = new THREE.MeshStandardMaterial({ color: 0x1a1a1a, roughness: 0.4, metalness: 0.5 });
-                const ringCount = 5;
-                for (let k = 0; k < ringCount; k++) {
-                    ringsGroup.add(new THREE.Mesh(ringGeometry, ringMaterial));
-                }
-
-                tentacleGroup.add(cableShell, energyCore, electricityEffect, ringsGroup);
+                tentacleGroup.add(innerCore, electricityEffect);
                 
                 tentacleGroup.userData = {
-                    targetId: i, segments, originPoint: originPoint.clone(), restingPoint: restingPoint.clone(),
-                    animatedTarget: new THREE.Vector3().copy(restingPoint), isEngaged: false,
-                    cableShell, energyCore, electricityEffect, ringsGroup,
+                    targetId: i,
+                    segments: segments,
+                    originPoint: originPoint.clone(),
+                    restingPoint: restingPoint.clone(),
+                    animatedTarget: new THREE.Vector3().copy(restingPoint),
+                    isEngaged: false,
+                    innerCore: innerCore,
+                    electricityEffect: electricityEffect,
                     animationProps: {
-                        timeOffset: Math.random() * 10, amplitude: 50 + Math.random() * 20,
-                        speed: 0.8 + Math.random() * 0.3, waveLength: 0.3 + Math.random() * 0.1
+                        timeOffset: Math.random() * 10,
+                        amplitude: 50 + Math.random() * 20,
+                        speed: 0.8 + Math.random() * 0.3,
+                        waveLength: 0.3 + Math.random() * 0.1
                     }
                 };
                 tentaclesGroup.add(tentacleGroup);
             });
         }
         
-        // --- MODIFICACIÓN CLAVE: Actualización de todos los componentes del tentáculo ---
         function updateTentacleGeometry(tentacleGroup, time) {
-            const { segments, originPoint, animatedTarget, cableShell, energyCore, electricityEffect, ringsGroup, animationProps } = tentacleGroup.userData;
+            const { segments, originPoint, animatedTarget, innerCore, electricityEffect, animationProps } = tentacleGroup.userData;
             
             const mainAxis = new THREE.Vector3().subVectors(animatedTarget, originPoint);
             const distance = mainAxis.length();
             mainAxis.normalize();
 
-            let waveAxisX = new THREE.Vector3().crossVectors(mainAxis, new THREE.Vector3(0, 1, 0)).normalize();
+            const up = new THREE.Vector3(0, 1, 0);
+            let waveAxisX = new THREE.Vector3().crossVectors(mainAxis, up).normalize();
             if (waveAxisX.lengthSq() < 0.1) {
-                waveAxisX.crossVectors(mainAxis, new THREE.Vector3(1, 0, 0)).normalize();
+                up.set(1, 0, 0);
+                waveAxisX.crossVectors(mainAxis, up).normalize();
             }
             const waveAxisY = new THREE.Vector3().crossVectors(mainAxis, waveAxisX).normalize();
 
@@ -499,41 +486,35 @@
                 const progress = i / (segments.length - 1);
                 const positionOnAxis = originPoint.clone().add(mainAxis.clone().multiplyScalar(distance * progress));
                 const waveFactor = Math.sin(progress * Math.PI);
-                const waveOffsetX = Math.sin(waveTime + i * animationProps.waveLength) * animationProps.amplitude * waveFactor;
-                const waveOffsetY = Math.cos(waveTime * 0.7 + i * animationProps.waveLength * 0.8) * (animationProps.amplitude * 0.7) * waveFactor;
-                positionOnAxis.add(waveAxisX.clone().multiplyScalar(waveOffsetX)).add(waveAxisY.clone().multiplyScalar(waveOffsetY));
+                const waveAmplitude = animationProps.amplitude;
+                const waveOffsetX = Math.sin(waveTime + i * animationProps.waveLength) * waveAmplitude * waveFactor;
+                const waveOffsetY = Math.cos(waveTime * 0.7 + i * animationProps.waveLength * 0.8) * (waveAmplitude * 0.7) * waveFactor;
+                positionOnAxis.add(waveAxisX.clone().multiplyScalar(waveOffsetX));
+                positionOnAxis.add(waveAxisY.clone().multiplyScalar(waveOffsetY));
                 segments[i].copy(positionOnAxis);
             }
 
             const newCurve = new THREE.CatmullRomCurve3(segments);
+            const newCoreGeom = new THREE.TubeGeometry(newCurve, 32, 6, 8, false);
+            const newElectricityGeom = new THREE.TubeGeometry(newCurve, 32, 6.2, 8, false);
             
-            // Actualizar todas las geometrías
-            const newCableGeo = new THREE.TubeGeometry(newCurve, 32, 6, 8, false);
-            const newCoreGeo = new THREE.TubeGeometry(newCurve, 32, 3, 8, false);
-            const newElectricityGeo = new THREE.TubeGeometry(newCurve, 32, 7.2, 8, false);
-
-            cableShell.geometry.dispose(); cableShell.geometry = newCableGeo;
-            energyCore.geometry.dispose(); energyCore.geometry = newCoreGeo;
-            electricityEffect.geometry.dispose(); electricityEffect.geometry = newElectricityGeo;
+            innerCore.geometry.dispose();
+            electricityEffect.geometry.dispose();
+            innerCore.geometry = newCoreGeom;
+            electricityEffect.geometry = newElectricityGeom;
             
-            // Actualizar posición de los anillos
-            ringsGroup.children.forEach((ring, index) => {
-                const pointIndex = Math.floor((index * 0.2 + 0.1) * (segments.length -1)); // Distribuir anillos
-                const point = segments[pointIndex];
-                const tangent = newCurve.getTangentAt((pointIndex) / (segments.length - 1));
-                ring.position.copy(point);
-                ring.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), tangent);
-            });
-
             electricityEffect.material.map.offset.x = time * -0.6;
         }
 
         function engageTentacle(tentacle, targetObject) {
             if (!tentacle || !window.gsap) return;
             tentacle.userData.isEngaged = true;
+
             const targetPosition = new THREE.Vector3();
             targetObject.getWorldPosition(targetPosition);
+            tentaclesGroup.worldToLocal(targetPosition);
             targetPosition.y -= 110; 
+
             gsap.to(tentacle.userData.animatedTarget, {
                 x: targetPosition.x, y: targetPosition.y, z: targetPosition.z,
                 duration: 0.4, ease: "power2.inOut"
@@ -543,19 +524,24 @@
         function disengageTentacle(tentacle) {
             if (!tentacle || !window.gsap) return;
             tentacle.userData.isEngaged = false;
+
             const { restingPoint, animatedTarget } = tentacle.userData;
             const currentTipPosition = tentacle.userData.segments[tentacle.userData.segments.length - 1];
+
             const recoilDirection = new THREE.Vector3().subVectors(currentTipPosition, restingPoint).normalize();
             recoilDirection.x += (Math.random() - 0.5) * 2.5;
             recoilDirection.y += (Math.random() - 0.5) * 2.5;
             recoilDirection.z += (Math.random() - 0.5) * 2.5;
             const recoilPoint = currentTipPosition.clone().add(recoilDirection.multiplyScalar(400));
+
             gsap.killTweensOf(animatedTarget);
             const tl = gsap.timeline();
+            
             tl.to(animatedTarget, {
                 x: recoilPoint.x, y: recoilPoint.y, z: recoilPoint.z,
                 duration: 0.25, ease: "power3.out"
             });
+            
             tl.to(animatedTarget, {
                 x: restingPoint.x, y: restingPoint.y, z: restingPoint.z,
                 duration: 1.5, ease: "elastic.out(1, 0.5)"
@@ -570,6 +556,7 @@
             if (!isPointerDown) {
                 if (Math.abs(velocityY) > 0.0001) {
                     carouselGroup.rotation.y += velocityY;
+                    tentaclesGroup.rotation.y += velocityY;
                     velocityY *= deceleration;
                 } else {
                     velocityY = 0;
@@ -585,6 +572,7 @@
                 const cameraDirection = new THREE.Vector3(0, 0, -1).applyQuaternion(camera.quaternion);
                 const objectDirection = worldPosition.sub(camera.position).normalize();
                 const dot = cameraDirection.dot(objectDirection);
+
                 if (dot > maxDot) { maxDot = dot; newlyFocusedObject = object; }
                 object.element.classList.remove('focused'); 
             });
@@ -603,7 +591,9 @@
                         if (targetCard) {
                             const targetPosition = new THREE.Vector3();
                             targetCard.getWorldPosition(targetPosition);
+                            tentaclesGroup.worldToLocal(targetPosition);
                             targetPosition.y -= 110;
+                            // Ahora el objetivo se actualiza constantemente para la persecución
                             tentacle.userData.animatedTarget.copy(targetPosition);
                         }
                     }
@@ -677,22 +667,27 @@
             }
         }
 
+        // --- MODIFICACIÓN CLAVE: Lógica de Arrastre Corregida ---
         function onPointerMove(event) {
             if (!isPointerDown) return;
             const deltaX = event.clientX - startPointerX;
 
+            // Si el movimiento es significativo, se convierte en un arrastre.
             if (Math.abs(deltaX) > 10) {
                 isDragging = true;
+                // Si estábamos "sujetando" una tarjeta, cancelamos la carga.
                 if (isHolding) {
                     stopCharging();
                 }
             }
             
+            // Solo rotar si estamos en modo de arrastre.
             if (isDragging) {
                 const rotationFactor = 0.005; 
                 const newRotation = startRotationY + (deltaX * rotationFactor);
                 velocityY = newRotation - carouselGroup.rotation.y;
                 carouselGroup.rotation.y = newRotation;
+                tentaclesGroup.rotation.y = newRotation;
                 
                 startRotationY = newRotation;
                 startPointerX = event.clientX;
@@ -700,6 +695,8 @@
         }
 
         function onPointerUp(event) {
+            // Si soltamos el dedo y estábamos sujetando (y no arrastrando),
+            // significa que fue un "tap" o "hold", así que soltamos el tentáculo.
             if(isHolding) {
                 stopCharging(); 
             }
