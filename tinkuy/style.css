@@ -1,0 +1,59 @@
+:root { --mk-font: 'Cinzel Decorative', cursive; }
+body { margin: 0; overflow: hidden; background-color: #000; color: white; font-family: 'Inter', sans-serif; -webkit-user-select: none; user-select: none; }
+#game-container { width: 100vw; height: 100vh; position: relative; }
+.overlay { position: absolute; top: 0; left: 0; width: 100%; height: 100%; display: flex; flex-direction: column; justify-content: center; align-items: center; z-index: 100; background: radial-gradient(circle, rgba(20,20,30,0.8) 0%, rgba(0,0,0,0.9) 100%); backdrop-filter: blur(5px); }
+
+/* --- Menú Principal --- */
+#main-menu { font-family: var(--mk-font); }
+#main-menu h1 { font-size: 4rem; color: #E53E3E; text-shadow: 0 0 10px #E53E3E, 0 0 20px #E53E3E; margin-bottom: 40px; }
+.menu-item { font-size: 2.5rem; color: #A0AEC0; padding: 10px 20px; transition: all 0.2s ease; cursor: pointer; display: flex; justify-content: space-between; align-items: center; width: 400px; }
+.menu-item.active { color: #F7FAFC; background-color: rgba(237, 137, 54, 0.2); border-left: 4px solid #ED8936; transform: scale(1.1); }
+.menu-option-values { color: #ED8936; }
+
+/* --- Pantalla de Selección de Personajes --- */
+#char-select-screen { font-family: var(--mk-font); }
+#char-select-title { font-size: 3rem; color: #F7FAFC; position: absolute; top: 20px; text-align: center; }
+#char-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 10px; }
+.char-slot { width: 100px; height: 100px; border: 3px solid #4A5568; background-color: rgba(0,0,0,0.5); display: flex; justify-content: center; align-items: center; font-size: 3rem; color: #718096; transition: all 0.2s ease; }
+.char-slot.unlocked { border-color: #A0AEC0; cursor: pointer; }
+.char-slot.p1-cursor { border-color: #3B82F6; box-shadow: 0 0 20px #3B82F6; transform: scale(1.1); }
+.char-slot.p2-cursor { border-color: #EF4444; box-shadow: 0 0 20px #EF4444; transform: scale(1.1); }
+.char-slot.p1-selected { border-width: 5px; border-color: #2563EB; transform: scale(1.05); }
+.char-slot.p2-selected { border-width: 5px; border-color: #DC2626; transform: scale(1.05); }
+.player-preview { position: absolute; width: 25%; height: 80%; display: flex; flex-direction: column; align-items: center; justify-content: center; }
+#p1-preview { left: 2%; } #p2-preview { right: 2%; }
+.preview-portrait { width: 250px; height: 250px; border: 5px solid; background-color: #1A202C; margin-bottom: 20px; }
+#p1-preview .preview-portrait { border-color: #3B82F6; }
+#p2-preview .preview-portrait { border-color: #EF4444; }
+.preview-name { font-size: 3rem; text-shadow: 0 0 10px; }
+#p1-preview .preview-name { color: #60A5FA; }
+#p2-preview .preview-name { color: #F87171; }
+
+/* --- UI del Juego --- */
+#game-over-screen { text-align: center; }
+#game-over-title { font-size: 5rem; font-weight: bold; color: #ff4141; text-shadow: 0 0 20px #ff4141; }
+#winner-text { font-size: 3rem; color: #ffc107; }
+#countdown-text { font-size: 1.5rem; margin-top: 20px; }
+#ui-container { position: absolute; top: 0; left: 0; width: 100%; padding: 20px; box-sizing: border-box; display: flex; justify-content: space-between; align-items: flex-start; pointer-events: none; z-index: 10; }
+.player-hud { width: 40%; display: flex; flex-direction: column; gap: 8px; }
+.player-hud.right { align-items: flex-end; }
+.health-bar-container, .power-bar-container { width: 100%; height: 30px; background-color: rgba(0, 0, 0, 0.5); border: 2px solid #666; border-radius: 8px; padding: 2px; }
+.health-bar { height: 100%; background: linear-gradient(90deg, #ff4141, #ff8383); border-radius: 4px; transition: width 0.3s ease-in-out; }
+.power-bar { height: 100%; background: linear-gradient(90deg, #41a1ff, #83c1ff); border-radius: 4px; transition: width 0.3s ease-in-out; }
+.player-name { color: white; font-size: 1.5rem; font-weight: bold; text-shadow: 1px 1px 3px black; margin-top: 4px; }
+.player-name.right { text-align: right; }
+.round-wins { display: flex; gap: 6px; margin-top: 8px; }
+.round-dot { width: 20px; height: 20px; border-radius: 50%; background-color: rgba(0,0,0,0.5); border: 2px solid #666; }
+.round-dot.won { background-color: #ffc107; }
+#timer-container { position: absolute; top: 20px; left: 50%; transform: translateX(-50%); background-color: rgba(0, 0, 0, 0.7); padding: 10px 20px; border-radius: 10px; font-size: 2.5rem; font-weight: bold; border: 2px solid #888; z-index: 10;}
+#round-display { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); font-size: 6rem; font-weight: bold; color: #fff; text-shadow: 0 0 20px #000; z-index: 101; display: none; }
+
+/* --- Controles en Pantalla --- */
+#controls-container { position: absolute; bottom: 20px; width: 100%; display: none; justify-content: space-between; padding: 0 5%; box-sizing: border-box; pointer-events: none; z-index: 10; }
+.control-group { display: flex; gap: 10px; align-items: center; pointer-events: all; }
+.d-pad { display: grid; grid-template-columns: repeat(3, 55px); grid-template-rows: repeat(2, 55px); gap: 5px; }
+.action-buttons { display: flex; flex-direction: row; gap: 10px; }
+.control-button { width: 55px; height: 55px; background-color: rgba(255, 255, 255, 0.2); border: 2px solid rgba(255, 255, 255, 0.5); border-radius: 50%; display: flex; justify-content: center; align-items: center; font-size: 1.5rem; font-weight: bold; color: white; cursor: pointer; backdrop-filter: blur(3px); }
+.control-button:active { background-color: rgba(255, 255, 255, 0.5); transform: scale(0.95); }
+.d-pad .up { grid-column: 2; grid-row: 1; } .d-pad .left { grid-column: 1; grid-row: 2; } .d-pad .down { grid-column: 2; grid-row: 2; } .d-pad .right { grid-column: 3; grid-row: 2; }
+.action-button { width: 70px; height: 70px; }
