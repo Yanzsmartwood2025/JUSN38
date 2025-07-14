@@ -70,8 +70,10 @@
             box-shadow: 0 0 30px rgba(173, 216, 230, 0.4), 0 0 15px rgba(255, 255, 255, 0.3);
             border-color: rgba(173, 216, 230, 0.5);
         }
+        /* --- Efecto de luz más potente --- */
         .project-card-3d.card-active {
-            box-shadow: 0 0 100px rgba(255, 255, 255, 1), 0 0 60px rgba(173, 216, 230, 1);
+            /* Se aumentó el desenfoque (blur) y se añadió un radio de expansión (spread) para un brillo más intenso */
+            box-shadow: 0 0 130px 25px rgba(255, 255, 255, 1), 0 0 80px 15px rgba(173, 216, 230, 0.9);
             border-color: rgba(255, 255, 255, 1);
             transform: scale(1.05);
         }
@@ -649,13 +651,15 @@
                 const dot = cameraDirection.dot(objectDirection);
 
                 if (dot > maxDot) { maxDot = dot; newlyFocusedObject = object; }
-                object.element.classList.remove('focused'); 
+                if (object !== heldObject) { // Don't remove focus class if it's being held
+                    object.element.classList.remove('focused');
+                }
             });
 
             if (newlyFocusedObject && newlyFocusedObject !== focusedObject) {
                 focusedObject = newlyFocusedObject;
             }
-            if(focusedObject) {
+            if(focusedObject && !isHolding) { // Only apply focus if not holding another card
                 focusedObject.element.classList.add('focused');
             }
 
@@ -695,7 +699,7 @@
             else { window.location.href = element.href; }
         }
 
-        // --- Interaction Functions (Restored and Verified) ---
+        // --- Interaction Functions ---
 
         function startCharging(element) {
             isHolding = true;
@@ -739,6 +743,9 @@
         }
 
         function onPointerDown(event) {
+            // Do not start charging if dragging is already in progress
+            if (isDragging) return;
+
             isPointerDown = true; 
             isDragging = false;
             startPointerX = event.clientX;
@@ -747,7 +754,9 @@
             pressStartTime = Date.now();
             
             const element = event.target.closest('.project-card-3d');
-            if (element && focusedObject && element === focusedObject.element) {
+            // --- MODIFICACIÓN CLAVE ---
+            // Se eliminó la condición '&& focusedObject ...' para permitir la carga en cualquier tarjeta.
+            if (element) {
                  startCharging(element);
             }
         }
@@ -756,6 +765,7 @@
             if (!isPointerDown) return;
             const deltaX = event.clientX - startPointerX;
 
+            // If movement is significant, consider it a drag and cancel charging
             if (Math.abs(deltaX) > 10) {
                 isDragging = true;
                 if (isHolding) {
@@ -763,6 +773,7 @@
                 }
             }
             
+            // Only rotate if dragging
             if (isDragging) {
                 const rotationFactor = 0.005; 
                 const newRotation = startRotationY + (deltaX * rotationFactor);
@@ -770,7 +781,8 @@
                 carouselGroup.rotation.y = newRotation;
                 tentaclesGroup.rotation.y = newRotation;
                 
-                startRotationY = newRotation;
+                // Update start position for next frame's calculation
+                startRotationY = carouselGroup.rotation.y;
                 startPointerX = event.clientX;
             }
         }
