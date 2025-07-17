@@ -1,0 +1,110 @@
+@keyframes fill-bar {
+    from { width: 0%; }
+    to { width: 100%; }
+}
+
+@keyframes screen-shake {
+    0% { transform: translate(3px, 3px) rotate(0deg); }
+    10% { transform: translate(-3px, -6px) rotate(-3deg); }
+    20% { transform: translate(-9px, 0px) rotate(3deg); }
+    30% { transform: translate(9px, 6px) rotate(0deg); }
+    40% { transform: translate(3px, -3px) rotate(3deg); }
+    50% { transform: translate(-3px, 6px) rotate(-3deg); }
+    60% { transform: translate(-9px, 3px) rotate(0deg); }
+    70% { transform: translate(9px, 3px) rotate(-3deg); }
+    80% { transform: translate(-3px, -3px) rotate(3deg); }
+    90% { transform: translate(3px, 6px) rotate(0deg); }
+    100% { transform: translate(0, 0) rotate(0deg); }
+}
+
+.shaking {
+    animation: screen-shake 0.5s;
+}
+
+body { 
+    font-family: 'Rajdhani', sans-serif; 
+    background-color: #000000; 
+    color: #cbd5e0;
+    margin: 0;
+    overflow: hidden;
+    -webkit-user-select: none; user-select: none;
+}
+ 
+#scene-container {
+    position: absolute; top: 0; left: 0;
+    width: 100vw; height: 100vh;
+    cursor: grab;
+    touch-action: none;
+}
+#scene-container:active { cursor: grabbing; }
+
+.project-card-3d {
+    width: 320px;
+    height: 240px;
+    transition: all 0.3s ease;
+    cursor: pointer;
+    box-shadow: 0 0 15px rgba(0,0,0,0.5);
+    position: relative;
+    overflow: hidden;
+    -webkit-touch-callout: none;
+}
+.project-card-3d.focused {
+    box-shadow: 0 0 30px rgba(173, 216, 230, 0.4), 0 0 15px rgba(255, 255, 255, 0.3);
+    border-color: rgba(173, 216, 230, 0.5);
+}
+.project-card-3d.card-active {
+    box-shadow: 0 0 130px 25px rgba(255, 255, 255, 1), 0 0 80px 15px rgba(173, 216, 230, 0.9);
+    border-color: rgba(255, 255, 255, 1);
+    transform: scale(1.05);
+}
+
+.glass-card { 
+    background: rgba(12, 10, 24, 0.5);
+    backdrop-filter: blur(4px); -webkit-backdrop-filter: blur(4px); 
+    border: 1px solid rgba(255, 255, 255, 0.2); 
+    position: relative;
+}
+ 
+.card-video-bg {
+    position: absolute; top: 0; left: 0;
+    width: 100%; height: 100%; object-fit: cover;
+    z-index: 1; opacity: 0.5; transition: opacity 0.3s ease;
+}
+.project-card-3d:hover .card-video-bg { opacity: 0.8; }
+
+.card-content {
+    position: relative; z-index: 2; width: 100%; height: 100%;
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    text-shadow: 0 2px 4px rgba(0,0,0,0.7);
+}
+
+.monitor-bezel {
+    position: absolute; bottom: 0; left: 0; right: 0;
+    height: 20px;
+    background: linear-gradient(to top, #18181f, #2a2a33);
+    border-top: 1px solid rgba(255, 255, 255, 0.15);
+    border-radius: 0 0 8px 8px;
+    z-index: 3;
+    box-shadow: 0px 8px 25px -5px rgba(255, 255, 255, 0.6);
+    display: flex; align-items: center; justify-content: center;
+    padding: 4px;
+}
+.loading-bar-container {
+    width: 100%; height: 100%;
+    background-color: rgba(0, 0, 0, 0.3);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 4px;
+    display: none;
+}
+.loading-bar-fill {
+    width: 0%; height: 100%;
+    background-color: white;
+    border-radius: 4px;
+    box-shadow: 0 0 8px white;
+}
+.project-card-3d.is-charging .loading-bar-container {
+    display: block;
+}
+.project-card-3d.is-charging .loading-bar-fill {
+    animation: fill-bar 4s linear forwards;
+}
