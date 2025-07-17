@@ -1,9 +1,6 @@
 import * as THREE from 'https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.module.js';
-// No necesitamos OrbitControls por ahora, la cámara seguirá al jugador.
-// import { OrbitControls } from 'https://cdn.jsdelivr.net/npm/three@0.128.0/examples/jsm/controls/OrbitControls.js';
 import { createSoccerField } from './scene.js';
 import { createBall } from './ball.js';
-// ¡Importamos al jugador y los controles!
 import { createPlayer } from './player.js';
 import { Controls } from './controls.js';
 
@@ -37,19 +34,20 @@ class Game {
         const soccerField = createSoccerField();
         this.scene.add(soccerField);
 
+        // Creamos el balón primero, para poder pasárselo al jugador.
         const ball = createBall(this.physicsMaterials);
         this.scene.add(ball.mesh);
         this.world.addBody(ball.body);
         this.objectsToUpdate.push(ball);
 
-        // Creamos nuestro jugador
-        this.player = createPlayer(this.physicsMaterials);
+        // Creamos al jugador y le pasamos el balón para que sepa a qué patear.
+        this.player = createPlayer(this.physicsMaterials, ball);
         this.scene.add(this.player.mesh);
         this.world.addBody(this.player.body);
         this.objectsToUpdate.push(this.player);
 
-        // Creamos una instancia de nuestros controles, pasándole el jugador que debe controlar.
-        this.controls = new Controls(this.player);
+        // Creamos una instancia de nuestros controles.
+        this.controls = new Controls();
 
         window.addEventListener('resize', () => this.onWindowResize(), false);
         this.animate();
@@ -57,18 +55,14 @@ class Game {
 
     initPhysics() {
         this.world = new CANNON.World();
-        this.world.gravity.set(0, -20, 0); // Aumentamos un poco la gravedad para un juego más arcade.
+        this.world.gravity.set(0, -20, 0);
 
-        // --- MATERIALES FÍSICOS ---
         const groundMaterial = new CANNON.Material('ground');
         const ballMaterial = new CANNON.Material('ball');
-        const playerMaterial = new CANNON.Material('player'); // Nuevo material para el jugador
-
-        // Contacto Balón-Suelo
+        const playerMaterial = new CANNON.Material('player');
+        
         this.world.addContactMaterial(new CANNON.ContactMaterial(groundMaterial, ballMaterial, { friction: 0.4, restitution: 0.7 }));
-        // Contacto Jugador-Suelo
         this.world.addContactMaterial(new CANNON.ContactMaterial(groundMaterial, playerMaterial, { friction: 0.9, restitution: 0.1 }));
-        // Contacto Jugador-Balón
         this.world.addContactMaterial(new CANNON.ContactMaterial(playerMaterial, ballMaterial, { friction: 0.1, restitution: 0.5 }));
         
         this.physicsMaterials = { ground: groundMaterial, ball: ballMaterial, player: playerMaterial };
@@ -79,7 +73,6 @@ class Game {
     }
 
     addLights() {
-        // ... (el código de las luces no cambia)
         const ambientLight = new THREE.AmbientLight(0xffffff, 0.5);
         this.scene.add(ambientLight);
         const directionalLight = new THREE.DirectionalLight(0xffffff, 0.8);
@@ -97,20 +90,24 @@ class Game {
     }
 
     updateCamera() {
-        // La cámara sigue suavemente al jugador
         const playerPosition = this.player.mesh.position;
-        const cameraOffset = new THREE.Vector3(0, 15, 25); // Distancia de la cámara al jugador
-
-        // Usamos LERP (interpolación lineal) para un movimiento de cámara suave
+        const cameraOffset = new THREE.Vector3(0, 15, 25);
         this.camera.position.lerp(playerPosition.clone().add(cameraOffset), 0.1);
-        this.camera.lookAt(playerPosition); // La cámara siempre mira al jugador
+        this.camera.lookAt(playerPosition);
     }
 
     animate() {
         requestAnimationFrame(() => this.animate());
 
-        // Actualizamos los controles para saber si hay que mover al jugador
-        this.controls.update();
+        // Actualizamos los controles de movimiento
+        this.controls.update(this.player);
+
+        // ¡NUEVA LÓGICA DE PATEO!
+        // Si la tecla de espacio está presionada...
+        if (this.controls.keys.space) {
+            // ...le decimos al jugador que patee, pasándole la cámara para saber la dirección.
+            this.player.kick(this.camera);
+        }
 
         this.world.step(1 / 60);
 
@@ -119,7 +116,6 @@ class Game {
             object.mesh.quaternion.copy(object.body.quaternion);
         }
 
-        // Actualizamos la posición de la cámara en cada fotograma
         this.updateCamera();
 
         this.renderer.render(this.scene, this.camera);
