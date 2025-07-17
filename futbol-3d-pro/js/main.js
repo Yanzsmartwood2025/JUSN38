@@ -1,23 +1,23 @@
 import * as THREE from 'https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.module.js';
-import { OrbitControls } from 'https://cdn.jsdelivr.net/npm/three@0.128.0/examples/jsm/controls/OrbitControls.js';
+// No necesitamos OrbitControls por ahora, la cámara seguirá al jugador.
+// import { OrbitControls } from 'https://cdn.jsdelivr.net/npm/three@0.128.0/examples/jsm/controls/OrbitControls.js';
 import { createSoccerField } from './scene.js';
-// ¡Importamos nuestro nuevo creador de balones!
 import { createBall } from './ball.js';
+// ¡Importamos al jugador y los controles!
+import { createPlayer } from './player.js';
+import { Controls } from './controls.js';
 
-// CANNON.js se carga globalmente, así que lo asignamos a una constante para facilidad de uso.
 const CANNON = window.CANNON;
 
 class Game {
     constructor() {
-        this.objectsToUpdate = []; // Un array para guardar todos los objetos que necesitan sincronización física.
+        this.objectsToUpdate = [];
         this.init();
     }
 
     init() {
-        // --- INICIALIZACIÓN DE FÍSICA (CANNON.JS) ---
         this.initPhysics();
 
-        // --- INICIALIZACIÓN GRÁFICA (THREE.JS) ---
         this.renderer = new THREE.WebGLRenderer({
             canvas: document.getElementById('game-canvas'),
             antialias: true
@@ -29,72 +29,59 @@ class Game {
         this.scene = new THREE.Scene();
         this.scene.background = new THREE.Color(0x87CEEB);
 
-        this.camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 1000);
-        this.camera.position.set(0, 50, 60); // Ajustamos la cámara para una mejor vista inicial
-
-        this.controls = new OrbitControls(this.camera, this.renderer.domElement);
-        this.controls.enableDamping = true;
-        this.controls.target.set(0, 0, 0);
-
+        this.camera = new THREE.PerspectiveCamera(55, window.innerWidth / window.innerHeight, 0.1, 1000);
+        
         this.addLights();
 
         // --- CREACIÓN DE OBJETOS ---
-
-        // Campo de fútbol (visual)
         const soccerField = createSoccerField();
         this.scene.add(soccerField);
-        // El campo físico ya se creó en initPhysics()
 
-        // Balón (visual y físico)
         const ball = createBall(this.physicsMaterials);
         this.scene.add(ball.mesh);
         this.world.addBody(ball.body);
-        this.objectsToUpdate.push(ball); // Lo añadimos a la lista de objetos a actualizar.
+        this.objectsToUpdate.push(ball);
+
+        // Creamos nuestro jugador
+        this.player = createPlayer(this.physicsMaterials);
+        this.scene.add(this.player.mesh);
+        this.world.addBody(this.player.body);
+        this.objectsToUpdate.push(this.player);
+
+        // Creamos una instancia de nuestros controles, pasándole el jugador que debe controlar.
+        this.controls = new Controls(this.player);
 
         window.addEventListener('resize', () => this.onWindowResize(), false);
         this.animate();
     }
 
     initPhysics() {
-        // Creamos un mundo de física con gravedad hacia abajo.
         this.world = new CANNON.World();
-        this.world.gravity.set(0, -9.82, 0); // Gravedad estándar de la Tierra.
+        this.world.gravity.set(0, -20, 0); // Aumentamos un poco la gravedad para un juego más arcade.
 
         // --- MATERIALES FÍSICOS ---
-        // Definimos cómo se comportan los objetos al chocar.
         const groundMaterial = new CANNON.Material('ground');
         const ballMaterial = new CANNON.Material('ball');
-        
-        // Definimos la interacción entre el balón y el suelo.
-        const ballGroundContactMaterial = new CANNON.ContactMaterial(
-            groundMaterial,
-            ballMaterial,
-            {
-                friction: 0.4, // Fricción para que no resbale infinitamente.
-                restitution: 0.7 // "Rebote". 0 es sin rebote, 1 es rebote perfecto.
-            }
-        );
-        this.world.addContactMaterial(ballGroundContactMaterial);
-        
-        // Guardamos los materiales para poder usarlos en otros archivos (como en ball.js).
-        this.physicsMaterials = { ground: groundMaterial, ball: ballMaterial };
+        const playerMaterial = new CANNON.Material('player'); // Nuevo material para el jugador
 
-        // --- SUELO FÍSICO ---
-        // Creamos un plano infinito para que los objetos no caigan al vacío.
-        const groundBody = new CANNON.Body({
-            mass: 0, // Masa 0 significa que es un objeto estático, no se mueve.
-            shape: new CANNON.Plane(),
-            material: groundMaterial
-        });
-        // Lo rotamos para que coincida con nuestro suelo visual.
+        // Contacto Balón-Suelo
+        this.world.addContactMaterial(new CANNON.ContactMaterial(groundMaterial, ballMaterial, { friction: 0.4, restitution: 0.7 }));
+        // Contacto Jugador-Suelo
+        this.world.addContactMaterial(new CANNON.ContactMaterial(groundMaterial, playerMaterial, { friction: 0.9, restitution: 0.1 }));
+        // Contacto Jugador-Balón
+        this.world.addContactMaterial(new CANNON.ContactMaterial(playerMaterial, ballMaterial, { friction: 0.1, restitution: 0.5 }));
+        
+        this.physicsMaterials = { ground: groundMaterial, ball: ballMaterial, player: playerMaterial };
+
+        const groundBody = new CANNON.Body({ mass: 0, shape: new CANNON.Plane(), material: groundMaterial });
         groundBody.quaternion.setFromAxisAngle(new CANNON.Vec3(1, 0, 0), -Math.PI / 2);
         this.world.addBody(groundBody);
     }
 
     addLights() {
+        // ... (el código de las luces no cambia)
         const ambientLight = new THREE.AmbientLight(0xffffff, 0.5);
         this.scene.add(ambientLight);
-
         const directionalLight = new THREE.DirectionalLight(0xffffff, 0.8);
         directionalLight.position.set(-100, 100, 50);
         directionalLight.castShadow = true;
@@ -109,22 +96,32 @@ class Game {
         this.renderer.setSize(window.innerWidth, window.innerHeight);
     }
 
+    updateCamera() {
+        // La cámara sigue suavemente al jugador
+        const playerPosition = this.player.mesh.position;
+        const cameraOffset = new THREE.Vector3(0, 15, 25); // Distancia de la cámara al jugador
+
+        // Usamos LERP (interpolación lineal) para un movimiento de cámara suave
+        this.camera.position.lerp(playerPosition.clone().add(cameraOffset), 0.1);
+        this.camera.lookAt(playerPosition); // La cámara siempre mira al jugador
+    }
+
     animate() {
         requestAnimationFrame(() => this.animate());
 
-        // --- ACTUALIZACIÓN DE FÍSICA ---
-        // Avanzamos la simulación física un pequeño paso en el tiempo.
+        // Actualizamos los controles para saber si hay que mover al jugador
+        this.controls.update();
+
         this.world.step(1 / 60);
 
-        // --- SINCRONIZACIÓN ---
-        // Copiamos la posición y rotación del cuerpo físico al objeto visual.
-        // Este es el paso CRUCIAL que une la física con los gráficos.
         for (const object of this.objectsToUpdate) {
             object.mesh.position.copy(object.body.position);
             object.mesh.quaternion.copy(object.body.quaternion);
         }
 
-        this.controls.update();
+        // Actualizamos la posición de la cámara en cada fotograma
+        this.updateCamera();
+
         this.renderer.render(this.scene, this.camera);
     }
 }
