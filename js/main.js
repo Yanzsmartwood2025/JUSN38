@@ -1,7 +1,26 @@
+// ===============================================================
+// 1. IMPORTACIONES
+// Traemos las herramientas que necesitamos: Three.js para 3D y Firebase para la base de datos.
+// ===============================================================
 import * as THREE from 'three';
 import { CSS3DRenderer, CSS3DObject } from 'three/addons/renderers/CSS3DRenderer.js';
+import { initializeApp } from 'https://www.gstatic.com/firebasejs/9.15.0/firebase-app.js';
+import { getFirestore, doc, getDoc, setDoc, increment } from 'https://www.gstatic.com/firebasejs/9.15.0/firebase-firestore.js';
 
-// --- Global Variables ---
+
+// ===============================================================
+// 2. INICIALIZACIÓN DE FIREBASE
+// Nos conectamos a tu proyecto de Firebase usando la configuración de tu archivo secreto.
+// La variable 'firebaseConfig' debe existir globalmente gracias a tu archivo 'firebase-init.js'.
+// ===============================================================
+const firebaseApp = initializeApp(firebaseConfig);
+const db = getFirestore(firebaseApp);
+
+
+// ===============================================================
+// 3. VARIABLES GLOBALES DE TU PORTAFOLIO
+// Todas las variables que tu aplicación necesita para funcionar.
+// ===============================================================
 let camera, scene, renderer, cssScene, cssRenderer, sceneContainer;
 const carouselGroup = new THREE.Group();
 const tentaclesGroup = new THREE.Group();
@@ -18,22 +37,23 @@ let heldObject = null;
 let pressStartTime = 0;
 let shakeInterval = null;
 
-// --- Particle System Variables ---
+// Particle System Variables
 let sparkParticles, sparkGeometry, sparkMaterial;
 const particleCount = 4000;
 const particlesData = [];
 const gravity = new THREE.Vector3(0, -200, 0);
 
-// --- Texture Loading ---
+// Texture Loading
 const lightningTexture = textureLoader.load('https://i.imgur.com/Y4uK349.png');
 lightningTexture.wrapS = THREE.RepeatWrapping;
 lightningTexture.wrapT = THREE.RepeatWrapping;
 const sparkTexture = textureLoader.load('https://i.imgur.com/e40Lcf5.png');
 
-function main() {
-    init();
-    animate();
-}
+
+// ===============================================================
+// 4. FUNCIONES DE TU PORTAFOLIO
+// Todas las funciones que hacen la magia: init, animate, crear tentáculos, etc.
+// ===============================================================
 
 function init() {
     sceneContainer = document.getElementById('scene-container');
@@ -44,13 +64,9 @@ function init() {
     
     textureLoader.load(
         'https://raw.githubusercontent.com/Yanzsmartwood2025/JUSN38/main/assets/images/JUSN38/menu-principal.png',
-        (texture) => {
-            scene.background = texture;
-        },
+        (texture) => { scene.background = texture; },
         undefined,
-        (err) => {
-            console.error('An error occurred while loading the background texture.', err);
-        }
+        (err) => { console.error('Error loading background texture.', err); }
     );
 
     const ambientLight = new THREE.AmbientLight(0xffffff, 0.8);
@@ -93,7 +109,7 @@ function init() {
     updateLayout();
     createTentacles();
 
-    // --- Event Listeners ---
+    // Event Listeners
     sceneContainer.addEventListener('pointerdown', onPointerDown);
     sceneContainer.addEventListener('pointermove', onPointerMove);
     sceneContainer.addEventListener('pointerup', onPointerUp);
@@ -184,72 +200,33 @@ function updateLayout() {
 
 function createTentacles() {
     tentaclesGroup.children.filter(child => child.isGroup).forEach(t => tentaclesGroup.remove(t));
-
     const numTentacles = carouselGroup.children.length;
     const numSegments = 25; 
-
     const linkGeometry = new THREE.TorusGeometry(10, 4, 8, 16);
-    const linkMaterial = new THREE.MeshStandardMaterial({
-        color: 0x222228,
-        metalness: 0.9,
-        roughness: 0.4
-    });
-
+    const linkMaterial = new THREE.MeshStandardMaterial({ color: 0x222228, metalness: 0.9, roughness: 0.4 });
     carouselGroup.children.forEach((targetObject, i) => {
         const tentacleGroup = new THREE.Group();
-        
-        const originPoint = new THREE.Vector3(
-            (Math.random() - 0.5) * 200, 0, (Math.random() - 0.5) * 200,
-        ).applyMatrix4(tentacleAnchor.matrixWorld);
-
+        const originPoint = new THREE.Vector3((Math.random() - 0.5) * 200, 0, (Math.random() - 0.5) * 200).applyMatrix4(tentacleAnchor.matrixWorld);
         const restingAngle = (i / numTentacles) * Math.PI * 2 + (Math.random() - 0.5) * 0.5;
         const restingRadius = 1200 + Math.random() * 200;
-        const restingPoint = new THREE.Vector3(
-            Math.cos(restingAngle) * restingRadius,
-            (Math.random() - 0.5) * 800,
-            Math.sin(restingAngle) * restingRadius - 400
-        );
-        
+        const restingPoint = new THREE.Vector3(Math.cos(restingAngle) * restingRadius, (Math.random() - 0.5) * 800, Math.sin(restingAngle) * restingRadius - 400);
         const segments = [];
         for (let j = 0; j < numSegments; j++) {
-            const point = new THREE.Vector3().lerpVectors(originPoint, restingPoint, j / (numSegments - 1));
-            segments.push(point);
+            segments.push(new THREE.Vector3().lerpVectors(originPoint, restingPoint, j / (numSegments - 1)));
         }
-        
         const curve = new THREE.CatmullRomCurve3(segments);
         const coreGeometry = new THREE.TubeGeometry(curve, 32, 5, 8, false);
-        const coreMaterial = new THREE.MeshBasicMaterial({ 
-            map: lightningTexture, 
-            blending: THREE.AdditiveBlending, 
-            transparent: true,
-            opacity: 0.9,
-            depthWrite: false
-        });
+        const coreMaterial = new THREE.MeshBasicMaterial({ map: lightningTexture, blending: THREE.AdditiveBlending, transparent: true, opacity: 0.9, depthWrite: false });
         const electricityCore = new THREE.Mesh(coreGeometry, coreMaterial);
-
         const chainLinks = new THREE.Group();
         for (let j = 0; j < numSegments; j++) {
-            const link = new THREE.Mesh(linkGeometry, linkMaterial);
-            chainLinks.add(link);
+            chainLinks.add(new THREE.Mesh(linkGeometry, linkMaterial));
         }
-        
         tentacleGroup.add(electricityCore, chainLinks);
-        
         tentacleGroup.userData = {
-            targetId: i,
-            segments: segments,
-            originPoint: originPoint.clone(),
-            restingPoint: restingPoint.clone(),
-            animatedTarget: new THREE.Vector3().copy(restingPoint),
-            isEngaged: false,
-            electricityCore: electricityCore,
-            chainLinks: chainLinks,
-            animationProps: {
-                timeOffset: Math.random() * 10,
-                amplitude: 60 + Math.random() * 40,
-                speed: 0.7 + Math.random() * 0.4,
-                waveLength: 0.25 + Math.random() * 0.15
-            }
+            targetId: i, segments: segments, originPoint: originPoint.clone(), restingPoint: restingPoint.clone(),
+            animatedTarget: new THREE.Vector3().copy(restingPoint), isEngaged: false, electricityCore: electricityCore,
+            chainLinks: chainLinks, animationProps: { timeOffset: Math.random() * 10, amplitude: 60 + Math.random() * 40, speed: 0.7 + Math.random() * 0.4, waveLength: 0.25 + Math.random() * 0.15 }
         };
         tentaclesGroup.add(tentacleGroup);
     });
@@ -257,11 +234,9 @@ function createTentacles() {
 
 function updateTentacleGeometry(tentacleGroup, time) {
     const { segments, originPoint, animatedTarget, electricityCore, chainLinks, animationProps } = tentacleGroup.userData;
-    
     const mainAxis = new THREE.Vector3().subVectors(animatedTarget, originPoint);
     const distance = mainAxis.length();
     mainAxis.normalize();
-
     const up = new THREE.Vector3(0, 1, 0);
     let waveAxisX = new THREE.Vector3().crossVectors(mainAxis, up).normalize();
     if (waveAxisX.lengthSq() < 0.1) {
@@ -269,91 +244,62 @@ function updateTentacleGeometry(tentacleGroup, time) {
         waveAxisX.crossVectors(mainAxis, up).normalize();
     }
     const waveAxisY = new THREE.Vector3().crossVectors(mainAxis, waveAxisX).normalize();
-
     const waveTime = time * animationProps.speed + animationProps.timeOffset;
-
     for (let i = 0; i < segments.length; i++) {
         const progress = i / (segments.length - 1);
         const positionOnAxis = originPoint.clone().add(mainAxis.clone().multiplyScalar(distance * progress));
-        
         const waveFactor = Math.sin(progress * Math.PI);
         const waveAmplitude = animationProps.amplitude;
-        
         const waveOffsetX = Math.sin(waveTime + i * animationProps.waveLength) * waveAmplitude * waveFactor;
         const waveOffsetY = Math.cos(waveTime * 0.8 + i * animationProps.waveLength * 1.2) * (waveAmplitude * 0.8) * waveFactor;
-        
         positionOnAxis.add(waveAxisX.clone().multiplyScalar(waveOffsetX));
         positionOnAxis.add(waveAxisY.clone().multiplyScalar(waveOffsetY));
         segments[i].copy(positionOnAxis);
     }
-
     const newCurve = new THREE.CatmullRomCurve3(segments);
-    
     const newCoreGeom = new THREE.TubeGeometry(newCurve, 32, 5, 8, false);
     electricityCore.geometry.dispose();
     electricityCore.geometry = newCoreGeom;
     electricityCore.material.map.offset.x = time * -0.8;
-
     const numLinks = chainLinks.children.length;
     for (let i = 0; i < numLinks; i++) {
         const link = chainLinks.children[i];
-        const progress = i / (numLinks - 1);
-        const point = newCurve.getPointAt(progress);
+        const point = newCurve.getPointAt(i / (numLinks - 1));
         link.position.copy(point);
-
-        const lookAtProgress = (i + 1) / (numLinks - 1);
-        const lookAtPoint = newCurve.getPointAt(Math.min(lookAtProgress, 1));
-        link.lookAt(lookAtPoint);
+        link.lookAt(newCurve.getPointAt(Math.min((i + 1) / (numLinks - 1), 1)));
     }
 }
 
 function engageTentacle(tentacle, targetObject) {
     if (!tentacle || !window.gsap) return;
     tentacle.userData.isEngaged = true;
-
     const targetPosition = new THREE.Vector3();
     targetObject.getWorldPosition(targetPosition);
     tentaclesGroup.worldToLocal(targetPosition);
-    targetPosition.y -= 110; 
-
-    gsap.to(tentacle.userData.animatedTarget, {
-        x: targetPosition.x, y: targetPosition.y, z: targetPosition.z,
-        duration: 0.4, ease: "power2.inOut"
-    });
+    targetPosition.y -= 110;
+    gsap.to(tentacle.userData.animatedTarget, { x: targetPosition.x, y: targetPosition.y, z: targetPosition.z, duration: 0.4, ease: "power2.inOut" });
 }
 
 function disengageTentacle(tentacle) {
     if (!tentacle || !window.gsap) return;
     tentacle.userData.isEngaged = false;
-
-    const { restingPoint, animatedTarget } = tentacle.userData;
-    const currentTipPosition = tentacle.userData.segments[tentacle.userData.segments.length - 1];
-
+    const { restingPoint, animatedTarget, segments } = tentacle.userData;
+    const currentTipPosition = segments[segments.length - 1];
     const recoilDirection = new THREE.Vector3().subVectors(currentTipPosition, restingPoint).normalize();
     recoilDirection.x += (Math.random() - 0.5) * 2.5;
     recoilDirection.y += (Math.random() - 0.5) * 2.5;
     recoilDirection.z += (Math.random() - 0.5) * 2.5;
     const recoilPoint = currentTipPosition.clone().add(recoilDirection.multiplyScalar(400));
-
     gsap.killTweensOf(animatedTarget);
     const tl = gsap.timeline();
-    
-    tl.to(animatedTarget, {
-        x: recoilPoint.x, y: recoilPoint.y, z: recoilPoint.z,
-        duration: 0.25, ease: "power3.out"
-    });
-    
-    tl.to(animatedTarget, {
-        x: restingPoint.x, y: restingPoint.y, z: restingPoint.z,
-        duration: 1.5, ease: "elastic.out(1, 0.5)"
-    });
+    tl.to(animatedTarget, { x: recoilPoint.x, y: recoilPoint.y, z: recoilPoint.z, duration: 0.25, ease: "power3.out" });
+    tl.to(animatedTarget, { x: restingPoint.x, y: restingPoint.y, z: restingPoint.z, duration: 1.5, ease: "elastic.out(1, 0.5)" });
 }
 
 function animate() {
     requestAnimationFrame(animate);
     const delta = clock.getDelta();
     const time = clock.getElapsedTime();
-    
     if (!isPointerDown) {
         if (Math.abs(velocityY) > 0.0001) {
             carouselGroup.rotation.y += velocityY;
@@ -363,7 +309,6 @@ function animate() {
             velocityY = 0;
         }
     }
-    
     let maxDot = -2;
     let newlyFocusedObject = null;
     carouselGroup.children.forEach(object => {
@@ -373,21 +318,18 @@ function animate() {
         const cameraDirection = new THREE.Vector3(0, 0, -1).applyQuaternion(camera.quaternion);
         const objectDirection = worldPosition.sub(camera.position).normalize();
         const dot = cameraDirection.dot(objectDirection);
-
         if (dot > maxDot) { maxDot = dot; newlyFocusedObject = object; }
         if (object !== heldObject) {
             object.element.classList.remove('focused');
         }
     });
-
     if (newlyFocusedObject && newlyFocusedObject !== focusedObject) {
         focusedObject = newlyFocusedObject;
     }
-    if(focusedObject && !isHolding) {
+    if (focusedObject && !isHolding) {
         focusedObject.element.classList.add('focused');
     }
-
-    tentaclesGroup.children.forEach(tentacle => { 
+    tentaclesGroup.children.forEach(tentacle => {
         if (tentacle.isGroup) {
             if (tentacle.userData.isEngaged) {
                 const targetCard = carouselGroup.children.find(c => c.userData.id === tentacle.userData.targetId);
@@ -399,27 +341,25 @@ function animate() {
                     tentacle.userData.animatedTarget.copy(targetPosition);
                 }
             }
-            updateTentacleGeometry(tentacle, time); 
+            updateTentacleGeometry(tentacle, time);
         }
     });
-
     if (isHolding && heldObject) {
         const tentacle = tentaclesGroup.children.find(t => t.isGroup && t.userData.targetId === heldObject.userData.id);
-        if (tentacle) { 
+        if (tentacle) {
             const tipPosition = new THREE.Vector3();
-            const lastSegment = tentacle.userData.segments[tentacle.userData.segments.length-1];
+            const lastSegment = tentacle.userData.segments[tentacle.userData.segments.length - 1];
             tentacle.localToWorld(tipPosition.copy(lastSegment));
             triggerSparks(tipPosition);
         }
     }
     updateSparks(delta);
-
     renderer.render(scene, camera);
     cssRenderer.render(cssScene, camera);
 }
 
 function navigateTo(element) {
-    if (element.target === '_blank') { window.open(element.href, '_blank'); } 
+    if (element.target === '_blank') { window.open(element.href, '_blank'); }
     else { window.location.href = element.href; }
 }
 
@@ -428,16 +368,14 @@ function startCharging(element) {
     heldObject = carouselGroup.children.find(o => o.element === element);
     if (heldObject) {
         element.classList.add('is-charging');
-        if(shakeInterval) clearInterval(shakeInterval);
+        if (shakeInterval) clearInterval(shakeInterval);
         shakeInterval = setInterval(() => {
             sceneContainer.classList.remove('shaking');
             void sceneContainer.offsetWidth;
             sceneContainer.classList.add('shaking');
         }, 500);
-        
         const tentacle = tentaclesGroup.children.find(t => t.isGroup && t.userData.targetId === heldObject.userData.id);
         engageTentacle(tentacle, heldObject);
-
         longPressTimeout = setTimeout(() => {
             if (isHolding && heldObject) {
                 element.classList.add('card-active');
@@ -451,29 +389,25 @@ function stopCharging() {
     if (isHolding && heldObject) {
         heldObject.element.classList.remove('is-charging');
         heldObject.element.classList.remove('card-active');
-        
         const tentacle = tentaclesGroup.children.find(t => t.isGroup && t.userData.targetId === heldObject.userData.id);
         disengageTentacle(tentacle);
     }
-    clearTimeout(longPressTimeout); 
+    clearTimeout(longPressTimeout);
     clearInterval(shakeInterval);
     sceneContainer.classList.remove('shaking');
-    
-    shakeInterval = null; 
-    isHolding = false; 
+    shakeInterval = null;
+    isHolding = false;
     heldObject = null;
 }
 
 function onPointerDown(event) {
     if (isDragging) return;
-
-    isPointerDown = true; 
+    isPointerDown = true;
     isDragging = false;
     startPointerX = event.clientX;
     startRotationY = carouselGroup.rotation.y;
-    velocityY = 0; 
+    velocityY = 0;
     pressStartTime = Date.now();
-    
     const element = event.target.closest('.project-card-3d');
     if (element) {
         startCharging(element);
@@ -483,32 +417,29 @@ function onPointerDown(event) {
 function onPointerMove(event) {
     if (!isPointerDown) return;
     const deltaX = event.clientX - startPointerX;
-
     if (Math.abs(deltaX) > 10) {
         isDragging = true;
         if (isHolding) {
             stopCharging();
         }
     }
-    
     if (isDragging) {
-        const rotationFactor = 0.005; 
+        const rotationFactor = 0.005;
         const newRotation = startRotationY + (deltaX * rotationFactor);
         velocityY = newRotation - carouselGroup.rotation.y;
         carouselGroup.rotation.y = newRotation;
         tentaclesGroup.rotation.y = newRotation;
-        
         startRotationY = carouselGroup.rotation.y;
         startPointerX = event.clientX;
     }
 }
 
 function onPointerUp(event) {
-    if(isHolding) {
-        stopCharging(); 
+    if (isHolding) {
+        stopCharging();
     }
-    isPointerDown = false; 
-    isDragging = false; 
+    isPointerDown = false;
+    isDragging = false;
 }
 
 function onWindowResize() {
@@ -517,7 +448,45 @@ function onWindowResize() {
     renderer.setSize(window.innerWidth, window.innerHeight);
     cssRenderer.setSize(window.innerWidth, window.innerHeight);
     updateLayout();
-    createTentacles(); 
+    createTentacles();
 }
 
-window.addEventListener('load', main);
+// ===============================================================
+// 5. NUEVA FUNCIÓN PARA EL CONTADOR DE VISITAS
+// ===============================================================
+async function updateAndShowViewCount() {
+    const counterElement = document.getElementById('view-count');
+    if (!counterElement) return; // Si el elemento no existe, no hacemos nada.
+    
+    // Definimos una referencia a un documento específico en nuestra base de datos
+    const viewsDocRef = doc(db, "stats", "pageViews");
+
+    try {
+        // Incrementamos el contador en la base de datos de forma atómica
+        await setDoc(viewsDocRef, { count: increment(1) }, { merge: true });
+
+        // Después de incrementar, obtenemos el documento para saber el nuevo total
+        const docSnap = await getDoc(viewsDocRef);
+
+        if (docSnap.exists()) {
+            // Si el documento existe, mostramos el contador
+            counterElement.textContent = docSnap.data().count.toLocaleString('es');
+        } else {
+            // Si es la primera vez, el contador será 1
+            counterElement.textContent = '1';
+        }
+    } catch (error) {
+        console.error("Error al actualizar el contador de visitas:", error);
+        counterElement.textContent = 'Error';
+    }
+}
+
+
+// ===============================================================
+// 6. PUNTO DE ENTRADA DE LA APLICACIÓN
+// Cuando la página ha cargado todo, iniciamos la lógica.
+// ===============================================================
+window.addEventListener('load', () => {
+    main(); // Esta es la función que inicia tu portafolio 3D
+    updateAndShowViewCount(); // Y esta la que actualiza el contador de visitas
+});
