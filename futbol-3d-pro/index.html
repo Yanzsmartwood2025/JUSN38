@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <!-- Esta etiqueta es crucial para que el juego se adapte a diferentes tamaños de pantalla -->
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Fútbol Pro 3D</title>
+    
+    <!-- Enlazamos nuestra hoja de estilos que crearemos a continuación -->
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+    <!-- Este es el lienzo donde Three.js dibujará nuestro juego 3D -->
+    <canvas id="game-canvas"></canvas>
+
+    <!-- Este es el mensaje que se mostrará si un usuario de móvil tiene el dispositivo en vertical -->
+    <div id="rotate-device-overlay">
+        <p>Por favor, gira tu dispositivo a modo horizontal para jugar.</p>
+    </div>
+
+    <!-- 
+      Importamos las librerías externas (nuestras herramientas especializadas).
+      Las traemos desde un CDN (Content Delivery Network), que es una forma rápida y
+      sencilla de incluirlas sin tener que descargarlas.
+    -->
+
+    <!-- Three.js (Motor Gráfico 3D) -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    
+    <!-- Cannon.js (Motor de Física) -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/cannon.js/0.6.2/cannon.min.js"></script>
+
+    <!-- 
+      Finalmente, cargamos nuestro propio código de JavaScript.
+      Usamos type="module" para poder usar sintaxis moderna (import/export)
+      y mantener nuestro código organizado. Este será el punto de entrada a toda la lógica del juego.
+    -->
+    <script type="module" src="js/main.js"></script>
+</body>
+</html>
