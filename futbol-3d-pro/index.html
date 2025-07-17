@@ -5,30 +5,23 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Fútbol Pro 3D</title>
     
-    <!-- Enlazamos nuestra hoja de estilos que está en la carpeta css -->
+    <!-- Enlazamos nuestra hoja de estilos -->
     <link rel="stylesheet" href="css/style.css">
 </head>
 <body>
-    <!-- El lienzo donde se dibujará nuestro juego -->
+    <!-- El canvas del juego es ahora el único elemento principal en el body -->
     <canvas id="game-canvas"></canvas>
-
-    <!-- La capa que pide girar el dispositivo en móviles -->
-    <div id="rotate-device-overlay">
-        <p>Por favor, gira tu dispositivo a modo horizontal para jugar.</p>
-    </div>
 
     <!-- === CARGA DE SCRIPTS === -->
 
-    <!-- 1. Cargamos el CEREBRO SECRETO. La ruta "../" significa "salir de la carpeta actual". -->
-    <!-- Esto encontrará tu archivo firebase-init.js que está fuera de futbol-3d-pro. -->
+    <!-- 1. Cargamos el CEREBRO SECRETO -->
     <script src="../firebase-init.js"></script>
 
     <!-- 2. Cargamos las herramientas externas (Motor 3D y Física) -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/cannon.js/0.6.2/cannon.min.js"></script>
 
-    <!-- 3. Cargamos la lógica principal de nuestro juego (que aún no hemos creado) -->
-    <!-- Usamos type="module" para mantener el código ordenado. -->
+    <!-- 3. Cargamos la lógica principal de nuestro juego -->
     <script type="module" src="js/main.js"></script>
 </body>
 </html>
