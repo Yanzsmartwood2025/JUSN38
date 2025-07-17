@@ -1,9 +1,12 @@
+// --- ZONA CRÍTICA: REVISA ESTAS LÍNEAS ---
+// El navegador buscará estos archivos. Si uno tiene un nombre diferente o no existe, todo se detendrá.
 import * as THREE from 'https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.module.js';
 import { createSoccerField } from './scene.js';
 import { createBall } from './ball.js';
 import { createPlayer } from './player.js';
 import { Controls } from './controls.js';
 
+// CANNON.js se carga de forma global, así que lo asignamos a una constante.
 const CANNON = window.CANNON;
 
 class Game {
@@ -30,23 +33,20 @@ class Game {
         
         this.addLights();
 
-        // --- CREACIÓN DE OBJETOS ---
+        // --- CREACIÓN DE OBJETOS DEL JUEGO ---
         const soccerField = createSoccerField();
         this.scene.add(soccerField);
 
-        // Creamos el balón primero, para poder pasárselo al jugador.
         const ball = createBall(this.physicsMaterials);
         this.scene.add(ball.mesh);
         this.world.addBody(ball.body);
         this.objectsToUpdate.push(ball);
 
-        // Creamos al jugador y le pasamos el balón para que sepa a qué patear.
         this.player = createPlayer(this.physicsMaterials, ball);
         this.scene.add(this.player.mesh);
         this.world.addBody(this.player.body);
         this.objectsToUpdate.push(this.player);
 
-        // Creamos una instancia de nuestros controles.
         this.controls = new Controls();
 
         window.addEventListener('resize', () => this.onWindowResize(), false);
@@ -99,13 +99,9 @@ class Game {
     animate() {
         requestAnimationFrame(() => this.animate());
 
-        // Actualizamos los controles de movimiento
         this.controls.update(this.player);
 
-        // ¡NUEVA LÓGICA DE PATEO!
-        // Si la tecla de espacio está presionada...
         if (this.controls.keys.space) {
-            // ...le decimos al jugador que patee, pasándole la cámara para saber la dirección.
             this.player.kick(this.camera);
         }
 
@@ -122,4 +118,5 @@ class Game {
     }
 }
 
+// Inicia el juego.
 new Game();
