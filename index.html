@@ -1,34 +1,167 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-    <!-- ... (todo tu head actual no cambia) ... -->
+    <meta charset="UTF-8">
+    <!-- Script de Google AdSense -->
+    <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-2224408518904582"
+     crossorigin="anonymous"></script>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
     <title>Jusn38 - Centro de Creación Digital</title>
+    
+    <!-- Metatags y Fuentes -->
+    <meta name="theme-color" content="#0c0a18">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <link rel="apple-touch-icon" href="https://raw.githubusercontent.com/Yanzsmartwood2025/Runacoffee/main/public/assets/imagenes/logo_jusn38.png">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@500;700&display=swap" rel="stylesheet">
+    
+    <!-- Enlace a nuestra hoja de estilos externa -->
     <link rel="stylesheet" href="css/style.css">
 </head>
 <body>
-    <!-- Añadimos un lugar para el contador de visitas -->
+    <!-- NUEVO: Contenedor para el contador de visitas -->
     <div id="view-counter-container">
         Visitas: <span id="view-count">...</span>
     </div>
 
+    <!-- Contenedor para la escena 3D -->
     <div id="scene-container"></div>
+
+    <!-- Contenedor para los elementos HTML que se convertirán en objetos 3D -->
     <div id="html-elements" style="display: none;">
-        <!-- ... (todas tus tarjetas de proyectos) ... -->
+        <!-- Panel 1: Caja de Herramientas -->
+        <a href="caja_de_herramientas.html" class="project-card-3d">
+            <div class="glass-card rounded-lg w-full h-full">
+                <video class="card-video-bg" autoplay loop muted playsinline><source src="https://videos.pexels.com/video-files/853875/853875-hd_1280_720_25fps.mp4" type="video/mp4"></video>
+                <div class="card-content p-6 text-center">
+                    <div class="flex justify-center mb-4"><svg class="w-12 h-12 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M11.42 15.17L17.25 21A2.652 2.652 0 0021 17.25l-5.877-5.877M11.42 15.17l2.472-2.472a3.375 3.375 0 000-4.773L11.42 5.42a3.375 3.375 0 00-4.773 0L2.25 9.828a3.375 3.375 0 000 4.773l2.472 2.472M11.42 15.17L5.877 21" /></svg></div>
+                    <h2 class="text-xl font-bold text-white">Caja de Herramientas</h2>
+                    <p class="text-slate-300 mt-1 text-sm">Generadores y utilidades.</p>
+                </div>
+                <div class="monitor-bezel"><div class="loading-bar-container"><div class="loading-bar-fill"></div></div></div>
+            </div>
+        </a>
+        
+        <!-- Panel 2: Lumenfall -->
+        <a href="lumenfall.html" class="project-card-3d">
+            <div class="glass-card rounded-lg w-full h-full">
+                <video class="card-video-bg" autoplay loop muted playsinline><source src="https://videos.pexels.com/video-files/4784400/4784400-hd_1280_720_30fps.mp4" type="video/mp4"></video>
+                <div class="card-content p-6 text-center">
+                    <div class="flex justify-center mb-4"><svg class="w-12 h-12 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M10.5 6h9.75M10.5 6a1.5 1.5 0 11-3 0m3 0a1.5 1.5 0 10-3 0M3.75 6H7.5m3 12h9.75m-9.75 0a1.5 1.5 0 01-3 0m3 0a1.5 1.5 0 00-3 0m-3.75 0H7.5m9-6h3.75m-3.75 0a1.5 1.5 0 01-3 0m3 0a1.5 1.5 0 00-3 0m-9.75 0h9.75" /></svg></div>
+                    <h2 class="text-xl font-bold text-white">Lumenfall</h2>
+                    <p class="text-slate-300 mt-1 text-sm">Prototipo de juego de defensa.</p>
+                </div>
+                <div class="monitor-bezel"><div class="loading-bar-container"><div class="loading-bar-fill"></div></div></div>
+            </div>
+        </a>
+
+        <!-- Panel 3: Fórmula 1 -->
+        <a href="formula-1.html" class="project-card-3d">
+            <div class="glass-card rounded-lg w-full h-full">
+                <video class="card-video-bg" autoplay loop muted playsinline><source src="https://videos.pexels.com/video-files/2103949/2103949-hd_1280_720_24fps.mp4" type="video/mp4"></video>
+                <div class="card-content p-6 text-center">
+                    <div class="flex justify-center mb-4"><svg class="w-12 h-12 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M3 3v1.5M3 21v-6m0 0l2.77-.693a9 9 0 016.208.682l.108.054a9 9 0 006.086.71l3.114-.732a48.524 48.524 0 01-.005-10.499l-3.11.732a9 9 0 01-6.085-.711l-.108-.054a9 9 0 00-6.208-.682L3 4.5M3 15V4.5" /></svg></div>
+                    <h2 class="text-xl font-bold text-white">Fórmula 1</h2>
+                    <p class="text-slate-300 mt-1 text-sm">Simulador de carreras 3D.</p>
+                </div>
+                <div class="monitor-bezel"><div class="loading-bar-container"><div class="loading-bar-fill"></div></div></div>
+            </div>
+        </a>
+
+        <!-- Panel 4: Fútbol 3D Pro -->
+        <a href="futbol-3d-pro/" class="project-card-3d">
+            <div class="glass-card rounded-lg w-full h-full">
+                <video class="card-video-bg" autoplay loop muted playsinline><source src="https://videos.pexels.com/video-files/3807534/3807534-uhd_2560_1440_25fps.mp4" type="video/mp4"></video>
+                <div class="card-content p-6 text-center">
+                    <div class="flex justify-center mb-4"><svg class="w-12 h-12 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M12 21a9.004 9.004 0 008.716-6.747M12 21a9.004 9.004 0 01-8.716-6.747M12 21v-4.5m0 0V5.25M12 16.5V21M12 16.5a3 3 0 11-3-3m3 3a3 3 0 103-3m-3 3H9m3 0h3m-6 0a3 3 0 11-3-3m3 3a3 3 0 103-3m-3 3H9m3 0h3m-6 0a3 3 0 11-3-3m3 3a3 3 0 103-3m-3 3H9m3 0h3" /></svg></div>
+                    <h2 class="text-xl font-bold text-white">Fútbol 3D Pro</h2>
+                    <p class="text-slate-300 mt-1 text-sm">Simulador de fútbol interactivo.</p>
+                </div>
+                <div class="monitor-bezel"><div class="loading-bar-container"><div class="loading-bar-fill"></div></div></div>
+            </div>
+        </a>
+
+        <!-- Panel 5: Runa Coffee -->
+        <a href="https://runacoffee.vercel.app" target="_blank" class="project-card-3d">
+            <div class="glass-card rounded-lg w-full h-full">
+                <video class="card-video-bg" autoplay loop muted playsinline><source src="https://videos.pexels.com/video-files/2789328/2789328-hd_1280_720_25fps.mp4" type="video/mp4"></video>
+                <div class="card-content p-6 text-center">
+                    <div class="flex justify-center mb-4"><svg class="w-12 h-12 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path d="M10.575 2.25h2.85c.414 0 .75.336.75.75v.31c0 .414-.336.75-.75.75h-2.85a.75.75 0 01-.75-.75v-.31c0-.414.336-.75.75-.75zM9 9.75A.75.75 0 009.75 9h4.5a.75.75 0 000-1.5h-4.5A.75.75 0 009 9.75zM9 12.75A.75.75 0 009.75 12h4.5a.75.75 0 000-1.5h-4.5a.75.75 0 00-.75.75zM9.057 15.443l-.004.005a.75.75 0 00.004-.005zM8.25 15h7.5a.75.75 0 00.75-.75v-6a.75.75 0 00-.75-.75h-7.5a.75.75 0 00-.75.75v6c0 .414.336.75.75.75zM12 21a8.25 8.25 0 008.25-8.25v-6A8.25 8.25 0 0012 3H3.75A1.5 1.5 0 002.25 4.5v12A1.5 1.5 0 003.75 18H12c0 1.657 1.343 3 3 3z" /></svg></div>
+                    <h2 class="text-xl font-bold text-white">Runa Coffee</h2>
+                    <p class="text-slate-300 mt-1 text-sm">Café de especialidad.</p>
+                </div>
+                <div class="monitor-bezel"><div class="loading-bar-container"><div class="loading-bar-fill"></div></div></div>
+            </div>
+        </a>
+        
+        <!-- Panel 6: Yas Desmargura -->
+        <a href="yas-desmargura.html" class="project-card-3d">
+            <div class="glass-card rounded-lg w-full h-full">
+                <video class="card-video-bg" autoplay loop muted playsinline><source src="https://videos.pexels.com/video-files/3194518/3194518-hd_1280_720_25fps.mp4" type="video/mp4"></video>
+                <div class="card-content p-6 text-center">
+                    <div class="flex justify-center mb-4"><svg class="w-12 h-12 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M12 18v-5.25m0 0a6.01 6.01 0 001.5-.189m-1.5.189a6.01 6.01 0 01-1.5-.189m3.75 7.478a12.06 12.06 0 01-4.5 0m3.75 2.311l-3.75 0m3.75-7.478l-3.75 0m6.375-3.375a12.064 12.064 0 00-3.75 0m3.75 0a12.064 12.064 0 013.75 0m-11.25 0a12.064 12.064 0 00-3.75 0m3.75 0a12.064 12.064 0 013.75 0m-3.75 0l-3.75 0" /></svg></div>
+                    <h2 class="text-xl font-bold text-white">Yas Desmargura</h2>
+                    <p class="text-slate-300 mt-1 text-sm">Agencia de publicidad.</p>
+                </div>
+                <div class="monitor-bezel"><div class="loading-bar-container"><div class="loading-bar-fill"></div></div></div>
+            </div>
+        </a>
+
+        <!-- Panel 7: Yanz Smart Wood -->
+        <a href="https://yanz-smart-wood.vercel.app" target="_blank" class="project-card-3d">
+            <div class="glass-card rounded-lg w-full h-full">
+                <video class="card-video-bg" autoplay loop muted playsinline><source src="https://videos.pexels.com/video-files/3254006/3254006-hd_1280_720_25fps.mp4" type="video/mp4"></video>
+                <div class="card-content p-6 text-center">
+                    <div class="flex justify-center mb-4"><svg class="w-12 h-12 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M21 7.5l-9-5.25L3 7.5m18 0l-9 5.25m9-5.25v9l-9 5.25M3 7.5l9 5.25M3 7.5v9l9 5.25m0-9v9" /></svg></div>
+                    <h2 class="text-xl font-bold text-white">Yanz Smart Wood</h2>
+                    <p class="text-slate-300 mt-1 text-sm">Diseño y tecnología en madera.</p>
+                </div>
+                <div class="monitor-bezel"><div class="loading-bar-container"><div class="loading-bar-fill"></div></div></div>
+            </div>
+        </a>
+
+        <!-- Panel 8: Laboratorio de Ideas -->
+        <a href="#" class="project-card-3d">
+            <div class="glass-card rounded-lg w-full h-full">
+                <video class="card-video-bg" autoplay loop muted playsinline><source src="https://videos.pexels.com/video-files/3253410/3253410-hd_1280_720_25fps.mp4" type="video/mp4"></video>
+                <div class="card-content p-6 text-center">
+                    <div class="flex justify-center mb-4"><svg class="w-12 h-12 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M10.5 6a7.5 7.5 0 100 12h-3a7.5 7.5 0 000-12h3z" /><path stroke-linecap="round" stroke-linejoin="round" d="M10.5 9a2.25 2.25 0 100 4.5 2.25 2.25 0 000-4.5zM19.5 10.5c0 7.142-7.5 11.25-7.5 11.25S4.5 17.642 4.5 10.5a7.5 7.5 0 1115 0z" /></svg></div>
+                    <h2 class="text-xl font-bold text-white">Laboratorio de Ideas</h2>
+                    <p class="text-slate-300 mt-1 text-sm">Nuevos prototipos en desarrollo.</p>
+                </div>
+                <div class="monitor-bezel"><div class="loading-bar-container"><div class="loading-bar-fill"></div></div></div>
+            </div>
+        </a>
+
+        <!-- Panel 9: Tinkuy -->
+        <a href="tinkuy/" class="project-card-3d">
+            <div class="glass-card rounded-lg w-full h-full">
+                <video class="card-video-bg" autoplay loop muted playsinline><source src="https://videos.pexels.com/video-files/853909/853909-hd_1280_720_25fps.mp4" type="video/mp4"></video>
+                <div class="card-content p-6 text-center">
+                    <div class="flex justify-center mb-4"><svg class="w-12 h-12 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M13.19 8.688a4.5 4.5 0 011.242 7.244l-4.5 4.5a4.5 4.5 0 01-6.364-6.364l1.757-1.757m13.35-.622l1.757-1.757a4.5 4.5 0 00-6.364-6.364l-4.5 4.5a4.5 4.5 0 001.242 7.244" /></svg></div>
+                    <h2 class="text-xl font-bold text-white">Tinkuy</h2>
+                    <p class="text-slate-300 mt-1 text-sm">Juego interactivo de conexión.</p>
+                </div>
+                <div class="monitor-bezel"><div class="loading-bar-container"><div class="loading-bar-fill"></div></div></div>
+            </div>
+        </a>
     </div>
 
     <!-- === CARGA DE SCRIPTS (NUEVO ORDEN) === -->
 
     <!-- 1. Primero, tu archivo de configuración secreto -->
-    <script src="../firebase-init.js"></script> 
+    <!-- Asegúrate de que este archivo exista en la raíz de tu proyecto -->
+    <script src="firebase-init.js"></script> 
 
-    <!-- 2. Luego, las herramientas de Firebase -->
+    <!-- 2. Luego, las herramientas para módulos y Firebase -->
     <script async src="https://unpkg.com/es-module-shims@1.6.3/dist/es-module-shims.js"></script>
     <script type="importmap">
     { "imports": { 
         "three": "https://cdn.jsdelivr.net/npm/three@0.157.0/build/three.module.js", 
-        "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.157.0/examples/jsm/",
-        "firebase/app": "https://www.gstatic.com/firebasejs/9.15.0/firebase-app.js",
-        "firebase/firestore": "https://www.gstatic.com/firebasejs/9.15.0/firebase-firestore.js"
+        "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.157.0/examples/jsm/"
     } }
     </script>
 
