@@ -1,91 +1,132 @@
-
-// Importamos las librerías necesarias. 'THREE' para los gráficos y 'OrbitControls' para mover la cámara.
-// También importamos nuestra función para crear el campo desde 'scene.js'.
 import * as THREE from 'https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.module.js';
 import { OrbitControls } from 'https://cdn.jsdelivr.net/npm/three@0.128.0/examples/jsm/controls/OrbitControls.js';
 import { createSoccerField } from './scene.js';
+// ¡Importamos nuestro nuevo creador de balones!
+import { createBall } from './ball.js';
 
-// --- CLASE PRINCIPAL DEL JUEGO ---
-// Usamos una clase para mantener todo nuestro código organizado.
+// CANNON.js se carga globalmente, así que lo asignamos a una constante para facilidad de uso.
+const CANNON = window.CANNON;
+
 class Game {
     constructor() {
-        // El constructor llama al método init para empezar todo.
+        this.objectsToUpdate = []; // Un array para guardar todos los objetos que necesitan sincronización física.
         this.init();
     }
 
     init() {
-        // 1. RENDERIZADOR: Es el encargado de dibujar la escena en el <canvas> de nuestro HTML.
+        // --- INICIALIZACIÓN DE FÍSICA (CANNON.JS) ---
+        this.initPhysics();
+
+        // --- INICIALIZACIÓN GRÁFICA (THREE.JS) ---
         this.renderer = new THREE.WebGLRenderer({
             canvas: document.getElementById('game-canvas'),
-            antialias: true // Esto hace que los bordes de los objetos se vean más suaves.
+            antialias: true
         });
         this.renderer.setSize(window.innerWidth, window.innerHeight);
-        this.renderer.setPixelRatio(window.devicePixelRatio); // Mejora la calidad visual en pantallas de alta resolución.
-        this.renderer.shadowMap.enabled = true; // Activamos las sombras para más realismo.
+        this.renderer.setPixelRatio(window.devicePixelRatio);
+        this.renderer.shadowMap.enabled = true;
 
-        // 2. ESCENA: Es el mundo virtual donde colocaremos todos nuestros objetos.
         this.scene = new THREE.Scene();
-        this.scene.background = new THREE.Color(0x87CEEB); // Le damos un color de cielo azul.
+        this.scene.background = new THREE.Color(0x87CEEB);
 
-        // 3. CÁMARA: Define nuestro punto de vista dentro de la escena.
-        this.camera = new THREE.PerspectiveCamera(
-            45, // Campo de visión (FOV). Un valor más bajo es como hacer zoom.
-            window.innerWidth / window.innerHeight, // Relación de aspecto, para que no se deforme la imagen.
-            0.1, // Distancia mínima que la cámara puede ver.
-            1000 // Distancia máxima que la cámara puede ver.
-        );
-        this.camera.position.set(0, 150, 250); // Colocamos la cámara arriba y atrás para tener una buena vista del campo.
+        this.camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 1000);
+        this.camera.position.set(0, 50, 60); // Ajustamos la cámara para una mejor vista inicial
 
-        // 4. CONTROLES: Permiten que movamos la cámara con el ratón (para probar y depurar).
         this.controls = new OrbitControls(this.camera, this.renderer.domElement);
-        this.controls.enableDamping = true; // Añade un efecto suave de "inercia" al mover la cámara.
-        this.controls.target.set(0, 0, 0); // Hacemos que la cámara siempre apunte al centro del campo.
+        this.controls.enableDamping = true;
+        this.controls.target.set(0, 0, 0);
 
-        // 5. LUCES: Sin luces, nuestros objetos se verían negros.
         this.addLights();
 
-        // 6. CAMPO DE FÚTBOL: Llamamos a la función que importamos de 'scene.js' para crear el campo.
+        // --- CREACIÓN DE OBJETOS ---
+
+        // Campo de fútbol (visual)
         const soccerField = createSoccerField();
-        this.scene.add(soccerField); // Añadimos el campo a nuestra escena.
+        this.scene.add(soccerField);
+        // El campo físico ya se creó en initPhysics()
 
-        // 7. MANEJO DE REDIMENSIÓN: Hacemos que el juego se adapte si el usuario cambia el tamaño de la ventana.
+        // Balón (visual y físico)
+        const ball = createBall(this.physicsMaterials);
+        this.scene.add(ball.mesh);
+        this.world.addBody(ball.body);
+        this.objectsToUpdate.push(ball); // Lo añadimos a la lista de objetos a actualizar.
+
         window.addEventListener('resize', () => this.onWindowResize(), false);
-
-        // 8. BUCLE DE ANIMACIÓN: Iniciamos la función que se ejecutará 60 veces por segundo para actualizar y dibujar el juego.
         this.animate();
     }
 
+    initPhysics() {
+        // Creamos un mundo de física con gravedad hacia abajo.
+        this.world = new CANNON.World();
+        this.world.gravity.set(0, -9.82, 0); // Gravedad estándar de la Tierra.
+
+        // --- MATERIALES FÍSICOS ---
+        // Definimos cómo se comportan los objetos al chocar.
+        const groundMaterial = new CANNON.Material('ground');
+        const ballMaterial = new CANNON.Material('ball');
+        
+        // Definimos la interacción entre el balón y el suelo.
+        const ballGroundContactMaterial = new CANNON.ContactMaterial(
+            groundMaterial,
+            ballMaterial,
+            {
+                friction: 0.4, // Fricción para que no resbale infinitamente.
+                restitution: 0.7 // "Rebote". 0 es sin rebote, 1 es rebote perfecto.
+            }
+        );
+        this.world.addContactMaterial(ballGroundContactMaterial);
+        
+        // Guardamos los materiales para poder usarlos en otros archivos (como en ball.js).
+        this.physicsMaterials = { ground: groundMaterial, ball: ballMaterial };
+
+        // --- SUELO FÍSICO ---
+        // Creamos un plano infinito para que los objetos no caigan al vacío.
+        const groundBody = new CANNON.Body({
+            mass: 0, // Masa 0 significa que es un objeto estático, no se mueve.
+            shape: new CANNON.Plane(),
+            material: groundMaterial
+        });
+        // Lo rotamos para que coincida con nuestro suelo visual.
+        groundBody.quaternion.setFromAxisAngle(new CANNON.Vec3(1, 0, 0), -Math.PI / 2);
+        this.world.addBody(groundBody);
+    }
+
     addLights() {
-        // Luz ambiental: ilumina todos los objetos de la escena por igual, para que no haya zonas completamente negras.
         const ambientLight = new THREE.AmbientLight(0xffffff, 0.5);
         this.scene.add(ambientLight);
 
-        // Luz direccional: simula la luz del sol, viene de una dirección y proyecta sombras.
         const directionalLight = new THREE.DirectionalLight(0xffffff, 0.8);
-        directionalLight.position.set(-100, 100, 50); // La posicionamos arriba y a la izquierda.
-        directionalLight.castShadow = true; // Le decimos a esta luz que genere sombras.
-        directionalLight.shadow.mapSize.width = 2048; // Aumentamos la resolución de las sombras para que se vean mejor.
+        directionalLight.position.set(-100, 100, 50);
+        directionalLight.castShadow = true;
+        directionalLight.shadow.mapSize.width = 2048;
         directionalLight.shadow.mapSize.height = 2048;
         this.scene.add(directionalLight);
     }
 
     onWindowResize() {
-        // Este método se llama cuando la ventana del navegador cambia de tamaño.
         this.camera.aspect = window.innerWidth / window.innerHeight;
-        this.camera.updateProjectionMatrix(); // Actualizamos la cámara.
-        this.renderer.setSize(window.innerWidth, window.innerHeight); // Actualizamos el renderizador.
+        this.camera.updateProjectionMatrix();
+        this.renderer.setSize(window.innerWidth, window.innerHeight);
     }
 
     animate() {
-        // El corazón del juego. Se llama a sí mismo en un bucle infinito.
         requestAnimationFrame(() => this.animate());
 
-        this.controls.update(); // Actualizamos los controles de la cámara en cada fotograma.
+        // --- ACTUALIZACIÓN DE FÍSICA ---
+        // Avanzamos la simulación física un pequeño paso en el tiempo.
+        this.world.step(1 / 60);
 
-        // Le decimos al renderizador que dibuje la escena desde el punto de vista de la cámara.
+        // --- SINCRONIZACIÓN ---
+        // Copiamos la posición y rotación del cuerpo físico al objeto visual.
+        // Este es el paso CRUCIAL que une la física con los gráficos.
+        for (const object of this.objectsToUpdate) {
+            object.mesh.position.copy(object.body.position);
+            object.mesh.quaternion.copy(object.body.quaternion);
+        }
+
+        this.controls.update();
         this.renderer.render(this.scene, this.camera);
     }
 }
 
-// Finalmente, creamos una instancia de nuestro juego para que todo comience.
 new Game();
