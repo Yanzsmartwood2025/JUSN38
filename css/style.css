@@ -108,3 +108,17 @@ body {
 .project-card-3d.is-charging .loading-bar-fill {
     animation: fill-bar 4s linear forwards;
 }
+
+/* --- NUEVOS ESTILOS AÑADIDOS --- */
+#view-counter-container {
+    position: fixed;
+    bottom: 10px;
+    left: 10px;
+    background-color: rgba(0, 0, 0, 0.5);
+    color: white;
+    padding: 5px 10px;
+    border-radius: 5px;
+    font-family: 'Rajdhani', sans-serif;
+    font-size: 14px;
+    z-index: 1000; /* Para que esté por encima de todo */
+}
