@@ -2,13 +2,13 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <!-- Script de Google AdSense añadido aquí -->
+    <!-- Script de Google AdSense -->
     <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-2224408518904582"
-      crossorigin="anonymous"></script>
+     crossorigin="anonymous"></script>
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
     <title>Jusn38 - Centro de Creación Digital</title>
     
-    <!-- Metatags y Estilos -->
+    <!-- Metatags y Fuentes -->
     <meta name="theme-color" content="#0c0a18">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
@@ -18,129 +18,14 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@500;700&display=swap" rel="stylesheet">
     
-    <style>
-        @keyframes fill-bar {
-            from { width: 0%; }
-            to { width: 100%; }
-        }
-
-        @keyframes screen-shake {
-            0% { transform: translate(3px, 3px) rotate(0deg); }
-            10% { transform: translate(-3px, -6px) rotate(-3deg); }
-            20% { transform: translate(-9px, 0px) rotate(3deg); }
-            30% { transform: translate(9px, 6px) rotate(0deg); }
-            40% { transform: translate(3px, -3px) rotate(3deg); }
-            50% { transform: translate(-3px, 6px) rotate(-3deg); }
-            60% { transform: translate(-9px, 3px) rotate(0deg); }
-            70% { transform: translate(9px, 3px) rotate(-3deg); }
-            80% { transform: translate(-3px, -3px) rotate(3deg); }
-            90% { transform: translate(3px, 6px) rotate(0deg); }
-            100% { transform: translate(0, 0) rotate(0deg); }
-        }
-
-        .shaking {
-            animation: screen-shake 0.5s;
-        }
-
-        body { 
-            font-family: 'Rajdhani', sans-serif; 
-            background-color: #000000; 
-            color: #cbd5e0;
-            margin: 0;
-            overflow: hidden;
-            -webkit-user-select: none; user-select: none;
-        }
-        
-        #scene-container {
-            position: absolute; top: 0; left: 0;
-            width: 100vw; height: 100vh;
-            cursor: grab;
-            touch-action: none;
-        }
-        #scene-container:active { cursor: grabbing; }
-
-        .project-card-3d {
-            width: 320px;
-            height: 240px;
-            transition: all 0.3s ease;
-            cursor: pointer;
-            box-shadow: 0 0 15px rgba(0,0,0,0.5);
-            position: relative;
-            overflow: hidden;
-            -webkit-touch-callout: none;
-        }
-        .project-card-3d.focused {
-            box-shadow: 0 0 30px rgba(173, 216, 230, 0.4), 0 0 15px rgba(255, 255, 255, 0.3);
-            border-color: rgba(173, 216, 230, 0.5);
-        }
-        .project-card-3d.card-active {
-            box-shadow: 0 0 130px 25px rgba(255, 255, 255, 1), 0 0 80px 15px rgba(173, 216, 230, 0.9);
-            border-color: rgba(255, 255, 255, 1);
-            transform: scale(1.05);
-        }
-
-        .glass-card { 
-            background: rgba(12, 10, 24, 0.5);
-            backdrop-filter: blur(4px); -webkit-backdrop-filter: blur(4px); 
-            border: 1px solid rgba(255, 255, 255, 0.2); 
-            position: relative;
-        }
-        
-        .card-video-bg {
-            position: absolute; top: 0; left: 0;
-            width: 100%; height: 100%; object-fit: cover;
-            z-index: 1; opacity: 0.5; transition: opacity 0.3s ease;
-        }
-        .project-card-3d:hover .card-video-bg { opacity: 0.8; }
-
-        .card-content {
-            position: relative; z-index: 2; width: 100%; height: 100%;
-            display: flex; flex-direction: column; align-items: center; justify-content: center;
-            text-shadow: 0 2px 4px rgba(0,0,0,0.7);
-        }
-
-        .monitor-bezel {
-            position: absolute;
-            bottom: 0;
-            left: 0;
-            right: 0;
-            height: 20px;
-            background: linear-gradient(to top, #18181f, #2a2a33);
-            border-top: 1px solid rgba(255, 255, 255, 0.15);
-            border-radius: 0 0 8px 8px;
-            z-index: 3;
-            box-shadow: 0px 8px 25px -5px rgba(255, 255, 255, 0.6);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            padding: 4px;
-        }
-        .loading-bar-container {
-            width: 100%;
-            height: 100%;
-            background-color: rgba(0, 0, 0, 0.3);
-            border: 1px solid rgba(255, 255, 255, 0.1);
-            border-radius: 4px;
-            display: none;
-        }
-        .loading-bar-fill {
-            width: 0%;
-            height: 100%;
-            background-color: white;
-            border-radius: 4px;
-            box-shadow: 0 0 8px white;
-        }
-        .project-card-3d.is-charging .loading-bar-container {
-            display: block;
-        }
-        .project-card-3d.is-charging .loading-bar-fill {
-            animation: fill-bar 4s linear forwards;
-        }
-    </style>
+    <!-- Enlace a nuestra hoja de estilos externa -->
+    <link rel="stylesheet" href="css/style.css">
 </head>
 <body>
+    <!-- Contenedor para la escena 3D -->
     <div id="scene-container"></div>
 
+    <!-- Contenedor para los elementos HTML que se convertirán en objetos 3D -->
     <div id="html-elements" style="display: none;">
         <!-- Panel 1: Caja de Herramientas -->
         <a href="caja_de_herramientas.html" class="project-card-3d">
@@ -151,9 +36,7 @@
                     <h2 class="text-xl font-bold text-white">Caja de Herramientas</h2>
                     <p class="text-slate-300 mt-1 text-sm">Generadores y utilidades.</p>
                 </div>
-                <div class="monitor-bezel">
-                    <div class="loading-bar-container"><div class="loading-bar-fill"></div></div>
-                </div>
+                <div class="monitor-bezel"><div class="loading-bar-container"><div class="loading-bar-fill"></div></div></div>
             </div>
         </a>
         
@@ -166,9 +49,7 @@
                     <h2 class="text-xl font-bold text-white">Lumenfall</h2>
                     <p class="text-slate-300 mt-1 text-sm">Prototipo de juego de defensa.</p>
                 </div>
-                <div class="monitor-bezel">
-                    <div class="loading-bar-container"><div class="loading-bar-fill"></div></div>
-                </div>
+                <div class="monitor-bezel"><div class="loading-bar-container"><div class="loading-bar-fill"></div></div></div>
             </div>
         </a>
 
@@ -181,30 +62,20 @@
                     <h2 class="text-xl font-bold text-white">Fórmula 1</h2>
                     <p class="text-slate-300 mt-1 text-sm">Simulador de carreras 3D.</p>
                 </div>
-                <div class="monitor-bezel">
-                    <div class="loading-bar-container"><div class="loading-bar-fill"></div></div>
-                </div>
+                <div class="monitor-bezel"><div class="loading-bar-container"><div class="loading-bar-fill"></div></div></div>
             </div>
         </a>
 
         <!-- Panel 4: Fútbol 3D Pro -->
         <a href="futbol-3d-pro/" class="project-card-3d">
             <div class="glass-card rounded-lg w-full h-full">
-                <!-- Using a Pexels video for football theme -->
                 <video class="card-video-bg" autoplay loop muted playsinline><source src="https://videos.pexels.com/video-files/3807534/3807534-uhd_2560_1440_25fps.mp4" type="video/mp4"></video>
                 <div class="card-content p-6 text-center">
-                    <!-- SVG icon for a football (example, you can find a better one if needed) -->
-                    <div class="flex justify-center mb-4">
-                        <svg class="w-12 h-12 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
-                            <path stroke-linecap="round" stroke-linejoin="round" d="M12 21a9.004 9.004 0 008.716-6.747M12 21a9.004 9.004 0 01-8.716-6.747M12 21v-4.5m0 0V5.25M12 16.5V21M12 16.5a3 3 0 11-3-3m3 3a3 3 0 103-3m-3 3H9m3 0h3m-6 0a3 3 0 11-3-3m3 3a3 3 0 103-3m-3 3H9m3 0h3m-6 0a3 3 0 11-3-3m3 3a3 3 0 103-3m-3 3H9m3 0h3" />
-                        </svg>
-                    </div>
+                    <div class="flex justify-center mb-4"><svg class="w-12 h-12 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M12 21a9.004 9.004 0 008.716-6.747M12 21a9.004 9.004 0 01-8.716-6.747M12 21v-4.5m0 0V5.25M12 16.5V21M12 16.5a3 3 0 11-3-3m3 3a3 3 0 103-3m-3 3H9m3 0h3m-6 0a3 3 0 11-3-3m3 3a3 3 0 103-3m-3 3H9m3 0h3m-6 0a3 3 0 11-3-3m3 3a3 3 0 103-3m-3 3H9m3 0h3" /></svg></div>
                     <h2 class="text-xl font-bold text-white">Fútbol 3D Pro</h2>
                     <p class="text-slate-300 mt-1 text-sm">Simulador de fútbol interactivo.</p>
                 </div>
-                <div class="monitor-bezel">
-                    <div class="loading-bar-container"><div class="loading-bar-fill"></div></div>
-                </div>
+                <div class="monitor-bezel"><div class="loading-bar-container"><div class="loading-bar-fill"></div></div></div>
             </div>
         </a>
 
@@ -217,9 +88,7 @@
                     <h2 class="text-xl font-bold text-white">Runa Coffee</h2>
                     <p class="text-slate-300 mt-1 text-sm">Café de especialidad.</p>
                 </div>
-                <div class="monitor-bezel">
-                    <div class="loading-bar-container"><div class="loading-bar-fill"></div></div>
-                </div>
+                <div class="monitor-bezel"><div class="loading-bar-container"><div class="loading-bar-fill"></div></div></div>
             </div>
         </a>
         
@@ -232,9 +101,7 @@
                     <h2 class="text-xl font-bold text-white">Yas Desmargura</h2>
                     <p class="text-slate-300 mt-1 text-sm">Agencia de publicidad.</p>
                 </div>
-                <div class="monitor-bezel">
-                    <div class="loading-bar-container"><div class="loading-bar-fill"></div></div>
-                </div>
+                <div class="monitor-bezel"><div class="loading-bar-container"><div class="loading-bar-fill"></div></div></div>
             </div>
         </a>
 
@@ -247,9 +114,7 @@
                     <h2 class="text-xl font-bold text-white">Yanz Smart Wood</h2>
                     <p class="text-slate-300 mt-1 text-sm">Diseño y tecnología en madera.</p>
                 </div>
-                <div class="monitor-bezel">
-                    <div class="loading-bar-container"><div class="loading-bar-fill"></div></div>
-                </div>
+                <div class="monitor-bezel"><div class="loading-bar-container"><div class="loading-bar-fill"></div></div></div>
             </div>
         </a>
 
@@ -262,9 +127,7 @@
                     <h2 class="text-xl font-bold text-white">Laboratorio de Ideas</h2>
                     <p class="text-slate-300 mt-1 text-sm">Nuevos prototipos en desarrollo.</p>
                 </div>
-                <div class="monitor-bezel">
-                    <div class="loading-bar-container"><div class="loading-bar-fill"></div></div>
-                </div>
+                <div class="monitor-bezel"><div class="loading-bar-container"><div class="loading-bar-fill"></div></div></div>
             </div>
         </a>
 
@@ -277,13 +140,12 @@
                     <h2 class="text-xl font-bold text-white">Tinkuy</h2>
                     <p class="text-slate-300 mt-1 text-sm">Juego interactivo de conexión.</p>
                 </div>
-                <div class="monitor-bezel">
-                    <div class="loading-bar-container"><div class="loading-bar-fill"></div></div>
-                </div>
+                <div class="monitor-bezel"><div class="loading-bar-container"><div class="loading-bar-fill"></div></div></div>
             </div>
         </a>
     </div>
 
+    <!-- Carga de librerías y scripts -->
     <script async src="https://unpkg.com/es-module-shims@1.6.3/dist/es-module-shims.js"></script>
     <script type="importmap">
     { "imports": { 
@@ -292,533 +154,7 @@
     } }
     </script>
 
-    <script type="module">
-        import * as THREE from 'three';
-        import { CSS3DRenderer, CSS3DObject } from 'three/addons/renderers/CSS3DRenderer.js';
-
-        // --- Global Variables ---
-        let camera, scene, renderer, cssScene, cssRenderer, sceneContainer;
-        const carouselGroup = new THREE.Group();
-        const tentaclesGroup = new THREE.Group();
-        const clock = new THREE.Clock();
-        const textureLoader = new THREE.TextureLoader();
-        
-        let tentacleAnchor;
-
-        let focusedObject = null;
-        let isPointerDown = false, isDragging = false;
-        let startPointerX = 0, startRotationY = 0, velocityY = 0;
-        const deceleration = 0.95;
-        let longPressTimeout = null;
-        let isHolding = false;
-        let heldObject = null;
-        let pressStartTime = 0;
-        let shakeInterval = null;
-
-        // --- Particle System Variables ---
-        let sparkParticles, sparkGeometry, sparkMaterial;
-        const particleCount = 4000;
-        const particlesData = [];
-        const gravity = new THREE.Vector3(0, -200, 0);
-
-        // --- Texture Loading ---
-        const lightningTexture = textureLoader.load('https://i.imgur.com/Y4uK349.png');
-        lightningTexture.wrapS = THREE.RepeatWrapping;
-        lightningTexture.wrapT = THREE.RepeatWrapping;
-
-        const sparkTexture = textureLoader.load('https://i.imgur.com/e40Lcf5.png');
-
-        function main() {
-            init();
-            animate();
-        }
-
-        function init() {
-            sceneContainer = document.getElementById('scene-container');
-            camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 1, 5000);
-            
-            scene = new THREE.Scene();
-            cssScene = new THREE.Scene();
-            
-            textureLoader.load(
-                'https://raw.githubusercontent.com/Yanzsmartwood2025/JUSN38/main/assets/images/JUSN38/menu-principal.png',
-                (texture) => {
-                    scene.background = texture;
-                },
-                undefined,
-                (err) => {
-                    console.error('An error occurred while loading the background texture.', err);
-                }
-            );
-
-            const ambientLight = new THREE.AmbientLight(0xffffff, 0.8);
-            scene.add(ambientLight);
-            const pointLight = new THREE.PointLight(0x88aaff, 2, 2000);
-            scene.add(pointLight);
-
-            initSparks();
-
-            renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
-            renderer.setPixelRatio(window.devicePixelRatio);
-            renderer.setSize(window.innerWidth, window.innerHeight);
-            sceneContainer.appendChild(renderer.domElement);
-
-            cssRenderer = new CSS3DRenderer();
-            cssRenderer.setSize(window.innerWidth, window.innerHeight);
-            cssRenderer.domElement.style.position = 'absolute';
-            cssRenderer.domElement.style.top = 0;
-            sceneContainer.appendChild(cssRenderer.domElement);
-
-            const elements = document.querySelectorAll('#html-elements .project-card-3d');
-            elements.forEach((element, i) => {
-                const cssObject = new CSS3DObject(element);
-                cssObject.userData.id = i;
-                carouselGroup.add(cssObject);
-            });
-            cssScene.add(carouselGroup);
-            
-            scene.add(tentaclesGroup);
-
-            const anchorGeometry = new THREE.TorusGeometry(80, 10, 16, 100);
-            const anchorMaterial = new THREE.MeshBasicMaterial({ color: 0xff0000, wireframe: true });
-            tentacleAnchor = new THREE.Mesh(anchorGeometry, anchorMaterial);
-            
-            tentacleAnchor.position.set(0, -500, -400);
-            tentacleAnchor.rotation.x = -Math.PI / 2;
-            tentacleAnchor.visible = false; 
-            tentaclesGroup.add(tentacleAnchor);
-
-            updateLayout();
-            createTentacles();
-
-            // --- Event Listeners ---
-            sceneContainer.addEventListener('pointerdown', onPointerDown);
-            sceneContainer.addEventListener('pointermove', onPointerMove);
-            sceneContainer.addEventListener('pointerup', onPointerUp);
-            sceneContainer.addEventListener('pointerleave', onPointerUp);
-            sceneContainer.addEventListener('contextmenu', (event) => event.preventDefault());
-            window.addEventListener('resize', onWindowResize);
-            
-            const gsapScript = document.createElement('script');
-            gsapScript.src = 'https://cdnjs.cloudflare.com/ajax/libs/gsap/3.11.4/gsap.min.js';
-            document.body.appendChild(gsapScript);
-        }
-
-        function initSparks() {
-            sparkGeometry = new THREE.BufferGeometry();
-            const positions = new Float32Array(particleCount * 3);
-            for (let i = 0; i < particleCount; i++) {
-                positions[i * 3] = 0; positions[i * 3 + 1] = 0; positions[i * 3 + 2] = 0;
-                particlesData.push({ velocity: new THREE.Vector3(), lifetime: 0, isActive: false });
-            }
-            sparkGeometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
-            sparkMaterial = new THREE.PointsMaterial({
-                map: sparkTexture, size: 12, blending: THREE.AdditiveBlending,
-                transparent: true, depthWrite: false,
-            });
-            sparkParticles = new THREE.Points(sparkGeometry, sparkMaterial);
-            sparkParticles.visible = false;
-            scene.add(sparkParticles);
-        }
-
-        function triggerSparks(position) {
-            sparkParticles.position.copy(position);
-            sparkParticles.visible = true;
-            let particlesToEmit = 10;
-            for (let i = 0; i < particleCount && particlesToEmit > 0; i++) {
-                const p = particlesData[i];
-                if (!p.isActive) {
-                    p.isActive = true; p.lifetime = Math.random() * 0.8 + 0.2;
-                    const pos = sparkGeometry.attributes.position.array;
-                    pos[i * 3] = 0; pos[i * 3 + 1] = 0; pos[i * 3 + 2] = 0;
-                    const angle = Math.random() * Math.PI * 2;
-                    const speed = Math.random() * 300 + 200;
-                    p.velocity.set(Math.cos(angle) * speed, Math.random() * 200 + 50, Math.sin(angle) * speed);
-                    particlesToEmit--;
-                }
-            }
-        }
-
-        function updateSparks(delta) {
-            if (!sparkParticles.visible) return;
-            const positions = sparkGeometry.attributes.position.array;
-            let activeParticles = 0;
-            for (let i = 0; i < particleCount; i++) {
-                const p = particlesData[i];
-                if (p.isActive) {
-                    p.lifetime -= delta;
-                    if (p.lifetime <= 0) {
-                        p.isActive = false;
-                        positions[i * 3] = 0; positions[i * 3 + 1] = 0; positions[i * 3 + 2] = 0;
-                        continue;
-                    }
-                    p.velocity.add(gravity.clone().multiplyScalar(delta));
-                    positions[i * 3] += p.velocity.x * delta;
-                    positions[i * 3 + 1] += p.velocity.y * delta;
-                    positions[i * 3 + 2] += p.velocity.z * delta;
-                    activeParticles++;
-                }
-            }
-            if (activeParticles === 0 && !isHolding) {
-                sparkParticles.visible = false;
-            }
-            sparkGeometry.attributes.position.needsUpdate = true;
-        }
-
-        function updateLayout() {
-            const isMobile = window.innerWidth < 768;
-            const radius = isMobile ? 1000 : 1200;
-            const cardScale = isMobile ? 0.8 : 1.0;
-            camera.position.z = isMobile ? 1400 : 1200;
-
-            carouselGroup.children.forEach((object, i) => {
-                const numElements = carouselGroup.children.length;
-                const angle = (i / numElements) * Math.PI * 2;
-                object.position.x = Math.sin(angle) * radius;
-                object.position.z = Math.cos(angle) * radius;
-                object.scale.set(cardScale, cardScale, cardScale);
-            });
-        }
-
-        function createTentacles() {
-            tentaclesGroup.children.filter(child => child.isGroup).forEach(t => tentaclesGroup.remove(t));
-
-            const numTentacles = carouselGroup.children.length;
-            const numSegments = 25; 
-
-            const linkGeometry = new THREE.TorusGeometry(10, 4, 8, 16);
-            const linkMaterial = new THREE.MeshStandardMaterial({
-                color: 0x222228,
-                metalness: 0.9,
-                roughness: 0.4
-            });
-
-            carouselGroup.children.forEach((targetObject, i) => {
-                const tentacleGroup = new THREE.Group();
-                
-                const originPoint = new THREE.Vector3(
-                    (Math.random() - 0.5) * 200, 0, (Math.random() - 0.5) * 200,
-                ).applyMatrix4(tentacleAnchor.matrixWorld);
-
-                const restingAngle = (i / numTentacles) * Math.PI * 2 + (Math.random() - 0.5) * 0.5;
-                const restingRadius = 1200 + Math.random() * 200;
-                const restingPoint = new THREE.Vector3(
-                    Math.cos(restingAngle) * restingRadius,
-                    (Math.random() - 0.5) * 800,
-                    Math.sin(restingAngle) * restingRadius - 400
-                );
-                
-                const segments = [];
-                for (let j = 0; j < numSegments; j++) {
-                    const point = new THREE.Vector3().lerpVectors(originPoint, restingPoint, j / (numSegments - 1));
-                    segments.push(point);
-                }
-                
-                const curve = new THREE.CatmullRomCurve3(segments);
-                const coreGeometry = new THREE.TubeGeometry(curve, 32, 5, 8, false);
-                const coreMaterial = new THREE.MeshBasicMaterial({ 
-                    map: lightningTexture, 
-                    blending: THREE.AdditiveBlending, 
-                    transparent: true,
-                    opacity: 0.9,
-                    depthWrite: false
-                });
-                const electricityCore = new THREE.Mesh(coreGeometry, coreMaterial);
-
-                const chainLinks = new THREE.Group();
-                for (let j = 0; j < numSegments; j++) {
-                    const link = new THREE.Mesh(linkGeometry, linkMaterial);
-                    chainLinks.add(link);
-                }
-                
-                tentacleGroup.add(electricityCore, chainLinks);
-                
-                tentacleGroup.userData = {
-                    targetId: i,
-                    segments: segments,
-                    originPoint: originPoint.clone(),
-                    restingPoint: restingPoint.clone(),
-                    animatedTarget: new THREE.Vector3().copy(restingPoint),
-                    isEngaged: false,
-                    electricityCore: electricityCore,
-                    chainLinks: chainLinks,
-                    animationProps: {
-                        timeOffset: Math.random() * 10,
-                        amplitude: 60 + Math.random() * 40,
-                        speed: 0.7 + Math.random() * 0.4,
-                        waveLength: 0.25 + Math.random() * 0.15
-                    }
-                };
-                tentaclesGroup.add(tentacleGroup);
-            });
-        }
-        
-        function updateTentacleGeometry(tentacleGroup, time) {
-            const { segments, originPoint, animatedTarget, electricityCore, chainLinks, animationProps } = tentacleGroup.userData;
-            
-            const mainAxis = new THREE.Vector3().subVectors(animatedTarget, originPoint);
-            const distance = mainAxis.length();
-            mainAxis.normalize();
-
-            const up = new THREE.Vector3(0, 1, 0);
-            let waveAxisX = new THREE.Vector3().crossVectors(mainAxis, up).normalize();
-            if (waveAxisX.lengthSq() < 0.1) {
-                up.set(1, 0, 0);
-                waveAxisX.crossVectors(mainAxis, up).normalize();
-            }
-            const waveAxisY = new THREE.Vector3().crossVectors(mainAxis, waveAxisX).normalize();
-
-            const waveTime = time * animationProps.speed + animationProps.timeOffset;
-
-            for (let i = 0; i < segments.length; i++) {
-                const progress = i / (segments.length - 1);
-                const positionOnAxis = originPoint.clone().add(mainAxis.clone().multiplyScalar(distance * progress));
-                
-                const waveFactor = Math.sin(progress * Math.PI);
-                const waveAmplitude = animationProps.amplitude;
-                
-                const waveOffsetX = Math.sin(waveTime + i * animationProps.waveLength) * waveAmplitude * waveFactor;
-                const waveOffsetY = Math.cos(waveTime * 0.8 + i * animationProps.waveLength * 1.2) * (waveAmplitude * 0.8) * waveFactor;
-                
-                positionOnAxis.add(waveAxisX.clone().multiplyScalar(waveOffsetX));
-                positionOnAxis.add(waveAxisY.clone().multiplyScalar(waveOffsetY));
-                segments[i].copy(positionOnAxis);
-            }
-
-            const newCurve = new THREE.CatmullRomCurve3(segments);
-            
-            const newCoreGeom = new THREE.TubeGeometry(newCurve, 32, 5, 8, false);
-            electricityCore.geometry.dispose();
-            electricityCore.geometry = newCoreGeom;
-            electricityCore.material.map.offset.x = time * -0.8;
-
-            const numLinks = chainLinks.children.length;
-            for (let i = 0; i < numLinks; i++) {
-                const link = chainLinks.children[i];
-                const progress = i / (numLinks - 1);
-                const point = newCurve.getPointAt(progress);
-                link.position.copy(point);
-
-                const lookAtProgress = (i + 1) / (numLinks - 1);
-                const lookAtPoint = newCurve.getPointAt(Math.min(lookAtProgress, 1));
-                link.lookAt(lookAtPoint);
-            }
-        }
-
-        function engageTentacle(tentacle, targetObject) {
-            if (!tentacle || !window.gsap) return;
-            tentacle.userData.isEngaged = true;
-
-            const targetPosition = new THREE.Vector3();
-            targetObject.getWorldPosition(targetPosition);
-            tentaclesGroup.worldToLocal(targetPosition);
-            targetPosition.y -= 110; 
-
-            gsap.to(tentacle.userData.animatedTarget, {
-                x: targetPosition.x, y: targetPosition.y, z: targetPosition.z,
-                duration: 0.4, ease: "power2.inOut"
-            });
-        }
-        
-        function disengageTentacle(tentacle) {
-            if (!tentacle || !window.gsap) return;
-            tentacle.userData.isEngaged = false;
-
-            const { restingPoint, animatedTarget } = tentacle.userData;
-            const currentTipPosition = tentacle.userData.segments[tentacle.userData.segments.length - 1];
-
-            const recoilDirection = new THREE.Vector3().subVectors(currentTipPosition, restingPoint).normalize();
-            recoilDirection.x += (Math.random() - 0.5) * 2.5;
-            recoilDirection.y += (Math.random() - 0.5) * 2.5;
-            recoilDirection.z += (Math.random() - 0.5) * 2.5;
-            const recoilPoint = currentTipPosition.clone().add(recoilDirection.multiplyScalar(400));
-
-            gsap.killTweensOf(animatedTarget);
-            const tl = gsap.timeline();
-            
-            tl.to(animatedTarget, {
-                x: recoilPoint.x, y: recoilPoint.y, z: recoilPoint.z,
-                duration: 0.25, ease: "power3.out"
-            });
-            
-            tl.to(animatedTarget, {
-                x: restingPoint.x, y: restingPoint.y, z: restingPoint.z,
-                duration: 1.5, ease: "elastic.out(1, 0.5)"
-            });
-        }
-
-        function animate() {
-            requestAnimationFrame(animate);
-            const delta = clock.getDelta();
-            const time = clock.getElapsedTime();
-            
-            if (!isPointerDown) {
-                if (Math.abs(velocityY) > 0.0001) {
-                    carouselGroup.rotation.y += velocityY;
-                    tentaclesGroup.rotation.y += velocityY;
-                    velocityY *= deceleration;
-                } else {
-                    velocityY = 0;
-                }
-            }
-            
-            let maxDot = -2;
-            let newlyFocusedObject = null;
-            carouselGroup.children.forEach(object => {
-                object.lookAt(camera.position);
-                const worldPosition = new THREE.Vector3();
-                object.getWorldPosition(worldPosition);
-                const cameraDirection = new THREE.Vector3(0, 0, -1).applyQuaternion(camera.quaternion);
-                const objectDirection = worldPosition.sub(camera.position).normalize();
-                const dot = cameraDirection.dot(objectDirection);
-
-                if (dot > maxDot) { maxDot = dot; newlyFocusedObject = object; }
-                if (object !== heldObject) {
-                    object.element.classList.remove('focused');
-                }
-            });
-
-            if (newlyFocusedObject && newlyFocusedObject !== focusedObject) {
-                focusedObject = newlyFocusedObject;
-            }
-            if(focusedObject && !isHolding) {
-                focusedObject.element.classList.add('focused');
-            }
-
-            tentaclesGroup.children.forEach(tentacle => { 
-                if (tentacle.isGroup) {
-                    if (tentacle.userData.isEngaged) {
-                        const targetCard = carouselGroup.children.find(c => c.userData.id === tentacle.userData.targetId);
-                        if (targetCard) {
-                            const targetPosition = new THREE.Vector3();
-                            targetCard.getWorldPosition(targetPosition);
-                            tentaclesGroup.worldToLocal(targetPosition);
-                            targetPosition.y -= 110;
-                            tentacle.userData.animatedTarget.copy(targetPosition);
-                        }
-                    }
-                    updateTentacleGeometry(tentacle, time); 
-                }
-            });
-
-            if (isHolding && heldObject) {
-                const tentacle = tentaclesGroup.children.find(t => t.isGroup && t.userData.targetId === heldObject.userData.id);
-                if (tentacle) { 
-                    const tipPosition = new THREE.Vector3();
-                    const lastSegment = tentacle.userData.segments[tentacle.userData.segments.length-1];
-                    tentacle.localToWorld(tipPosition.copy(lastSegment));
-                    triggerSparks(tipPosition);
-                }
-            }
-            updateSparks(delta);
-
-            renderer.render(scene, camera);
-            cssRenderer.render(cssScene, camera);
-        }
-        
-        function navigateTo(element) {
-            if (element.target === '_blank') { window.open(element.href, '_blank'); } 
-            else { window.location.href = element.href; }
-        }
-
-        function startCharging(element) {
-            isHolding = true;
-            heldObject = carouselGroup.children.find(o => o.element === element);
-            if (heldObject) {
-                element.classList.add('is-charging');
-                if(shakeInterval) clearInterval(shakeInterval);
-                shakeInterval = setInterval(() => {
-                    sceneContainer.classList.remove('shaking');
-                    void sceneContainer.offsetWidth;
-                    sceneContainer.classList.add('shaking');
-                }, 500);
-                
-                const tentacle = tentaclesGroup.children.find(t => t.isGroup && t.userData.targetId === heldObject.userData.id);
-                engageTentacle(tentacle, heldObject);
-
-                longPressTimeout = setTimeout(() => {
-                    if (isHolding && heldObject) {
-                        element.classList.add('card-active');
-                        navigateTo(element);
-                    }
-                }, 4000);
-            }
-        }
-
-        function stopCharging() {
-            if (isHolding && heldObject) {
-                heldObject.element.classList.remove('is-charging');
-                heldObject.element.classList.remove('card-active');
-                
-                const tentacle = tentaclesGroup.children.find(t => t.isGroup && t.userData.targetId === heldObject.userData.id);
-                disengageTentacle(tentacle);
-            }
-            clearTimeout(longPressTimeout); 
-            clearInterval(shakeInterval);
-            sceneContainer.classList.remove('shaking');
-            
-            shakeInterval = null; 
-            isHolding = false; 
-            heldObject = null;
-        }
-
-        function onPointerDown(event) {
-            if (isDragging) return;
-
-            isPointerDown = true; 
-            isDragging = false;
-            startPointerX = event.clientX;
-            startRotationY = carouselGroup.rotation.y;
-            velocityY = 0; 
-            pressStartTime = Date.now();
-            
-            const element = event.target.closest('.project-card-3d');
-            if (element) {
-                startCharging(element);
-            }
-        }
-
-        function onPointerMove(event) {
-            if (!isPointerDown) return;
-            const deltaX = event.clientX - startPointerX;
-
-            if (Math.abs(deltaX) > 10) {
-                isDragging = true;
-                if (isHolding) {
-                    stopCharging();
-                }
-            }
-            
-            if (isDragging) {
-                const rotationFactor = 0.005; 
-                const newRotation = startRotationY + (deltaX * rotationFactor);
-                velocityY = newRotation - carouselGroup.rotation.y;
-                carouselGroup.rotation.y = newRotation;
-                tentaclesGroup.rotation.y = newRotation;
-                
-                startRotationY = carouselGroup.rotation.y;
-                startPointerX = event.clientX;
-            }
-        }
-
-        function onPointerUp(event) {
-            if(isHolding) {
-                stopCharging(); 
-            }
-            isPointerDown = false; 
-            isDragging = false; 
-        }
-
-        function onWindowResize() {
-            camera.aspect = window.innerWidth / window.innerHeight;
-            camera.updateProjectionMatrix();
-            renderer.setSize(window.innerWidth, window.innerHeight);
-            cssRenderer.setSize(window.innerWidth, window.innerHeight);
-            updateLayout();
-            createTentacles(); 
-        }
-
-        window.addEventListener('load', main);
-    </script>
+    <!-- Enlace a nuestro archivo de lógica externo -->
+    <script type="module" src="js/main.js"></script>
 </body>
 </html>
