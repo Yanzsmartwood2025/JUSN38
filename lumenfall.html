@@ -2,1079 +2,1061 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, maximum-scale=1.0">
-    <title>LumenFall</title>
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Lora:wght@400;700&display=swap" rel="stylesheet">
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/tone/14.7.77/Tone.js"></script>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>Demo de Calabozo 2.5D (Ataque Corregido)</title>
     <style>
-        :root {
-            --health-color: #e53e3e;
-            --mana-color: #3182ce;
-            --magic-color: #63b3ed;
-            --boss-health-color: #805ad5;
-            --bar-bg-color: rgba(0, 0, 0, 0.5);
-            --bar-border-color: rgba(255, 255, 255, 0.2);
-            --joystick-bg-color: rgba(255, 255, 255, 0.15);
-            --joystick-border-color: rgba(255, 255, 255, 0.3);
-            --joystick-knob-color: rgba(255, 255, 255, 0.4);
+        /* Estilos generales del cuerpo */
+        body {
+            margin: 0;
+            overflow: hidden; /* Oculta las barras de desplazamiento */
+            background-color: #000; /* Fondo negro */
+            font-family: 'Inter', sans-serif; /* Fuente Inter */
         }
-        body, html {
-            margin: 0; padding: 0; width: 100%; height: 100%;
-            overflow: hidden; background-color: #0c0a18; font-family: 'Lora', serif;
-        }
-        #game-container { position: relative; width: 100%; height: 100%; cursor: none; }
-        canvas {
-            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
-            image-rendering: pixelated;
-        }
-        #background-canvas { z-index: 1; }
-        #midground-canvas { z-index: 2; }
-        #game-canvas { z-index: 3; }
-        #foreground-canvas { z-index: 4; }
-        #hud-container {
-            position: absolute; top: 20px; left: 20px; z-index: 10;
-            display: flex; flex-direction: column; gap: 10px;
-        }
-        .status-bar-container {
-            width: 250px; height: 25px; background-color: var(--bar-bg-color);
-            border-radius: 5px; border: 2px solid var(--bar-border-color);
-            padding: 3px; box-shadow: 0 0 10px rgba(0,0,0,0.5);
-        }
-        .status-bar {
-            width: 100%; height: 100%; border-radius: 3px;
-            transition: width 0.2s ease-out; box-shadow: inset 0 0 5px rgba(0,0,0,0.5);
-        }
-        #health-bar { background: var(--health-color); }
-        #mana-bar { background: var(--mana-color); }
-        #level-indicator {
-            position: absolute; top: 20px; right: 20px; z-index: 10;
-            color: white; font-size: 1.2rem; text-shadow: 0 2px 4px #000;
-        }
-        #boss-hud-container {
-            position: absolute; bottom: 20px; left: 50%; transform: translateX(-50%);
-            z-index: 10; display: none; flex-direction: column; align-items: center;
-            gap: 5px;
-        }
-        #boss-name {
-            color: white; font-size: 1.2rem; text-shadow: 0 2px 4px #000;
-        }
-        #boss-health-bar-container {
-            width: 400px; height: 20px; background-color: var(--bar-bg-color);
-            border-radius: 5px; border: 2px solid var(--bar-border-color);
-            padding: 3px; box-shadow: 0 0 10px rgba(0,0,0,0.5);
-        }
-        #boss-health-bar {
-            width: 100%; height: 100%; border-radius: 3px;
-            background: var(--boss-health-color);
-            transition: width 0.2s ease-out;
-        }
-        #menu-overlay {
-            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
-            background-color: rgba(0, 0, 0, 0.7); z-index: 20;
-            display: flex; align-items: center; justify-content: center;
-            color: white; flex-direction: column; gap: 20px;
-            text-shadow: 0 2px 4px #000;
-        }
-        #menu-overlay.hidden { display: none; }
-        .menu-button {
-            padding: 15px 30px; font-size: 1.5rem; background-color: var(--mana-color);
-            border: none; color: white; border-radius: 8px; cursor: pointer;
-            box-shadow: 0 4px #2c5282; transition: all 0.1s ease;
-        }
-        .menu-button:active { transform: translateY(2px); box-shadow: 0 2px #2c5282; }
-        
-        /* Touch Controls */
-        #touch-controls-layer {
-            position: absolute;
-            bottom: 0;
+
+        /* Canvas de fondo para Three.js */
+        #bg-canvas {
+            position: fixed;
+            top: 0;
             left: 0;
             width: 100%;
-            height: 220px;
-            z-index: 15;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding: 20px;
+            height: 100%;
+            z-index: 1; /* Detrás de la UI */
+            display: none; /* Inicialmente oculto */
+        }
+
+        /* Contenedor de la interfaz de usuario */
+        #ui-container {
+            position: relative;
+            z-index: 2; /* Encima del canvas */
+            width: 100%;
+            height: 100vh;
+            pointer-events: none; /* Permite clics a través del contenedor, los elementos internos los anulan */
+            display: none; /* Inicialmente oculto */
+        }
+
+        /* Asegura que los elementos dentro de ui-container sean interactivos */
+        #ui-container > * {
+            pointer-events: auto;
+        }
+
+        /* Estilos para la parte superior de la UI y los controles */
+        #ui-top, #controls {
+            position: absolute;
+            width: 100%;
             box-sizing: border-box;
-            pointer-events: none;
-        }
-        .joystick-base {
-            position: absolute;
-            width: 160px; 
-            height: 160px;
-            background-color: var(--joystick-bg-color);
-            border-radius: 50%;
-            border: 2px solid var(--joystick-border-color);
-            pointer-events: auto;
-        }
-        .joystick-knob {
-            position: absolute;
-            width: 80px; 
-            height: 80px;
-            background-color: var(--joystick-knob-color);
-            border-radius: 50%;
-            transform: translate(-50%, -50%);
-        }
-        #move-stick { bottom: 30px; left: 30px; }
-        
-        #action-buttons {
-            position: absolute;
-            bottom: 40px;
-            right: 30px;
-            display: flex;
-            gap: 20px;
-            align-items: center;
-            pointer-events: auto;
-        }
-        .action-button {
-            width: 90px; 
-            height: 90px;
-            background-color: rgba(255, 255, 255, 0.2);
-            border-radius: 50%;
-            border: 2px solid rgba(255, 255, 255, 0.4);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            user-select: none;
-            -webkit-user-select: none;
-        }
-        .action-button:active {
-            background-color: rgba(255, 255, 255, 0.4);
-        }
-        #jump-button {
-            font-size: 50px;
             color: white;
+            font-family: 'Segoe UI', sans-serif; /* Fuente para la UI */
         }
-        #fire-button svg {
-            width: 50px;
-            height: 50px;
-        }
-        .back-button {
-            position: absolute;
-            top: 20px;
-            right: 20px;
-            z-index: 21; /* Encima del menú */
+
+        /* Contenedor superior de la UI (barras de estadísticas) */
+        #ui-top {
+            top: 0;
+            padding: 20px;
             display: flex;
-            align-items: center;
-            padding: 8px 12px;
-            background-color: rgba(0,0,0,0.4);
-            color: #cbd5e0;
-            text-decoration: none;
-            border-radius: 8px;
-            transition: all 0.2s ease;
+            gap: 20px; /* Espacio entre las barras */
         }
-        .back-button:hover {
-            background-color: rgba(0,0,0,0.6);
+
+        /* Estilo de la barra de estadísticas */
+        .stat-bar {
+            width: 200px;
+            height: 20px;
+            background-color: rgba(0,0,0,0.5); /* Fondo semitransparente */
+            border: 2px solid #555;
+            border-radius: 10px;
+            padding: 2px;
+            box-shadow: 0 0 8px rgba(0,0,0,0.5); /* Sombra para profundidad */
+        }
+
+        /* Relleno de la barra de estadísticas */
+        .stat-bar-fill {
+            height: 100%;
+            border-radius: 6px;
+            transition: width 0.3s ease-out; /* Transición suave para el cambio de ancho */
+        }
+
+        /* Colores de relleno específicos */
+        #energy-fill { background-color: #3498db; } /* Azul */
+        #power-fill { background-color: #e74c3c; } /* Rojo */
+
+        /* Etiqueta de la estadística */
+        .stat-label {
+            font-weight: bold;
+            margin-bottom: 5px;
+            text-shadow: 1px 1px 2px black; /* Sombra de texto para legibilidad */
+        }
+
+        /* Controles inferiores */
+        #controls {
+            bottom: 20px;
+            display: flex;
+            justify-content: space-between; /* Espacio entre los grupos de botones */
+            align-items: flex-end;
+            padding: 0 40px;
+        }
+
+        /* Contenedor para los controles de la derecha */
+        .right-controls {
+            display: flex;
+            gap: 20px; /* Espacio entre los botones de la derecha */
+        }
+
+        /* Estilo de los botones de control */
+        .control-btn {
+            width: 120px;
+            height: 120px;
+            background-color: rgba(0,0,0,0.4); /* Fondo semitransparente */
+            border: 1px solid rgba(255,255,255,0.1);
+            border-radius: 50%; /* Botones circulares */
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            color: rgba(255,255,255,0.7);
+            font-size: 60px;
+            font-weight: bold;
+            cursor: pointer;
+            user-select: none; /* Evita la selección de texto */
+            transition: background-color 0.2s, transform 0.1s; /* Transiciones suaves */
+            box-shadow: 0 5px 15px rgba(0,0,0,0.5); /* Sombra para un efecto 3D */
+            backdrop-filter: blur(5px); /* Efecto de desenfoque detrás del botón */
+        }
+
+        /* Efecto al presionar el botón */
+        .control-btn:active {
+            background-color: rgba(255, 255, 255, 0.2);
+            transform: scale(0.95); /* Encoge ligeramente el botón */
+            box-shadow: 0 2px 8px rgba(0,0,0,0.7); /* Sombra más pequeña al presionar */
+        }
+
+        /* Estilos del Joystick */
+        #joystick-container {
+            width: 150px;
+            height: 150px;
+            background-color: rgba(0,0,0,0.4);
+            border: 1px solid rgba(255,255,255,0.1);
+            border-radius: 50%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.5);
+            backdrop-filter: blur(5px);
+            position: relative; /* Necesario para posicionar el knob */
+        }
+
+        #joystick-knob {
+            width: 70px;
+            height: 70px;
+            background-color: rgba(255,255,255,0.3);
+            border: 1px solid rgba(255,255,255,0.2);
+            border-radius: 50%;
+            position: absolute;
+            cursor: grab;
+            /* Centrado inicial del knob */
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            transition: transform 0.1s ease-out; /* Transición para el retorno al centro */
+        }
+
+        #joystick-knob:active {
+            cursor: grabbing;
+            background-color: rgba(255,255,255,0.5);
+        }
+
+        /* Estilos para la pantalla de introducción */
+        #intro-screen {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: #000; /* Fondo negro */
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 100; /* Asegura que esté por encima de todo */
+            opacity: 1;
+            transition: opacity 1s ease-out; /* Transición suave para el desvanecimiento */
+        }
+
+        #intro-image {
+            max-width: 100%;
+            max-height: 100%;
+            object-fit: cover; /* Cubre el área manteniendo el aspecto */
+            width: 100%; /* Asegura que la imagen ocupe todo el ancho */
+            height: 100%; /* Asegura que la imagen ocupe toda la altura */
+        }
+
+        /* Estilos para la pantalla del menú */
+        #menu-screen {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            display: none; /* Inicialmente oculto */
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            z-index: 99; /* Justo debajo de la pantalla de introducción */
+            color: white;
+            opacity: 0;
+            transition: opacity 0.5s ease-in; /* Transición suave para aparecer */
+            /* Nuevos estilos para la imagen de fondo del menú */
+            background-size: cover; /* Cubre todo el contenedor */
+            background-position: center; /* Centra la imagen */
+            background-repeat: no-repeat; /* Evita que la imagen se repita */
+        }
+
+        /* Eliminado: #menu-screen h1 */
+
+        .menu-option {
+            margin: 15px 0;
+            font-size: 1.5em;
+            background-color: rgba(0,0,0,0.7); /* Fondo más oscuro para mejor contraste */
+            border: 1px solid rgba(0, 170, 255, 0.5);
+            border-radius: 10px;
+            padding: 15px 30px;
+            cursor: pointer;
+            transition: background-color 0.2s, transform 0.1s, box-shadow 0.2s;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.5);
+            backdrop-filter: blur(5px); /* Mantener el desenfoque para los elementos del menú */
+            color: white;
+            text-align: center;
+            width: 250px;
+        }
+
+        .menu-option:hover {
+            background-color: rgba(0, 170, 255, 0.3); /* Un poco más claro al pasar el ratón */
+            transform: translateY(-3px);
+            box-shadow: 0 8px 20px rgba(0, 170, 255, 0.3);
+        }
+
+        .menu-option:active {
+            transform: scale(0.98);
+            box-shadow: 0 2px 8px rgba(0,0,0,0.7);
+        }
+
+        #language-select {
+            padding: 10px 15px;
+            border-radius: 8px;
+            border: 1px solid #00aaff;
+            background-color: rgba(0,0,0,0.8); /* Fondo más oscuro para el select */
+            color: white;
+            font-size: 1.1em;
+            margin-bottom: 20px;
+            cursor: pointer;
+            outline: none;
+            appearance: none; /* Elimina estilos por defecto del navegador */
+            background-image: url('data:image/svg+xml;charset=US-ASCII,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%22292.4%22%20height%3D%22292.4%22%3E%3Cpath%20fill%3D%22%23ffffff%22%20d%3D%22M287%2069.4L154.1%20202.3c-4.4%204.4-10.9%204.4-15.3%200L5.4%2069.4c-4.4-4.4-4.4-10.9%200-15.3l12.4-12.4c4.4-4.4%2010.9-4.4%2015.3%200L145.7%20174%20259.3%2041.7c4.4-4.4%2010.9-4.4%2015.3%200l12.4%2012.4c4.5%204.5%204.5%2010.9.1%2015.3z%22%2F%3E%3C%2Fsvg%3E');
+            background-repeat: no-repeat;
+            background-position: right 10px center;
+            background-size: 12px;
+        }
+
+        #language-select:focus {
+            border-color: #3498db;
+            box-shadow: 0 0 10px rgba(52, 152, 219, 0.5);
         }
     </style>
 </head>
 <body>
-    <div id="game-container">
-        <!-- Botón para volver al Taller -->
-        <a href="index.html" class="back-button">
-            <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-                <path stroke-linecap="round" stroke-linejoin="round" d="M11 17l-5-5m0 0l5-5m-5 5h12" />
-            </svg>
-            Volver al Taller
-        </a>
+    <div id="intro-screen">
+        <img id="intro-image" src="" alt="Intro Image">
+    </div>
 
-        <canvas id="background-canvas"></canvas>
-        <canvas id="midground-canvas"></canvas>
-        <canvas id="game-canvas"></canvas>
-        <canvas id="foreground-canvas"></canvas>
+    <div id="menu-screen">
+        <!-- <h1>LUMENFALL</h1> -- Este título ha sido eliminado -->
+        <div class="menu-option">
+            <label for="language-select">IDIOMA:</label>
+            <select id="language-select">
+                <option value="es">Español</option>
+                <option value="en">English</option>
+            </select>
+        </div>
+        <button id="play-button" class="menu-option">JUGAR</button>
+    </div>
 
-        <div id="hud-container">
-            <div class="status-bar-container"><div id="health-bar" class="status-bar"></div></div>
-            <div class="status-bar-container"><div id="mana-bar" class="status-bar"></div></div>
+    <canvas id="bg-canvas"></canvas>
+    <div id="ui-container">
+        <div id="ui-top">
+            <div><div class="stat-label">ENERGY</div><div class="stat-bar"><div id="energy-fill" class="stat-bar-fill"></div></div></div>
+            <div><div class="stat-label">POWER</div><div class="stat-bar"><div id="power-fill" class="stat-bar-fill"></div></div></div>
         </div>
-        <div id="level-indicator"></div>
-        <div id="boss-hud-container">
-            <div id="boss-name"></div>
-            <div id="boss-health-bar-container">
-                <div id="boss-health-bar" class="status-bar"></div>
+        <div id="controls">
+            <!-- Joystick para movimiento -->
+            <div id="joystick-container">
+                <div id="joystick-knob"></div>
             </div>
-        </div>
-        
-        <div id="touch-controls-layer">
-            <div id="move-stick" class="joystick-base">
-                <div id="move-knob" class="joystick-knob" style="top: 50%; left: 50%;"></div>
+            <div class="right-controls">
+                <div id="btn-attack" class="control-btn">⚔️</div>
             </div>
-            <div id="action-buttons">
-                 <div id="fire-button" class="action-button">
-                    <svg viewBox="0 0 24 24" fill="var(--magic-color)" xmlns="http://www.w3.org/2000/svg" style="filter: drop-shadow(0 0 8px var(--magic-color));">
-                        <path d="M12 2C12 2 4.9 8.3 4.9 12.5C4.9 17.5 8.1 21 12 21s7.1-3.5 7.1-8.5C19.1 8.3 12 2 12 2Z" />
-                    </svg>
-                </div>
-                <div id="jump-button" class="action-button">▲</div>
-            </div>
-        </div>
-
-        <div id="menu-overlay">
-            <h1>LumenFall</h1>
-            <button id="start-button" class="menu-button">Empezar</button>
         </div>
     </div>
 
-    <script type="module">
-        // --- MÓDULO DE CONFIGURACIÓN (config.js) ---
-        const config = {
-            gravity: 0.6, playerSpeed: 5, jumpForce: -14,
-            initialHealth: 100, initialMana: 100, manaRegenRate: 0.1, magicOrbCost: 15,
-            magicOrbSpeed: 8,
-            playerShootCooldown: 15,
-            maxJumps: 2,
-            floatGravityMultiplier: 0.4,
-            levels: [
-                {
-                    id: 'level1', name: 'El Bosque Cian', width: 3500, height: 900,
-                    startPosition: { x: 150, y: 600 },
-                    bgColor: '#1a2d2d', platformColor: '#435e5e',
-                    platforms: [
-                        { x: 0, y: 800, width: 3500, height: 100 },
-                        { x: 400, y: 650, width: 200, height: 30 }, { x: 700, y: 550, width: 250, height: 30 },
-                        { x: 1100, y: 650, width: 150, height: 30 }, { x: 1400, y: 500, width: 300, height: 30 },
-                        { x: 1900, y: 600, width: 200, height: 30 }, { x: 2300, y: 450, width: 250, height: 30 },
-                    ],
-                    entities: [ 
-                        { type: 'door', x: 3000, y: 680, targetLevel: 'level2', color: '#38a169' }
-                    ]
-                },
-                 {
-                    id: 'level2', name: 'Las Cavernas Verdes', width: 2000, height: 1200,
-                    startPosition: { x: 150, y: 1000 },
-                    bgColor: '#162d1a', platformColor: '#435e43',
-                    platforms: [
-                        { x: 0, y: 1100, width: 2000, height: 100 },
-                        { x: 500, y: 950, width: 150, height: 20 }, { x: 800, y: 800, width: 150, height: 20 },
-                        { x: 1100, y: 650, width: 150, height: 20 }, { x: 800, y: 500, width: 150, height: 20 },
-                    ],
-                    entities: [ 
-                        { type: 'door', x: 100, y: 980, targetLevel: 'level1', color: '#435e5e' },
-                        { type: 'door', x: 1800, y: 980, targetLevel: 'level3', color: '#805ad5' }
-                    ]
-                },
-                {
-                    id: 'level3', name: 'Ruinas Púrpuras', width: 2800, height: 1000,
-                    startPosition: { x: 150, y: 800 },
-                    bgColor: '#2d162d', platformColor: '#5e435e',
-                    platforms: [
-                        { x: 0, y: 900, width: 2800, height: 100 },
-                        { x: 300, y: 750, width: 30, height: 150 }, { x: 500, y: 600, width: 30, height: 300 },
-                        { x: 800, y: 700, width: 200, height: 30 }, { x: 1200, y: 550, width: 200, height: 30 },
-                    ],
-                    entities: [ 
-                        { type: 'door', x: 100, y: 780, targetLevel: 'level2', color: '#435e43' },
-                        { type: 'door', x: 2600, y: 780, targetLevel: 'level4', color: '#d69e2e' } 
-                    ]
-                },
-                 {
-                    id: 'level4', name: 'Desierto Dorado', width: 4000, height: 800,
-                    startPosition: { x: 150, y: 600 },
-                    bgColor: '#2d2a16', platformColor: '#5e5a43',
-                    platforms: [ { x: 0, y: 700, width: 4000, height: 100 } ],
-                    entities: [ 
-                        { type: 'door', x: 100, y: 580, targetLevel: 'level3', color: '#5e435e' },
-                        { type: 'door', x: 3800, y: 580, targetLevel: 'level5', color: '#e53e3e' }
-                    ]
-                },
-                {
-                    id: 'level5', name: 'El Núcleo Carmesí', width: 2200, height: 1500,
-                    startPosition: { x: 150, y: 1300 },
-                    bgColor: '#2d1616', platformColor: '#5e4343',
-                    platforms: [
-                        { x: 0, y: 1400, width: 2200, height: 100 },
-                        { x: 200, y: 1250, width: 150, height: 20 }, { x: 400, y: 1100, width: 150, height: 20 },
-                        { x: 600, y: 950, width: 150, height: 20 }, { x: 800, y: 800, width: 150, height: 20 },
-                    ],
-                    entities: [ 
-                        { type: 'door', x: 100, y: 1280, targetLevel: 'level4', color: '#5e5a43' },
-                        { type: 'door', x: 2000, y: 1280, targetLevel: 'level6', color: '#805ad5' }
-                    ]
-                },
-                {
-                    id: 'level6', name: 'El Abismo', width: 1600, height: 900,
-                    startPosition: { x: 150, y: 700 },
-                    bgColor: '#060117', platformColor: '#2d233f',
-                    platforms: [
-                        { x: 0, y: 800, width: 1600, height: 100 },
-                    ],
-                    entities: [
-                        { type: 'door', x: 100, y: 680, targetLevel: 'level5', color: '#5e4343' },
-                        { type: 'boss', name: 'Espectro Ocular', x: 800, y: 400 }
-                    ]
-                }
-            ]
-        };
+    <!-- Carga la librería Three.js -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 
-        const SpriteManager = {
-            images: {},
-            async load(url, key) {
-                return new Promise((resolve, reject) => {
-                    const img = new Image();
-                    img.onload = () => {
-                        this.images[key] = img;
-                        console.log(`Sprite '${key}' cargado.`);
-                        resolve(img);
-                    };
-                    img.onerror = (err) => {
-                        console.error(`Error al cargar el sprite '${key}' desde ${url}`);
-                        reject(err);
-                    };
-                    img.src = url;
-                });
-            },
-            get(key) {
-                return this.images[key];
-            }
-        };
+    <script>
+        // --- URLs de Sprites y Texturas ---
+        // Se utilizan enlaces raw de GitHub para asegurar la disponibilidad
+        const runningSpriteUrl = 'https://raw.githubusercontent.com/Yanzsmartwood2025/JUSN38/91cf7a68151871314da5b27acc5dd1ff015e4290/assets/images/LumenFall.png';
+        const attackSpriteUrl = 'https://raw.githubusercontent.com/Yanzsmartwood2025/JUSN38/7d3c163a9830970f045b805d108c7dec2d5e8674/assets/images/hoja_de_sprites%20(2).png';
+        const flameParticleUrl = 'https://raw.githubusercontent.com/Yanzsmartwood2025/JUSN38/3baccf9aa782b7455c20496cdd2e7fbafa7c8286/assets/images/fuego.png';
+
+        const wallTextureUrl = 'https://raw.githubusercontent.com/Yanzsmartwood2025/JUSN38/d42892ab05658bf6dd3817ab92eb7ef1f73e0d85/assets/images/pared-calabozo.png';
+        const doorTextureUrl = 'https://raw.githubusercontent.com/Yanzsmartwood2025/JUSN38/d42892ab05658bf6dd3817ab92eb7ef1f73e0d85/assets/images/puerta-calabozo.png';
+        const floorTextureUrl = 'https://raw.githubusercontent.com/Yanzsmartwood2025/JUSN38/d42892ab05658bf6dd3817ab92eb7ef1f73e0d85/assets/images/piso-calabozo.png';
+        const torchTextureUrl = 'https://raw.githubusercontent.com/Yanzsmartwood2025/JUSN38/d42892ab05658bf6dd3817ab92eb7ef1f73e0d85/assets/images/antorcha.png';
+
+        // URL de la textura del espectro (ahora usando la URL raw de GitHub)
+        const specterTextureUrl = 'https://raw.githubusercontent.com/Yanzsmartwood2025/JUSN38/f84aac629032d6a02b8c34ac91d4844292e9e1ba/assets/images/fantasma.png'; 
         
-        class Animation {
-            constructor({ spriteSheet, frameWidth, frameHeight, frameCount, frameRate, yOffset = 0, loop = true }) {
-                this.spriteSheet = spriteSheet;
-                this.frameWidth = frameWidth;
-                this.frameHeight = frameHeight;
-                this.frameCount = frameCount;
-                this.frameRate = frameRate; 
-                this.yOffset = yOffset;
-                this.loop = loop;
-                this.currentFrame = 0;
-                this.timer = 0;
+        // --- NUEVAS URLs de Imágenes ---
+        const introImageUrl = 'https://raw.githubusercontent.com/Yanzsmartwood2025/JUSN38/4b2fc282d18b5dc4b93cb8e04a179854259d421c/assets/images/Intro.jpg';
+        const menuBackgroundImageUrl = 'https://raw.githubusercontent.com/Yanzsmartwood2025/JUSN38/3bcb76b3104ebb775ad3ca7272f3d15f436d9ce3/assets/images/menu-principal.jpg';
+
+        // --- Constantes del Juego ---
+        const totalRunningFrames = 8; // Número total de fotogramas en el sprite de correr
+        const totalAttackFrames = 6;  // Número total de fotogramas en el sprite de ataque
+        const totalSpecterFrames = 5; // Número total de fotogramas en el sprite del espectro (basado en la imagen proporcionada)
+        const animationSpeed = 80;    // Velocidad de la animación (ms por fotograma)
+        const specterAnimationSpeed = 120; // Velocidad de animación del espectro (más lento para un efecto etéreo)
+        const moveSpeed = 0.2;        // Velocidad de movimiento del personaje
+
+        // Ancho del área de juego visible (donde el personaje puede moverse y se colocan las puertas)
+        const playableAreaWidth = 120;
+        // Profundidad del "cuarto" desde la cámara hasta la pared del fondo
+        const roomDepth = 15; // Ajustado para que la cámara se vea más cerca
+
+        // --- Configuración de la Escena 3D ---
+        const scene = new THREE.Scene(); // Crea una nueva escena 3D
+        scene.background = new THREE.Color(0x1a1a2a); // Color de fondo de la escena (azul oscuro)
+
+        // Configuración de la cámara de perspectiva
+        const camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 1000);
+        camera.position.set(0, 4, 10); // Posición original y cercana de la cámara
+        camera.lookAt(0, 2, 0);        // Punto al que mira la cámara
+        camera.far = roomDepth + 50; // Asegura que el plano lejano de la cámara cubra toda la profundidad
+        camera.updateProjectionMatrix();
+
+        // Configuración del renderizador WebGL
+        const renderer = new THREE.WebGLRenderer({ canvas: document.getElementById('bg-canvas'), antialias: true });
+        renderer.setSize(window.innerWidth, window.innerHeight); // Ajusta el tamaño del renderizador al tamaño de la ventana
+        renderer.shadowMap.enabled = true; // Habilita las sombras
+
+        // --- Iluminación ---
+        // Luz ambiental: ilumina uniformemente toda la escena.
+        const ambientLight = new THREE.AmbientLight(0x808080, 1.5); // Color gris claro, intensidad aumentada
+        scene.add(ambientLight);
+
+        // Luz direccional: simula la luz del sol o una fuente de luz distante, proyecta sombras.
+        const directionalLight = new THREE.DirectionalLight(0xaaaaaa, 0.5); // Color gris claro, intensidad moderada
+        directionalLight.position.set(5, 10, 5); // Posición de la luz (arriba, derecha, adelante)
+        directionalLight.castShadow = true; // Permite que esta luz proyecte sombras
+        directionalLight.shadow.mapSize.width = 1024; // Resolución del mapa de sombras
+        directionalLight.shadow.mapSize.height = 1024;
+        directionalLight.shadow.camera.near = 0.5; // Rango de la cámara de sombra
+        directionalLight.shadow.camera.far = 50;
+        directionalLight.shadow.camera.left = -20;
+        directionalLight.shadow.camera.right = 20;
+        directionalLight.shadow.camera.top = 20;
+        directionalLight.shadow.camera.bottom = -20;
+        directionalLight.shadow.bias = -0.0001; // Pequeño ajuste para evitar "shadow acne"
+        scene.add(directionalLight);
+
+        // --- Cargador de Texturas ---
+        const textureLoader = new THREE.TextureLoader();
+
+        // Cargar y configurar las texturas para el suelo, paredes, puertas y antorchas
+        const floorTexture = textureLoader.load(floorTextureUrl);
+        floorTexture.wrapS = floorTexture.wrapT = THREE.RepeatWrapping; // Permite que la textura se repita
+        // Ajusta la repetición de la textura del suelo para el ancho y profundidad del cuarto
+        floorTexture.repeat.set(playableAreaWidth / 4, roomDepth / 5);
+        const floorMaterial = new THREE.MeshStandardMaterial({ map: floorTexture });
+
+        const wallTexture = textureLoader.load(wallTextureUrl);
+        wallTexture.wrapS = wallTexture.wrapT = THREE.RepeatWrapping;
+        // Ajusta la repetición de la textura de la pared para el ancho del cuarto
+        wallTexture.repeat.set(playableAreaWidth / 3, 6);
+        const wallMaterial = new THREE.MeshStandardMaterial({ map: wallTexture, color: 0x454555 });
+
+        const doorTexture = textureLoader.load(doorTextureUrl);
+        // El material de la puerta debe ser transparente y usar alphaTest para renderizar correctamente
+        const doorMaterial = new THREE.MeshStandardMaterial({ map: doorTexture, transparent: true, alphaTest: 0.5 });
+
+        const torchTexture = textureLoader.load(torchTextureUrl);
+        // El material de la antorcha también debe ser transparente y usar alphaTest
+        const torchMaterial = new THREE.MeshStandardMaterial({ map: torchTexture, transparent: true, alphaTest: 0.5, side: THREE.DoubleSide });
+
+        // --- Clase para la Llama Realista ---
+        class RealisticFlame {
+            constructor(scene, position) {
+                this.scene = scene;
+                this.position = position;
+                this.particleCount = 300; // Número de partículas en la llama
+                this.particles = null;
+                this.light = null;
+                this.init();
+            }
+
+            init() {
+                const particleTexture = textureLoader.load(flameParticleUrl); // Textura para las partículas de fuego
+                const particleMaterial = new THREE.PointsMaterial({
+                    color: 0x00aaff, // Color de las partículas (azul brillante)
+                    size: 0.4,       // Tamaño de las partículas
+                    map: particleTexture,
+                    blending: THREE.AdditiveBlending, // Modo de mezcla aditivo para un efecto de brillo
+                    transparent: true,
+                    depthWrite: false, // Importante para evitar problemas de renderizado con transparencia
+                });
+
+                const particleGeometry = new THREE.BufferGeometry();
+                const positions = new Float32Array(this.particleCount * 3); // Array para las posiciones de las partículas
+                this.velocities = []; // Almacena las velocidades y el tiempo de vida de cada partícula
+
+                // Inicializa las posiciones y velocidades de las partículas
+                for (let i = 0; i < this.particleCount; i++) {
+                    positions[i * 3] = this.position.x;
+                    positions[i * 3 + 1] = this.position.y;
+                    positions[i * 3 + 2] = this.position.z;
+                    this.velocities.push({
+                        x: (Math.random() - 0.5) * 0.02, // Velocidad X aleatoria
+                        y: Math.random() * 0.1,          // Velocidad Y (hacia arriba) aleatoria
+                        z: (Math.random() - 0.5) * 0.02, // Velocidad Z aleatoria
+                        lifetime: Math.random() * 2      // Tiempo de vida aleatorio
+                    });
+                }
+                particleGeometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+                this.particles = new THREE.Points(particleGeometry, particleMaterial);
+                this.scene.add(this.particles);
+
+                // Luz de la llama: ilumina el área alrededor de la antorcha
+                this.light = new THREE.PointLight(0x00aaff, 2.0, 20); // Color azul, intensidad aumentada, distancia
+                this.light.position.copy(this.position); // Posición de la luz igual a la de la llama
+                this.light.castShadow = true; // Permite que la luz de la llama proyecte sombras
+                this.scene.add(this.light);
             }
 
             update(deltaTime) {
-                this.timer += deltaTime;
-                if (this.timer > 1 / this.frameRate) {
-                    this.currentFrame++;
-                    if (this.currentFrame >= this.frameCount) {
-                        this.currentFrame = this.loop ? 0 : this.frameCount - 1;
-                    }
-                    this.timer = 0;
-                }
-            }
+                const positions = this.particles.geometry.attributes.position.array;
+                for (let i = 0; i < this.particleCount; i++) {
+                    const vel = this.velocities[i];
+                    vel.lifetime -= deltaTime; // Reduce el tiempo de vida de la partícula
 
-            getCurrentFrame() {
-                return {
-                    x: this.currentFrame * this.frameWidth,
-                    y: this.yOffset,
-                    width: this.frameWidth,
-                    height: this.frameHeight
-                };
-            }
-            
-            reset() {
-                this.currentFrame = 0;
-                this.timer = 0;
+                    // Si la partícula ha "muerto", la reinicia en la posición inicial
+                    if (vel.lifetime <= 0) {
+                        positions[i * 3] = this.position.x;
+                        positions[i * 3 + 1] = this.position.y;
+                        positions[i * 3 + 2] = this.position.z;
+                        vel.lifetime = Math.random() * 2; // Nuevo tiempo de vida
+                        vel.y = Math.random() * 0.1;      // Nueva velocidad Y
+                    }
+
+                    // Actualiza la posición de la partícula
+                    positions[i * 3] += vel.x;
+                    positions[i * 3 + 1] += vel.y;
+                    positions[i * 3 + 2] += vel.z;
+                }
+                this.particles.geometry.attributes.position.needsUpdate = true; // Notifica a Three.js que las posiciones han cambiado
+
+                // Hace que la intensidad de la luz parpadee
+                this.light.intensity = 1.0 + Math.sin(Date.now() * 0.01 + this.position.x) * 0.5;
             }
         }
 
-        const Sound = {
-            shootSynth: null, jumpSynth: null, playerHitSynth: null, bossHitSynth: null,
-            isReady: false,
+        // --- Clase para el Espectro ---
+        class Specter {
+            constructor(scene, initialX, initialY, torchPositions = []) {
+                this.scene = scene;
+                this.mesh = null;
+                this.initialX = initialX; // Initial X for spawning
+                this.floatingCenterY = initialY; // Y-coordinate for floating center
+
+                this.moveDirectionX = 1; // 1 for right, -1 for left
+                this.moveSpeedX = moveSpeed * 0.5; // Slower horizontal movement
+
+                this.floatingOffset = Math.random() * Math.PI * 2;
+                this.floatingSpeed = 2; // Speed of Y oscillation
+                this.floatingAmplitude = 0.5; // Amplitude of Y oscillation
+
+                this.currentFrame = 0;
+                this.lastFrameTime = 0;
+                this.spriteFlipX = 1; // 1 for normal, -1 for flipped horizontally
+
+                // Z-axis movement properties
+                this.zDirection = 1; // 1 for forward (towards camera), -1 for backward
+                this.zSpeed = 1.0; // Speed of Z movement (can be faster)
+                this.minZ = camera.position.z - 5; // Closer to camera
+                this.maxZ = camera.position.z - roomDepth + 1; // Further back, near the wall
+
+                // Teleportation properties
+                this.isTeleporting = false;
+                this.teleportingState = 'idle'; // 'idle', 'fadingOut', 'movingToNewPos', 'fadingIn'
+                this.teleportProgress = 0;
+                this.teleportDurationPhase = 0.3; // seconds for each fade phase (total 0.6 for fade in/out)
+                this.teleportCooldown = 2 + Math.random() * 2; // 2 to 4 seconds before next teleport
+                this.currentTeleportCooldown = this.teleportCooldown; // Initial cooldown
+                this.torchPositions = torchPositions; // Array of torch positions (x,y,z)
+
+                this.init();
+            }
 
             init() {
-                this.shootSynth = new Tone.Synth({ oscillator: { type: 'triangle' }, envelope: { attack: 0.01, decay: 0.1, sustain: 0.1, release: 0.1 } }).toDestination();
-                this.jumpSynth = new Tone.Synth({ oscillator: { type: 'sine' }, envelope: { attack: 0.01, decay: 0.2, sustain: 0, release: 0.2 } }).toDestination();
-                this.playerHitSynth = new Tone.NoiseSynth({ noise: { type: 'pink' }, envelope: { attack: 0.01, decay: 0.15, sustain: 0, release: 0.1 } }).toDestination();
-                this.bossHitSynth = new Tone.FMSynth({ envelope: { attack: 0.01, decay: 0.3, sustain: 0.1, release: 0.3 } }).toDestination();
-                this.isReady = true;
-            },
+                const specterTexture = textureLoader.load(specterTextureUrl);
+                specterTexture.wrapS = specterTexture.wrapT = THREE.RepeatWrapping;
+                specterTexture.repeat.x = 1 / totalSpecterFrames;
 
-            playShoot() { if (this.isReady) this.shootSynth.triggerAttackRelease('C5', '16n'); },
-            playJump() { if (this.isReady) this.jumpSynth.triggerAttackRelease('G5', '16n'); },
-            playPlayerHit() { if (this.isReady) this.playerHitSynth.triggerAttackRelease('8n'); },
-            playBossHit() { if (this.isReady) this.bossHitSynth.triggerAttackRelease('G2', '8n'); }
-        };
+                const specterMaterial = new THREE.MeshStandardMaterial({
+                    map: specterTexture,
+                    color: 0x88bbff,
+                    transparent: true,
+                    opacity: 0.7,
+                    side: THREE.DoubleSide,
+                    alphaTest: 0.1
+                });
 
-
-        class Player {
-            constructor(x, y) {
-                this.x = x; this.y = y;
-                this.vx = 0; this.vy = 0; this.health = config.initialHealth;
-                this.maxHealth = config.initialHealth; this.mana = config.initialMana;
-                this.maxMana = config.initialMana; this.isOnGround = false;
-                this.jumpsLeft = config.maxJumps;
-                this.shootCooldown = 0;
-                this.lastAimVector = { x: 1, y: 0 };
-                this.direction = 1;
-
-                this.spriteScale = 2.0; // Puedes hacer el sprite más grande o pequeño con esto
-                this.animations = {};
-                this.currentAnimation = null;
-                this.state = 'idle'; 
+                const specterGeometry = new THREE.PlaneGeometry(3, 3);
+                this.mesh = new THREE.Mesh(specterGeometry, specterMaterial);
                 
-                const playerSpriteSheet = SpriteManager.get('player');
-                if (playerSpriteSheet) {
-                    // --- ¡¡¡IMPORTANTE!!! AJUSTA ESTOS VALORES ---
-                    // Estos números deben coincidir con tu hoja de sprites.
-                    const spriteConfig = {
-                        frameWidth: 64,  // Ancho en píxeles de UN SOLO fotograma de tu animación
-                        frameHeight: 64, // Alto en píxeles de UN SOLO fotograma
-                        
-                        // Animación de estar quieto (idle)
-                        idle_frameCount: 1, // ¿Cuántos fotogramas tiene tu animación de estar quieto?
-                        
-                        // Animación de correr (run)
-                        run_frameCount: 4,  // ¿Cuántos fotogramas tiene tu animación de correr?
-                        run_frameRate: 8,   // Velocidad de la animación (8 fotogramas por segundo)
-                    };
-                    // ------------------------------------------------
-
-                    this.animations.idle = new Animation({
-                        spriteSheet: playerSpriteSheet,
-                        frameWidth: spriteConfig.frameWidth, frameHeight: spriteConfig.frameHeight, 
-                        frameCount: spriteConfig.idle_frameCount, frameRate: 1
-                    });
-                    this.animations.run = new Animation({
-                        spriteSheet: playerSpriteSheet,
-                        frameWidth: spriteConfig.frameWidth, frameHeight: spriteConfig.frameHeight, 
-                        frameCount: spriteConfig.run_frameCount, frameRate: spriteConfig.run_frameRate
-                    });
-                    this.currentAnimation = this.animations.idle;
-                }
-                
-                this.width = (this.animations.idle?.frameWidth || 30) * this.spriteScale;
-                this.height = (this.animations.idle?.frameHeight || 60) * this.spriteScale;
+                // Set initial position: X from constructor, Y from floatingCenterY, Z at maxZ (back)
+                this.mesh.position.set(this.initialX, this.floatingCenterY, this.maxZ);
+                this.scene.add(this.mesh);
+                this.initialScaleX = this.mesh.scale.x; // Store initial scale for flipping
             }
-            
-            update(world, controls, particleSystem, deltaTime) {
-                if(this.shootCooldown > 0) this.shootCooldown--;
-                
-                if (controls.moveVector.x !== 0) {
-                    this.vx = controls.moveVector.x * config.playerSpeed;
-                    this.direction = this.vx > 0 ? 1 : -1;
-                } else {
-                    this.vx = 0;
-                }
-                
-                if(Math.abs(controls.moveVector.x) > 0.1 || Math.abs(controls.moveVector.y) > 0.1) {
-                    this.lastAimVector = { x: controls.moveVector.x, y: controls.moveVector.y };
-                } else {
-                    this.lastAimVector = { x: this.direction, y: 0 };
+
+            update(deltaTime) {
+                // Actualiza el fotograma de animación del espectro
+                if (Date.now() - this.lastFrameTime > specterAnimationSpeed) {
+                    this.lastFrameTime = Date.now();
+                    this.currentFrame = (this.currentFrame + 1) % totalSpecterFrames;
+                    this.mesh.material.map.offset.x = this.currentFrame / totalSpecterFrames;
                 }
 
-                this.vy += config.gravity;
-                
-                if (controls.jumpHeld && this.vy > 0) {
-                    this.vy *= config.floatGravityMultiplier;
-                    particleSystem.emit(this.x + this.width / 2, this.y + this.height, 1, 'rgba(226, 232, 240, 0.4)', 0.3);
-                }
-                
-                this.x += this.vx;
-                this.y += this.vy;
-                
-                this.x = Math.max(0, Math.min(this.x, world.levelData.width - this.width));
-                this.y = Math.max(0, Math.min(this.y, world.levelData.height - this.height));
+                if (!this.isTeleporting) {
+                    // Movimiento horizontal (eje X)
+                    const oldMoveDirectionX = this.moveDirectionX;
+                    this.mesh.position.x += this.moveDirectionX * this.moveSpeedX;
 
-                this.isOnGround = false;
-                world.platforms.forEach(platform => this.handlePlatformCollision(platform));
-                
-                if (this.mana < this.maxMana) this.mana += config.manaRegenRate;
+                    const minX = -playableAreaWidth / 2 + 1.5;
+                    const maxX = playableAreaWidth / 2 - 1.5;
 
-                if (!this.isOnGround) {
-                    this.state = this.vy < 0 ? 'jumping' : 'falling';
-                } else {
-                    if (this.vx !== 0) {
-                        this.state = 'running';
-                    } else {
-                        this.state = 'idle';
+                    if (this.mesh.position.x < minX) {
+                        this.mesh.position.x = minX;
+                        this.moveDirectionX = 1;
+                    } else if (this.mesh.position.x > maxX) {
+                        this.mesh.position.x = maxX;
+                        this.moveDirectionX = -1;
                     }
-                }
-                
-                if (this.state === 'running') {
-                    this.currentAnimation = this.animations.run;
-                } else {
-                    this.currentAnimation = this.animations.idle;
-                }
-                this.currentAnimation?.update(deltaTime);
-            }
 
-            draw(ctx, camera) {
-                // Si la animación no se pudo cargar, dibuja un cuadrado morado como respaldo.
-                if (!this.currentAnimation) { 
-                    ctx.fillStyle = 'purple';
-                    ctx.fillRect(this.x - camera.x, this.y - camera.y, this.width, this.height);
-                    return;
-                }
-                
-                const frame = this.currentAnimation.getCurrentFrame();
-                const drawX = this.x - camera.x;
-                const drawY = this.y - camera.y;
-
-                ctx.save();
-                if (this.direction === -1) {
-                    ctx.scale(-1, 1);
-                    ctx.drawImage(
-                        this.currentAnimation.spriteSheet,
-                        frame.x, frame.y, frame.width, frame.height,
-                        -drawX - this.width, drawY, this.width, this.height
-                    );
-                } else {
-                    ctx.drawImage(
-                        this.currentAnimation.spriteSheet,
-                        frame.x, frame.y, frame.width, frame.height,
-                        drawX, drawY, this.width, this.height
-                    );
-                }
-                ctx.restore();
-            }
-            
-            jump(particleSystem) { 
-                if (this.jumpsLeft > 0) {
-                    this.vy = config.jumpForce;
-                    this.jumpsLeft--;
-                    this.isOnGround = false;
-                    Sound.playJump();
-                    const particleColor = this.jumpsLeft === 1 ? 'rgba(255, 255, 255, 0.7)' : 'rgba(150, 150, 255, 0.8)';
-                    particleSystem.emit(this.x + this.width / 2, this.y + this.height, 10, particleColor, 0.8);
-                }
-            }
-            castMagicOrb(orbs, particleSystem) {
-                if (this.mana >= config.magicOrbCost && this.shootCooldown <= 0) {
-                    this.mana -= config.magicOrbCost;
-                    this.shootCooldown = config.playerShootCooldown;
-                    Sound.playShoot();
-                    
-                    const orb = new MagicOrb(this.x + this.width / 2, this.y + this.height / 2, this.lastAimVector);
-                    orbs.push(orb);
-                    particleSystem.emit(this.x + this.width / 2, this.y + this.height / 2, 15, 'var(--magic-color)', 1);
-                }
-            }
-            handlePlatformCollision(platform) {
-                if (this.x < platform.x + platform.width && this.x + this.width > platform.x &&
-                    this.y < platform.y + platform.height && this.y + this.height > platform.y) {
-                    if (this.vy >= 0 && (this.y + this.height - this.vy) <= platform.y) {
-                         this.y = platform.y - this.height;
-                         this.vy = 0;
-                         if (!this.isOnGround) {
-                             this.isOnGround = true;
-                             this.jumpsLeft = config.maxJumps;
-                         }
+                    // Actualiza spriteFlipX si la dirección horizontal cambió
+                    if (this.moveDirectionX !== oldMoveDirectionX) {
+                        this.spriteFlipX = (this.moveDirectionX === 1) ? 1 : -1;
                     }
-                    else if (this.y + this.height > platform.y + 10) {
-                        if (this.vx < 0 && this.x < platform.x + platform.width) {
-                            this.x = platform.x + platform.width;
-                            this.vx = 0;
+                    this.mesh.scale.x = this.initialScaleX * this.spriteFlipX;
+
+                    // Flotación vertical (eje Y)
+                    this.floatingOffset += this.floatingSpeed * deltaTime;
+                    this.mesh.position.y = this.floatingCenterY + Math.sin(this.floatingOffset) * this.floatingAmplitude;
+
+                    // Movimiento en el eje Z (adelante/atrás)
+                    this.mesh.position.z += this.zDirection * this.zSpeed * deltaTime;
+
+                    // Invierte la dirección Z si golpea los límites
+                    if (this.mesh.position.z > this.minZ) {
+                        this.mesh.position.z = this.minZ;
+                        this.zDirection = -1;
+                    } else if (this.mesh.position.z < this.maxZ) {
+                        this.mesh.position.z = this.maxZ;
+                        this.zDirection = 1;
+                    }
+
+                    // Disparador de teletransporte
+                    this.currentTeleportCooldown -= deltaTime;
+                    if (this.currentTeleportCooldown <= 0 && this.torchPositions.length > 0) {
+                        this.isTeleporting = true;
+                        this.teleportingState = 'fadingOut';
+                        this.teleportProgress = 0;
+                        this.currentTeleportCooldown = this.teleportCooldown + Math.random() * 2; // Reinicia el cooldown
+                    }
+
+                } else {
+                    // Maneja los estados de teletransporte
+                    if (this.teleportingState === 'fadingOut') {
+                        this.teleportProgress += deltaTime / this.teleportDurationPhase;
+                        this.mesh.material.opacity = 0.7 * (1 - this.teleportProgress);
+                        if (this.teleportProgress >= 1) {
+                            this.teleportingState = 'movingToNewPos';
+                            this.mesh.material.opacity = 0; // Asegura que sea completamente invisible
+
+                            // Elige una nueva posición de antorcha aleatoria
+                            const randomIndex = Math.floor(Math.random() * this.torchPositions.length);
+                            const newTorchPos = this.torchPositions[randomIndex];
+                            
+                            // Teletransporta a la nueva X, Y (centro de flotación) y Z (fondo de la habitación)
+                            this.mesh.position.x = newTorchPos.x;
+                            this.floatingCenterY = newTorchPos.y; // Actualiza el centro de flotación Y
+                            this.mesh.position.z = this.maxZ; // Siempre inicia el movimiento Z desde el fondo
+                            this.zDirection = 1; // Siempre comienza a moverse hacia adelante después del teletransporte
+
+                            this.teleportProgress = 0;
                         }
-                        else if (this.vx > 0 && this.x + this.width > platform.x) {
-                            this.x = platform.x - this.width;
-                            this.vx = 0;
+                    } else if (this.teleportingState === 'movingToNewPos') {
+                        // Reposicionamiento instantáneo
+                        this.teleportingState = 'fadingIn';
+                    } else if (this.teleportingState === 'fadingIn') {
+                        this.teleportProgress += deltaTime / this.teleportDurationPhase;
+                        this.mesh.material.opacity = 0.7 * this.teleportProgress;
+                        if (this.teleportProgress >= 1) {
+                            this.isTeleporting = false;
+                            this.teleportingState = 'idle';
+                            this.mesh.material.opacity = 0.7; // Restaura la opacidad completa
                         }
                     }
-                    if (this.vy < 0 && this.y > platform.y + platform.height - (this.vy)) {
-                        this.y = platform.y + platform.height;
-                        this.vy = 0;
-                    }
                 }
-            }
-            takeDamage(amount) {
-                this.health = Math.max(0, this.health - amount);
-                Sound.playPlayerHit();
+
+                // Efecto billboard: siempre mira a la cámara
+                this.mesh.lookAt(camera.position);
             }
         }
 
-        class MagicOrb {
-             constructor(x, y, direction) {
-                this.x = x; this.y = y; this.radius = 8;
-                this.vx = direction.x * config.magicOrbSpeed;
-                this.vy = direction.y * config.magicOrbSpeed;
-                this.life = 240; 
-            }
-            update() { 
-                this.x += this.vx;
-                this.y += this.vy;
-                this.life--;
-            }
-            draw(ctx, camera) {
-                ctx.beginPath();
-                ctx.arc(this.x - camera.x, this.y - camera.y, this.radius, 0, Math.PI * 2);
-                ctx.fillStyle = 'var(--magic-color)';
-                ctx.shadowColor = 'var(--magic-color)';
-                ctx.shadowBlur = 15;
-                ctx.fill();
-                ctx.closePath();
-                ctx.shadowBlur = 0;
-            }
-        }
+        // --- Geometría del Mundo 3D ---
+        // Suelo: Extiende desde la cámara hasta la pared del fondo
+        const floorGeometry = new THREE.PlaneGeometry(playableAreaWidth, roomDepth);
+        const floor = new THREE.Mesh(floorGeometry, floorMaterial);
+        floor.rotation.x = -Math.PI / 2; // Rota el plano para que sea horizontal
+        // Posiciona el centro del piso para que cubra desde la cámara (z=10) hasta la pared del fondo (z=-5)
+        floor.position.z = camera.position.z - (roomDepth / 2); // 10 - (15/2) = 2.5
+        floor.receiveShadow = true; // El suelo puede recibir sombras
+        scene.add(floor);
+
+        // Pared trasera: Colocada al final de la profundidad del cuarto
+        const wallGeometry = new THREE.PlaneGeometry(playableAreaWidth, 20);
+        const wall = new THREE.Mesh(wallGeometry, wallMaterial);
+        wall.position.z = camera.position.z - roomDepth; // 10 - 15 = -5
+        wall.position.y = 10;
+        wall.receiveShadow = true;
+        scene.add(wall);
+
+        // Nuevas paredes laterales para el efecto de "cuarto encerrado" y diagonal
+        const sideWallHeight = 20; // Misma altura que la pared trasera
+        const sideWallLength = roomDepth; // La longitud de las paredes laterales es la profundidad del cuarto
+        const sideWallAngle = Math.PI / 6; // Ángulo de inclinación para el efecto diagonal (30 grados)
+
+        const sideWallGeometry = new THREE.PlaneGeometry(sideWallLength, sideWallHeight);
         
-        class Portal {
-            constructor(x, y, targetLevel, color) {
-                this.x = x; this.y = y; this.width = 80; this.height = 120;
-                this.targetLevel = targetLevel;
-                this.color = color;
+        // Pared Lateral Izquierda
+        const leftSideWall = new THREE.Mesh(sideWallGeometry, wallMaterial);
+        leftSideWall.rotation.y = Math.PI / 2 + sideWallAngle; // Rota 90 grados y luego un poco más para inclinar
+        // Posiciona en el extremo izquierdo del área de juego, centrado en Y, y a la misma Z que el centro del piso
+        leftSideWall.position.set(-playableAreaWidth / 2, sideWallHeight / 2, floor.position.z);
+        leftSideWall.receiveShadow = true;
+        leftSideWall.castShadow = true; // También pueden proyectar sombras
+        scene.add(leftSideWall);
+
+        // Pared Lateral Derecha
+        const rightSideWall = new THREE.Mesh(sideWallGeometry, wallMaterial);
+        rightSideWall.rotation.y = -Math.PI / 2 - sideWallAngle; // Rota -90 grados y luego un poco más para inclinar
+        // Posiciona en el extremo derecho del área de juego, centrado en Y, y a la misma Z que el centro del piso
+        rightSideWall.position.set(playableAreaWidth / 2, sideWallHeight / 2, floor.position.z);
+        rightSideWall.receiveShadow = true;
+        rightSideWall.castShadow = true;
+        scene.add(rightSideWall);
+
+
+        const allFlames = []; // Array para almacenar todas las instancias de llamas
+        const torchWorldPositions = []; // Array para almacenar las posiciones de las antorchas
+
+        // Función para crear una "puerta" (arco con antorchas)
+        function createGate(xPos) {
+            const gateGroup = new THREE.Group(); // Grupo para contener la puerta y sus elementos
+            const gateGeometry = new THREE.PlaneGeometry(8, 8);
+            const gate = new THREE.Mesh(gateGeometry, doorMaterial);
+            gate.position.set(0, 4, 0.3); // Posición relativa dentro del grupo (ligeramente delante de la pared trasera)
+            gate.receiveShadow = true;
+            gateGroup.add(gate);
+
+            // Añadir las mallas estáticas de la antorcha (la imagen de la antorcha)
+            const torchGeometry = new THREE.PlaneGeometry(0.5, 1.8); // Tamaño de la antorcha
+            const torchLeftMesh = new THREE.Mesh(torchGeometry, torchMaterial);
+            // Posición absoluta de la antorcha izquierda, alineada con la pared trasera
+            torchLeftMesh.position.set(xPos - 6, 3.2, camera.position.z - roomDepth + 0.5); // Alineada con la pared trasera
+            torchLeftMesh.castShadow = true; // La antorcha puede proyectar sombras
+            torchLeftMesh.receiveShadow = true; // La antorcha puede recibir sombras
+            scene.add(torchLeftMesh);
+            // Almacena la posición de la antorcha para el teletransporte del espectro, ajustando Y y Z para el espectro
+            torchWorldPositions.push(new THREE.Vector3(xPos - 6, 4.5, camera.position.z - roomDepth + 0.7)); 
+
+            const torchRightMesh = new THREE.Mesh(torchGeometry, torchMaterial);
+            // Posición absoluta de la antorcha derecha, alineada con la pared trasera
+            torchRightMesh.position.set(xPos + 6, 3.2, camera.position.z - roomDepth + 0.5); // Alineada con la pared trasera
+            torchRightMesh.castShadow = true;
+            torchRightMesh.receiveShadow = true;
+            scene.add(torchRightMesh);
+            // Almacena la posición de la antorcha para el teletransporte del espectro, ajustando Y y Z para el espectro
+            torchWorldPositions.push(new THREE.Vector3(xPos + 6, 4.5, camera.position.z - roomDepth + 0.7)); 
+
+            // Posición de la llama ajustada para que coincida con la nueva posición de la antorcha
+            const flameLeft = new RealisticFlame(scene, new THREE.Vector3(xPos - 6, 4.5, camera.position.z - roomDepth + 0.7));
+            const flameRight = new RealisticFlame(scene, new THREE.Vector3(xPos + 6, 4.5, camera.position.z - roomDepth + 0.7));
+            allFlames.push(flameLeft, flameRight); // Añade las llamas al array para su actualización
+
+            gateGroup.position.x = xPos; // Posiciona el grupo completo de la puerta en X
+            gateGroup.position.z = camera.position.z - roomDepth; // Posiciona el grupo de la puerta en la pared trasera
+            scene.add(gateGroup);
+        }
+
+        // Crea varias puertas a lo largo del ancho del área de juego
+        const spacing = playableAreaWidth / 6;
+        for (let i = 0; i < 5; i++) {
+            createGate(-playableAreaWidth / 2 + spacing * (i + 1));
+        }
+
+        // --- Personaje 2.5D ---
+        // Carga las texturas de los sprites para correr y atacar
+        const runningTexture = textureLoader.load(runningSpriteUrl);
+        const attackTexture = textureLoader.load(attackSpriteUrl);
+
+        // Configura la repetición de la textura para mostrar un solo fotograma del sprite
+        runningTexture.repeat.x = 1 / totalRunningFrames;
+        attackTexture.repeat.x = 1 / totalAttackFrames;
+
+        // Material del personaje, usando la textura de ataque por defecto
+        const playerMaterial = new THREE.MeshStandardMaterial({
+            map: attackTexture,
+            transparent: true,
+            side: THREE.DoubleSide, // Renderiza ambos lados del plano
+            alphaTest: 0.5          // Para manejar la transparencia de los sprites
+        });
+        const playerGeometry = new THREE.PlaneGeometry(2, 2); // Geometría del personaje (un plano)
+        const player = new THREE.Mesh(playerGeometry, playerMaterial);
+        player.position.y = 1; // Posición inicial del personaje
+        player.castShadow = true; // El personaje puede proyectar sombras
+        scene.add(player);
+
+        // Luz puntual para el personaje
+        const playerLight = new THREE.PointLight(0xffffff, 0.5, 8); // Luz blanca, intensidad 0.5, distancia 8
+        scene.add(playerLight);
+
+        // --- Doble Llama de Ataque ---
+        // Crea un grupo de llamas para el efecto de ataque
+        function createAttackFlame() {
+            const flameGroup = new THREE.Group();
+            const flameLight = new THREE.PointLight(0x00aaff, 1.5, 4); // Luz de la llama de ataque
+            flameLight.castShadow = true;
+            flameGroup.add(flameLight);
+
+            const attackFlameMaterial = new THREE.MeshBasicMaterial({
+                map: textureLoader.load(flameParticleUrl), // Misma textura de partícula de fuego
+                color: 0xaaddff, // Color azulado
+                transparent: true,
+                blending: THREE.AdditiveBlending,
+            });
+            const flameCore = new THREE.Mesh(new THREE.PlaneGeometry(0.5, 0.5), attackFlameMaterial);
+            flameGroup.add(flameCore);
+            flameGroup.visible = false; // Inicialmente invisible
+            player.add(flameGroup); // Añade el grupo de llamas como hijo del personaje
+            return flameGroup;
+        }
+
+        const rightHandFlame = createAttackFlame();
+        rightHandFlame.position.set(-0.6, 0.3, 0.3); // Posición de la llama de la mano derecha (relativa al personaje)
+        const leftHandFlame = createAttackFlame();
+        leftHandFlame.position.set(0.6, 0.3, 0.3); // Posición de la llama de la mano izquierda
+
+        // --- Controles y Estado del Juego ---
+        const btnAttack = document.getElementById('btn-attack');
+        const joystickContainer = document.getElementById('joystick-container');
+        const joystickKnob = document.getElementById('joystick-knob');
+
+        let isMovingLeft = false;  // Indica si el personaje se mueve a la izquierda
+        let isMovingRight = false; // Indica si el personaje se mueve a la derecha
+        let isFacingLeft = false;  // Indica si el personaje está mirando a la izquierda
+        let attackHeld = false;    // Indica si el botón de ataque está presionado
+
+        let lastTime = 0;        // Último tiempo de actualización de la animación
+        let currentFrame = 0;    // Fotograma actual de la animación
+
+        let currentState = 'idle';     // Estado actual del personaje (idle, running, attacking)
+        let previousState = 'idle';    // Estado anterior del personaje
+
+        // Límites de movimiento del personaje en el eje X (basados en el área de juego)
+        const minPlayerX = -playableAreaWidth / 2 + 1.5;
+        const maxPlayerX = playableAreaWidth / 2 - 1.5;
+
+        // Joystick variables
+        let isDraggingJoystick = false;
+        let joystickRect; // Para almacenar el bounding client rect del contenedor del joystick
+        let joystickRadius; // Se calculará dinámicamente
+
+        // Función para actualizar las dimensiones del joystick (posición y radio)
+        function updateJoystickDimensions() {
+            joystickRect = joystickContainer.getBoundingClientRect();
+            // Calcula el radio del joystick, restando la mitad del ancho del knob para el límite
+            joystickRadius = joystickContainer.clientWidth / 2 - joystickKnob.clientWidth / 2;
+        }
+
+        // Listeners de eventos del Joystick
+        joystickKnob.addEventListener('mousedown', (e) => {
+            isDraggingJoystick = true;
+            joystickKnob.style.transition = 'none'; // Deshabilita la transición durante el arrastre
+            updateJoystickDimensions(); // Asegura que las dimensiones estén actualizadas al iniciar el arrastre
+        });
+        joystickKnob.addEventListener('touchstart', (e) => {
+            e.preventDefault(); // Previene el desplazamiento de la página
+            isDraggingJoystick = true;
+            joystickKnob.style.transition = 'none'; // Deshabilita la transición durante el arrastre
+            updateJoystickDimensions(); // Asegura que las dimensiones estén actualizadas al iniciar el arrastre
+        }, { passive: false });
+
+        document.addEventListener('mousemove', (e) => {
+            if (!isDraggingJoystick) return;
+            moveJoystick(e.clientX, e.clientY);
+        });
+        document.addEventListener('touchmove', (e) => {
+            if (!isDraggingJoystick) return;
+            e.preventDefault(); // Previene el desplazamiento de la página
+            moveJoystick(e.touches[0].clientX, e.touches[0].clientY);
+        }, { passive: false });
+
+        document.addEventListener('mouseup', () => {
+            if (isDraggingJoystick) {
+                isDraggingJoystick = false;
+                resetJoystick();
             }
-            draw(ctx, camera, levelName) {
-                const glowColor = this.color.replace(')', ', 0.7)').replace('rgb', 'rgba');
-                ctx.fillStyle = this.color.replace(')', ', 0.3)').replace('rgb', 'rgba');
-                ctx.strokeStyle = glowColor;
-                ctx.lineWidth = 3; ctx.shadowColor = glowColor; ctx.shadowBlur = 20;
-                
-                ctx.fillRect(this.x - camera.x, this.y - camera.y, this.width, this.height);
-                ctx.strokeRect(this.x - camera.x, this.y - camera.y, this.width, this.height);
+        });
+        document.addEventListener('touchend', () => {
+            if (isDraggingJoystick) {
+                isDraggingJoystick = false;
+                resetJoystick();
+            }
+        });
+        document.addEventListener('mouseleave', () => { // Para cuando el ratón sale de la ventana
+            if (isDraggingJoystick) {
+                isDraggingJoystick = false;
+                resetJoystick();
+            }
+        });
 
-                ctx.shadowBlur = 0; ctx.lineWidth = 1;
+        function moveJoystick(clientX, clientY) {
+            // Calcula el delta (desplazamiento) relativo al centro del contenedor del joystick
+            let deltaX = clientX - (joystickRect.left + joystickRect.width / 2);
+            let deltaY = clientY - (joystickRect.top + joystickRect.height / 2);
 
-                if (levelName) {
-                    ctx.fillStyle = "white";
-                    ctx.font = "16px Lora";
-                    ctx.textAlign = "center";
-                    ctx.fillText(levelName, this.x + this.width / 2 - camera.x, this.y - 15 - camera.y);
-                }
+            // Calcula la distancia desde el centro
+            const distance = Math.sqrt(deltaX * deltaX + deltaY * deltaY);
+
+            // Limita la posición del knob al radio del contenedor del joystick
+            if (distance > joystickRadius) {
+                const angle = Math.atan2(deltaY, deltaX);
+                deltaX = joystickRadius * Math.cos(angle);
+                deltaY = joystickRadius * Math.sin(angle);
+            }
+
+            // Aplica la transformación para mover el knob desde su posición centrada
+            joystickKnob.style.transform = `translate(-50%, -50%) translate(${deltaX}px, ${deltaY}px)`;
+
+            // Determina la dirección del movimiento basándose en la posición horizontal
+            const deadZone = 10; // Píxeles desde el centro para ignorar movimientos ligeros
+            isMovingLeft = deltaX < -deadZone;
+            isMovingRight = deltaX > deadZone;
+
+            // Establece la dirección en la que mira el personaje según la entrada del joystick
+            if (isMovingLeft) {
+                isFacingLeft = true;
+            } else if (isMovingRight) {
+                isFacingLeft = false;
             }
         }
 
-        class OcularSpecter {
-            constructor(x, y, name) {
-                this.name = name; this.x = x; this.y = y;
-                this.width = 100; this.height = 100;
-                this.health = 500; this.maxHealth = 500;
-                this.projectiles = []; this.state = 'APPEARING';
-                this.stateTimer = 60; this.alpha = 0;
-            }
-            update(player, world, particleSystem) {
-                this.stateTimer--;
-
-                if (this.state === 'IDLE' && this.stateTimer <= 0) {
-                    this.state = 'APPEARING';
-                    this.x = Math.random() * (world.levelData.width - 400) + 200;
-                    this.y = Math.random() * (world.levelData.height / 2) + 100;
-                    this.stateTimer = 60;
-                } else if (this.state === 'APPEARING') {
-                    this.alpha = Math.min(1, this.alpha + 0.02);
-                    if (this.stateTimer <= 0) { this.state = 'ATTACKING'; this.stateTimer = 180; }
-                } else if (this.state === 'ATTACKING') {
-                    if (this.stateTimer % 30 === 0) { this.projectiles.push(new EnemyProjectile(this.x, this.y + this.height / 2)); }
-                    if (this.stateTimer <= 0) { this.state = 'DISAPPEARING'; this.stateTimer = 60; }
-                } else if (this.state === 'DISAPPEARING') {
-                    this.alpha = Math.max(0, this.alpha - 0.02);
-                    if (this.stateTimer <= 0) { this.state = 'IDLE'; this.stateTimer = 120; }
-                } else if (this.state === 'HURT') {
-                     if (this.stateTimer <= 0) { this.state = 'DISAPPEARING'; this.stateTimer = 30; }
-                } else if (this.state === 'DEFEATED') {
-                    this.alpha -= 0.01;
-                    if(Math.random() > 0.5) particleSystem.emit(this.x + Math.random() * this.width, this.y + Math.random() * this.height, 2, 'var(--boss-health-color)', 2);
-                }
-
-                this.projectiles.forEach((p, i) => { p.update(); if (p.y > world.levelData.height) this.projectiles.splice(i, 1); });
-            }
-            draw(ctx, camera) {
-                if (this.alpha <= 0) return;
-                ctx.save();
-                ctx.globalAlpha = this.alpha;
-                if (this.state === 'HURT' && this.stateTimer % 10 < 5) { ctx.filter = 'brightness(2)'; }
-                ctx.fillStyle = 'rgba(128, 90, 213, 0.7)';
-                ctx.shadowColor = 'rgba(128, 90, 213, 1)';
-                ctx.shadowBlur = 30;
-                ctx.beginPath();
-                ctx.ellipse(this.x - camera.x, this.y - camera.y, this.width / 2, this.height / 2, 0, 0, Math.PI * 2);
-                ctx.fill();
-                if (this.state === 'ATTACKING' || this.state === 'HURT') {
-                    ctx.fillStyle = '#FFFFFF';
-                    ctx.beginPath();
-                    ctx.arc(this.x - camera.x, this.y - camera.y, 15, 0, Math.PI * 2);
-                    ctx.fill();
-                    ctx.fillStyle = '#e53e3e';
-                    ctx.beginPath();
-                    ctx.arc(this.x - camera.x, this.y - camera.y, 8, 0, Math.PI * 2);
-                    ctx.fill();
-                }
-                ctx.restore();
-                this.projectiles.forEach(p => p.draw(ctx, camera));
-            }
-            takeDamage(amount, world) {
-                if (this.state !== 'ATTACKING') return false;
-                this.health -= amount;
-                Sound.playBossHit();
-                if (this.health <= 0) {
-                    this.health = 0; this.state = 'DEFEATED'; this.stateTimer = 300;
-                    world.addEntity(new Portal(world.levelData.width / 2 - 40, world.levelData.height - 220, 'level1', '#FFFFFF'));
-                } else {
-                    this.state = 'HURT'; this.stateTimer = 30;
-                }
-                return true;
-            }
+        function resetJoystick() {
+            joystickKnob.style.transition = 'transform 0.1s ease-out'; // Reactiva la transición
+            joystickKnob.style.transform = 'translate(-50%, -50%)'; // Vuelve al centro
+            isMovingLeft = false;
+            isMovingRight = false;
         }
 
-        class EnemyProjectile {
-            constructor(x, y) {
-                this.x = x; this.y = y; this.radius = 6; this.speed = 4;
-            }
-            update() { this.y += this.speed; }
-            draw(ctx, camera) {
-                ctx.fillStyle = 'var(--boss-health-color)';
-                ctx.shadowColor = 'var(--boss-health-color)';
-                ctx.shadowBlur = 10;
-                ctx.beginPath();
-                ctx.arc(this.x - camera.x, this.y - camera.y, this.radius, 0, Math.PI * 2);
-                ctx.fill();
-                ctx.shadowBlur = 0;
-            }
-        }
+        // Listeners del botón de ataque
+        btnAttack.addEventListener('mousedown', () => attackHeld = true);
+        btnAttack.addEventListener('mouseup', () => attackHeld = false);
+        btnAttack.addEventListener('mouseleave', () => attackHeld = false); // Si el ratón sale del botón
+        btnAttack.addEventListener('touchstart', (e) => { e.preventDefault(); attackHeld = true; }); // Para dispositivos táctiles
+        btnAttack.addEventListener('touchend', () => attackHeld = false);
 
-        class Particle {
-            constructor(x, y, color, life) {
-                this.x = x; this.y = y;
-                this.vx = (Math.random() - 0.5) * 4; this.vy = (Math.random() - 0.5) * 4;
-                this.life = life * 60; this.initialLife = this.life;
-                this.radius = Math.random() * 3 + 1; this.color = color;
-            }
-            update() { this.x += this.vx; this.y += this.vy; this.vy += 0.05; this.life--; }
-            draw(ctx, camera) {
-                ctx.globalAlpha = Math.max(0, this.life / this.initialLife);
-                ctx.beginPath();
-                ctx.arc(this.x - camera.x, this.y - camera.y, this.radius, 0, Math.PI * 2);
-                ctx.fillStyle = this.color; ctx.fill();
-                ctx.closePath();
-                ctx.globalAlpha = 1;
-            }
-        }
-        class ParticleSystem {
-            constructor() { this.particles = []; }
-            emit(x, y, count, color, life) {
-                for (let i = 0; i < count; i++) this.particles.push(new Particle(x, y, color, life));
-            }
-            update() {
-                for (let i = this.particles.length - 1; i >= 0; i--) {
-                    this.particles[i].update();
-                    if (this.particles[i].life <= 0) this.particles.splice(i, 1);
-                }
-            }
-            draw(ctx, camera) { this.particles.forEach(p => p.draw(ctx, camera)); }
-        }
+        const clock = new THREE.Clock(); // Reloj para calcular el tiempo transcurrido (deltaTime)
 
-        class World {
-            constructor() {
-                this.levelData = null; this.platforms = []; this.entities = []; this.boss = null;
-            }
-            loadLevel(levelData) {
-                this.levelData = levelData;
-                this.platforms = levelData.platforms.map(p => ({...p, color: levelData.platformColor}));
-                this.entities = [];
-                this.boss = null;
-                levelData.entities.forEach(e => {
-                    if (e.type === 'door') {
-                        const targetLevelData = config.levels.find(l => l.id === e.targetLevel);
-                        this.entities.push(new Portal(e.x, e.y, e.targetLevel, e.color || targetLevelData.platformColor));
-                    } else if (e.type === 'boss') {
-                        this.boss = new OcularSpecter(e.x, e.y, e.name);
-                    }
-                });
-                this.generateStars();
-            }
-            addEntity(entity) { this.entities.push(entity); }
-            generateStars() {
-                this.stars = [];
-                for(let i=0; i<100; i++) {
-                    this.stars.push({
-                        x: Math.random() * this.levelData.width,
-                        y: Math.random() * this.levelData.height,
-                        r: Math.random() * 2,
-                        parallax: Math.random() * 0.5 + 0.1
-                    });
-                }
-            }
-            draw(ctx, bgCtx, midCtx, camera) {
-                bgCtx.clearRect(0, 0, bgCtx.canvas.width, bgCtx.canvas.height);
-                midCtx.clearRect(0, 0, midCtx.canvas.width, midCtx.canvas.height);
-                if (!this.levelData) return;
-                
-                bgCtx.fillStyle = this.levelData.bgColor;
-                bgCtx.fillRect(0, 0, bgCtx.canvas.width, bgCtx.canvas.height);
+        // Array para almacenar todos los espectros
+        const allSpecters = [];
 
-                midCtx.fillStyle = 'rgba(255, 255, 255, 0.7)';
-                this.stars.forEach(star => {
-                    const x = (star.x - camera.x * star.parallax) % midCtx.canvas.width;
-                    const y = (star.y - camera.y * star.parallax * 0.1) % midCtx.canvas.height;
-                    midCtx.beginPath(); 
-                    midCtx.arc(x < 0 ? x + midCtx.canvas.width : x, y, star.r, 0, Math.PI * 2); 
-                    midCtx.fill();
-                });
+        // Ejemplo: Añadir un espectro en el centro de la habitación, un poco más atrás
+        // Posición inicial del espectro: X aleatoria dentro del área de juego, Y en altura de flotación, Z se ajustará a maxZ en init
+        const initialSpecterX = THREE.MathUtils.randFloat(-playableAreaWidth / 2 + 3, playableAreaWidth / 2 - 3);
+        const specter1 = new Specter(scene, initialSpecterX, 4.5, torchWorldPositions);
+        allSpecters.push(specter1);
 
-                ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height);
-                this.platforms.forEach(platform => {
-                    ctx.fillStyle = platform.color;
-                    ctx.fillRect(platform.x - camera.x, platform.y - camera.y, platform.width, platform.height);
-                });
-                if (this.boss) { this.boss.draw(ctx, camera); }
-                this.entities.forEach(entity => {
-                    if (entity instanceof Portal) {
-                        const targetLevelData = config.levels.find(l => l.id === entity.targetLevel);
-                        entity.draw(ctx, camera, targetLevelData ? targetLevelData.name : '');
-                    }
-                });
+        // --- Bucle principal de animación ---
+        function animate(time) {
+            requestAnimationFrame(animate); // Solicita el siguiente fotograma de animación
+
+            const deltaTime = clock.getDelta(); // Tiempo transcurrido desde el último fotograma
+            const isMoving = isMovingLeft || isMovingRight; // Comprueba si el personaje se está moviendo
+
+            // --- Lógica de Movimiento y Rotación del Personaje ---
+            if (isMovingRight) {
+                player.position.x += moveSpeed;
+                isFacingLeft = false; // Mira a la derecha
+            } else if (isMovingLeft) {
+                player.position.x -= moveSpeed;
+                isFacingLeft = true; // Mira a la izquierda
             }
-        }
-        
-        class Camera {
-            constructor(target, world) {
-                this.target = target; this.world = world;
-                this.x = 0; this.y = 0;
-                this.width = window.innerWidth; this.height = window.innerHeight;
-            }
-            update() {
-                const targetX = this.target.x - this.width / 2 + this.target.width / 2;
-                const targetY = this.target.y - this.height / 2 + this.target.height / 2;
-                this.x += (targetX - this.x) * 0.1; 
-                this.y += (targetY - this.y) * 0.1;
-                
-                if (this.world.levelData) {
-                    this.x = Math.max(0, Math.min(this.x, this.world.levelData.width - this.width));
-                    this.y = Math.max(0, Math.min(this.y, this.world.levelData.height - this.height));
-                }
-            }
-        }
+            
+            // Limita la posición del personaje dentro de los límites del área de juego
+            player.position.x = Math.max(minPlayerX, Math.min(maxPlayerX, player.position.x));
 
-        const healthBar = document.getElementById('health-bar'), manaBar = document.getElementById('mana-bar');
-        const levelIndicator = document.getElementById('level-indicator');
-        const bossHud = document.getElementById('boss-hud-container');
-        const bossName = document.getElementById('boss-name');
-        const bossHealthBar = document.getElementById('boss-health-bar');
+            // Ajusta la rotación del personaje para que mire en la dirección correcta
+            player.rotation.y = isFacingLeft ? Math.PI : 0;
 
-        function updateHUD(player, world) {
-            healthBar.style.width = `${(player.health / player.maxHealth) * 100}%`;
-            manaBar.style.width = `${(player.mana / player.maxMana) * 100}%`;
-            if(world.levelData) levelIndicator.textContent = world.levelData.name;
+            // La cámara sigue la posición X del jugador
+            camera.position.x = player.position.x;
 
-            if (world.boss && world.boss.state !== 'DEFEATED' && world.boss.alpha > 0) {
-                bossHud.style.display = 'flex';
-                bossName.textContent = world.boss.name;
-                bossHealthBar.style.width = `${(world.boss.health / world.boss.maxHealth) * 100}%`;
+            // La luz del jugador sigue la posición del jugador
+            playerLight.position.set(player.position.x, player.position.y + 1, player.position.z + 2);
+
+            // ***** LÓGICA DE ESTADO Y ANIMACIÓN REESTRUCTURADA *****
+            previousState = currentState; // Guarda el estado actual como el anterior
+
+            if (attackHeld) {
+                currentState = 'attacking'; // Si el ataque está presionado, el estado es atacando
+            } else if (isMoving) {
+                currentState = 'running'; // Si se está moviendo, el estado es corriendo
             } else {
-                bossHud.style.display = 'none';
-            }
-        }
-
-        const controls = { 
-            moveVector: { x: 0, y: 0 },
-            firePressed: false,
-            jumpPressed: false, 
-            jumpHeld: false
-        };
-
-        function initControls() {
-            window.addEventListener('keydown', e => {
-                if (e.repeat) return;
-                if (e.key === 'a' || e.key === 'ArrowLeft') controls.moveVector.x = -1;
-                else if (e.key === 'd' || e.key === 'ArrowRight') controls.moveVector.x = 1;
-                else if (e.key === 'w' || e.key === 'ArrowUp') controls.moveVector.y = -1;
-                else if (e.key === 's' || e.key === 'ArrowDown') controls.moveVector.y = 1;
-                
-                if (e.key === ' ') { controls.jumpPressed = true; controls.jumpHeld = true; }
-                if (e.key === 'j') controls.firePressed = true;
-            });
-            window.addEventListener('keyup', e => {
-                if ((e.key === 'a' || e.key === 'ArrowLeft') && controls.moveVector.x === -1) controls.moveVector.x = 0;
-                if ((e.key === 'd' || e.key === 'ArrowRight') && controls.moveVector.x === 1) controls.moveVector.x = 0;
-                if ((e.key === 'w' || e.key === 'ArrowUp') && controls.moveVector.y === -1) controls.moveVector.y = 0;
-                if ((e.key === 's' || e.key === 'ArrowDown') && controls.moveVector.y === 1) controls.moveVector.y = 0;
-                if (e.key === ' ') controls.jumpHeld = false;
-                if (e.key === 'j') controls.firePressed = false;
-            });
-
-            const jumpBtn = document.getElementById('jump-button');
-            jumpBtn.addEventListener('touchstart', e => { e.preventDefault(); controls.jumpPressed = true; controls.jumpHeld = true; });
-            jumpBtn.addEventListener('touchend', e => { e.preventDefault(); controls.jumpHeld = false; });
-            
-            const fireBtn = document.getElementById('fire-button');
-            fireBtn.addEventListener('touchstart', e => { e.preventDefault(); controls.firePressed = true; });
-            fireBtn.addEventListener('touchend', e => { e.preventDefault(); controls.firePressed = false; });
-
-            function setupJoystick(stickElement, knobElement, controlVector) {
-                let stickData = { id: null, active: false };
-                stickElement.addEventListener('touchstart', e => {
-                    e.preventDefault();
-                    stickData.id = e.changedTouches[0].identifier;
-                    stickData.active = true;
-                }, { passive: false });
-                window.addEventListener('touchmove', e => {
-                    if (!stickData.active) return;
-                    let touch = Array.from(e.changedTouches).find(t => t.identifier === stickData.id);
-                    if (!touch) return;
-                    const rect = stickElement.getBoundingClientRect();
-                    const centerX = rect.left + rect.width / 2;
-                    const centerY = rect.top + rect.height / 2;
-                    let dx = touch.clientX - centerX;
-                    let dy = touch.clientY - centerY;
-                    const dist = Math.sqrt(dx * dx + dy * dy);
-                    const maxDist = rect.width / 2 - knobElement.offsetWidth / 2;
-                    if (dist > maxDist) { dx = (dx / dist) * maxDist; dy = (dy / dist) * maxDist; }
-                    knobElement.style.left = `${50 + (dx / (rect.width/2)) * 50}%`;
-                    knobElement.style.top = `${50 + (dy / (rect.height/2)) * 50}%`;
-                    const normalizedDist = Math.min(1, dist / maxDist);
-                    controlVector.x = (dx / dist) * normalizedDist || 0;
-                    controlVector.y = (dy / dist) * normalizedDist || 0;
-                }, { passive: false });
-                const endTouch = (e) => {
-                    let touch = Array.from(e.changedTouches).find(t => t.identifier === stickData.id);
-                    if (!touch) return;
-                    stickData.active = false;
-                    knobElement.style.left = '50%';
-                    knobElement.style.top = '50%';
-                    controlVector.x = 0;
-                    controlVector.y = 0;
-                };
-                window.addEventListener('touchend', endTouch);
-                window.addEventListener('touchcancel', endTouch);
-            }
-            setupJoystick(document.getElementById('move-stick'), document.getElementById('move-knob'), controls.moveVector);
-        }
-
-        const gameCanvas = document.getElementById('game-canvas'), gameCtx = gameCanvas.getContext('2d');
-        const bgCanvas = document.getElementById('background-canvas'), bgCtx = bgCanvas.getContext('2d');
-        const midCanvas = document.getElementById('midground-canvas'), midCtx = midCanvas.getContext('2d');
-        let player, world, camera, particleSystem, magicOrbs;
-        let gameRunning = false;
-        let portalCooldown = 0;
-        let lastTimestamp = 0;
-
-        async function init() {
-            resizeCanvas();
-
-            const playerSpriteURL = 'assets/images/hoja_sprites_lumenfall.png';
-            
-            try {
-                await SpriteManager.load(playerSpriteURL, 'player');
-            } catch (err) {
-                console.error("No se pudo cargar la hoja de sprites del jugador. Se usará una forma básica.");
+                currentState = 'idle'; // Si no se mueve ni ataca, el estado es inactivo
             }
 
-            world = new World();
-            player = new Player(0, 0); 
-            camera = new Camera(player, world);
-            particleSystem = new ParticleSystem();
-            magicOrbs = [];
-            changeLevel('level1', null);
-            initControls();
-            
-            document.getElementById('start-button').onclick = async () => {
-                try {
-                    await Tone.start();
-                    Sound.init();
-                } catch (e) {
-                    console.error("Could not start audio context:", e);
-                }
-                document.getElementById('menu-overlay').classList.add('hidden');
-                gameRunning = true;
-                lastTimestamp = performance.now();
-                requestAnimationFrame(gameLoop);
-            };
-        }
-
-        function getLevelIndex(levelId) {
-            if (!levelId) return -1;
-            return config.levels.findIndex(l => l.id === levelId);
-        }
-        
-        function changeLevel(destinationLevelId, originLevelId) {
-            const destinationLevelData = config.levels.find(l => l.id === destinationLevelId);
-            if (!destinationLevelData) return;
-
-            const originIndex = getLevelIndex(originLevelId);
-            const destinationIndex = getLevelIndex(destinationLevelId);
-
-            world.loadLevel(destinationLevelData);
-
-            if (originLevelId && destinationIndex < originIndex) {
-                const arrivalPortal = world.entities.find(e => e instanceof Portal && e.targetLevel === originLevelId);
-                if (arrivalPortal) {
-                    player.y = arrivalPortal.y + arrivalPortal.height - player.height;
-                    player.x = arrivalPortal.x + (arrivalPortal.width / 2) - (player.width / 2);
-                } else {
-                    player.x = destinationLevelData.startPosition.x;
-                    player.y = destinationLevelData.startPosition.y;
-                }
-            } else {
-                player.x = destinationLevelData.startPosition.x;
-                player.y = destinationLevelData.startPosition.y;
+            // Si el estado acaba de cambiar, reiniciamos el contador de fotogramas
+            if (currentState !== previousState) {
+                currentFrame = 0;
             }
 
-            player.vx = 0; player.vy = 0;
-            player.jumpsLeft = config.maxJumps;
-            magicOrbs = [];
-            portalCooldown = 30;
-            
-            camera.x = player.x - camera.width / 2;
-            camera.y = player.y - camera.height / 2;
-            camera.update();
-        }
+            // Controla la visibilidad de las llamas de ataque
+            rightHandFlame.visible = (currentState === 'attacking');
+            leftHandFlame.visible = (currentState === 'attacking');
 
-        function checkCollisions() {
-            if (world.boss) {
-                magicOrbs.forEach((orb, orbIndex) => {
-                    if (world.boss.state === 'ATTACKING') {
-                        const dx = orb.x - world.boss.x;
-                        const dy = orb.y - world.boss.y;
-                        if (Math.sqrt(dx * dx + dy * dy) < orb.radius + world.boss.width / 2) {
-                           if (world.boss.takeDamage(10, world)) {
-                               particleSystem.emit(orb.x, orb.y, 25, 'var(--magic-color)', 1.5);
-                               magicOrbs.splice(orbIndex, 1);
-                           }
+            // Actualiza la animación del sprite solo si ha pasado suficiente tiempo
+            if (time - lastTime > animationSpeed) {
+                lastTime = time; // Actualiza el último tiempo de animación
+
+                switch (currentState) {
+                    case 'attacking':
+                        playerMaterial.map = attackTexture; // Usa la textura de ataque
+                        // Avanza el fotograma, pero se detiene en el último fotograma de ataque
+                        if (currentFrame < totalAttackFrames - 1) {
+                            currentFrame++;
                         }
-                    }
-                });
-                world.boss.projectiles.forEach((proj, projIndex) => {
-                    if (player.x < proj.x + proj.radius && player.x + player.width > proj.x - proj.radius &&
-                        player.y < proj.y + proj.radius && player.y + player.height > proj.y - proj.radius) {
-                        player.takeDamage(10);
-                        particleSystem.emit(proj.x, proj.y, 15, 'var(--boss-health-color)', 1);
-                        world.boss.projectiles.splice(projIndex, 1);
-                    }
-                });
-            }
-            if (portalCooldown > 0) return;
-            const originLevelId = world.levelData.id;
-            for (const entity of world.entities) {
-                if (entity instanceof Portal && 
-                    player.x < entity.x + entity.width && player.x + player.width > entity.x &&
-                    player.y < entity.y + entity.height && player.y + player.height > entity.y) {
-                    changeLevel(entity.targetLevel, originLevelId);
-                    break; 
+                        attackTexture.offset.x = currentFrame / totalAttackFrames; // Actualiza el offset de la textura
+                        break;
+                    case 'running':
+                        playerMaterial.map = runningTexture; // Usa la textura de correr
+                        currentFrame = (currentFrame + 1) % totalRunningFrames; // Cicla los fotogramas de correr
+                        runningTexture.offset.x = currentFrame / totalRunningFrames;
+                        break;
+                    case 'idle':
+                        playerMaterial.map = attackTexture; // Vuelve a la textura de ataque para el estado inactivo
+                        attackTexture.offset.x = 0; // Muestra el primer fotograma (inactivo)
+                        currentFrame = 0; // Reinicia el fotograma
+                        break;
                 }
             }
-        }
 
-        function gameLoop(timestamp) {
-            if (!gameRunning) return;
-            
-            const deltaTime = (timestamp - lastTimestamp) / 1000; 
-            lastTimestamp = timestamp;
-
-            if (portalCooldown > 0) portalCooldown--;
-
-            if (controls.jumpPressed) { player.jump(particleSystem); controls.jumpPressed = false; }
-            if (controls.firePressed) { player.castMagicOrb(magicOrbs, particleSystem); }
-            
-            player.update(world, controls, particleSystem, deltaTime);
-            if (world.boss) { world.boss.update(player, world, particleSystem); }
-            camera.update();
-            particleSystem.update();
-            magicOrbs.forEach((orb, i) => { orb.update(); if (orb.life <= 0) magicOrbs.splice(i, 1); });
-            
-            checkCollisions();
-            
-            world.draw(gameCtx, bgCtx, midCtx, camera);
-            particleSystem.draw(gameCtx, camera);
-            magicOrbs.forEach(orb => orb.draw(gameCtx, camera));
-            player.draw(gameCtx, camera);
-            
-            updateHUD(player, world);
-            requestAnimationFrame(gameLoop);
-        }
-
-        function resizeCanvas() {
-            [gameCanvas, bgCanvas, midCanvas].forEach(c => { 
-                c.width = window.innerWidth; 
-                c.height = window.innerHeight; 
-            });
-            if (camera) { 
-                camera.width = window.innerWidth; 
-                camera.height = window.innerHeight; 
+            // Actualiza las llamas de ataque si están visibles
+            if (rightHandFlame.visible) {
+                [rightHandFlame, leftHandFlame].forEach(flame => {
+                    const light = flame.children[0]; // La luz de la llama
+                    const core = flame.children[1];  // La malla de la partícula principal
+                    light.intensity = 1.0 + Math.random() * 0.5; // Parpadeo de la luz
+                    const scale = 0.8 + Math.random() * 0.4; // Escala aleatoria para el efecto de llama
+                    core.scale.set(scale, scale, scale);
+                    core.rotation.z += 0.1; // Pequeña rotación para el efecto
+                });
             }
+
+            // Actualiza todas las llamas del mundo
+            allFlames.forEach(flame => flame.update(deltaTime));
+
+            // Actualiza todos los espectros
+            allSpecters.forEach(specter => specter.update(deltaTime));
+
+            renderer.render(scene, camera); // Renderiza la escena
         }
 
-        window.addEventListener('load', init);
-        window.addEventListener('resize', resizeCanvas);
+        // --- Lógica de la pantalla de introducción y menú ---
+        const introScreen = document.getElementById('intro-screen');
+        const introImage = document.getElementById('intro-image');
+        const menuScreen = document.getElementById('menu-screen');
+        const playButton = document.getElementById('play-button');
+        const languageSelect = document.getElementById('language-select');
+
+        let currentLanguage = 'es'; // Idioma por defecto
+
+        function showMenu() {
+            // Establece la imagen de fondo del menú
+            menuScreen.style.backgroundImage = `url('${menuBackgroundImageUrl}')`;
+            menuScreen.style.display = 'flex'; // Muestra el menú
+            setTimeout(() => {
+                menuScreen.style.opacity = 1; // Inicia el desvanecimiento del menú
+            }, 10); // Pequeño retraso para que la transición de opacidad funcione
+        }
+
+        function startGame() {
+            menuScreen.style.opacity = 0; // Inicia el desvanecimiento del menú
+            menuScreen.addEventListener('transitionend', () => {
+                menuScreen.style.display = 'none'; // Oculta el menú
+                document.getElementById('bg-canvas').style.display = 'block'; // Muestra el canvas del juego
+                document.getElementById('ui-container').style.display = 'block'; // Muestra la UI del juego
+                animate(0); // Inicia el bucle de animación del juego
+            }, { once: true });
+        }
+
+        function handleLanguageChange() {
+            currentLanguage = languageSelect.value;
+            console.log('Idioma seleccionado:', currentLanguage);
+            // Aquí podrías añadir lógica para cambiar el texto de la UI según el idioma
+            // Por ejemplo:
+            // if (currentLanguage === 'en') {
+            //     playButton.textContent = 'PLAY';
+            //     document.querySelector('.stat-label').textContent = 'ENERGY';
+            //     // ... y así para todos los textos que necesites traducir
+            // } else {
+            //     playButton.textContent = 'JUGAR';
+            //     document.querySelector('.stat-label').textContent = 'ENERGY'; // O el texto en español
+            // }
+        }
+
+        // Event listeners para el menú
+        playButton.addEventListener('click', startGame);
+        languageSelect.addEventListener('change', handleLanguageChange);
+
+        // Iniciar la introducción al cargar la ventana
+        window.addEventListener('load', () => {
+            updateJoystickDimensions(); // Asegura que el joystick se inicialice correctamente
+            introImage.src = introImageUrl; // Establece la nueva imagen de la intro
+            
+            // Después de 4 segundos, oculta la pantalla de introducción y muestra el menú
+            setTimeout(() => {
+                introScreen.style.opacity = 0; // Inicia el desvanecimiento de la intro
+                introScreen.addEventListener('transitionend', () => {
+                    introScreen.style.display = 'none'; // Oculta la intro
+                    showMenu(); // Muestra el menú
+                }, { once: true }); // El listener se ejecuta solo una vez
+            }, 4000); // 4 segundos
+        });
+
+        // Actualiza las dimensiones del joystick y el renderizador al redimensionar la ventana
+        window.addEventListener('resize', () => {
+            updateJoystickDimensions();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+        });
     </script>
 </body>
 </html>
