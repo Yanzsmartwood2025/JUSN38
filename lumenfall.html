@@ -2,324 +2,1060 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>GUARDIAN+ Interfaz de Usuario</title>
-    <!-- Carga de Tailwind CSS para estilos rápidos y responsivos -->
-    <script src="https://cdn.tailwindcss.com"></script>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>Demo de Calabozo 2.5D (Ataque Corregido)</title>
     <style>
-        /* Estilos personalizados para la fuente Inter y el esquema de color */
+        /* Estilos generales del cuerpo */
         body {
-            font-family: 'Inter', sans-serif;
-            background-color: #0d1a2a; /* Fondo azul oscuro profundo */
-            color: #e0f2fe; /* Texto azul claro */
+            margin: 0;
+            overflow: hidden; /* Oculta las barras de desplazamiento */
+            background-color: #000; /* Fondo negro */
+            font-family: 'Inter', sans-serif; /* Fuente Inter */
         }
-        /* Clase para simular la animación de respiración */
-        @keyframes pulse {
-            0% { transform: scale(1); opacity: 0.7; }
-            50% { transform: scale(1.2); opacity: 1; }
-            100% { transform: scale(1); opacity: 0.7; }
+
+        /* Canvas de fondo para Three.js */
+        #bg-canvas {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 1; /* Detrás de la UI */
+            display: none; /* Inicialmente oculto */
         }
-        .breathing-circle {
-            animation: pulse 2s infinite alternate;
+
+        /* Contenedor de la interfaz de usuario */
+        #ui-container {
+            position: relative;
+            z-index: 2; /* Encima del canvas */
+            width: 100%;
+            height: 100vh;
+            pointer-events: none; /* Permite clics a través del contenedor, los elementos internos los anulan */
+            display: none; /* Inicialmente oculto */
+        }
+
+        /* Asegura que los elementos dentro de ui-container sean interactivos */
+        #ui-container > * {
+            pointer-events: auto;
+        }
+
+        /* Estilos para la parte superior de la UI y los controles */
+        #ui-top, #controls {
+            position: absolute;
+            width: 100%;
+            box-sizing: border-box;
+            color: white;
+            font-family: 'Segoe UI', sans-serif; /* Fuente para la UI */
+        }
+
+        /* Contenedor superior de la UI (barras de estadísticas) */
+        #ui-top {
+            top: 0;
+            padding: 20px;
+            display: flex;
+            gap: 20px; /* Espacio entre las barras */
+        }
+
+        /* Estilo de la barra de estadísticas */
+        .stat-bar {
+            width: 200px;
+            height: 20px;
+            background-color: rgba(0,0,0,0.5); /* Fondo semitransparente */
+            border: 2px solid #555;
+            border-radius: 10px;
+            padding: 2px;
+            box-shadow: 0 0 8px rgba(0,0,0,0.5); /* Sombra para profundidad */
+        }
+
+        /* Relleno de la barra de estadísticas */
+        .stat-bar-fill {
+            height: 100%;
+            border-radius: 6px;
+            transition: width 0.3s ease-out; /* Transición suave para el cambio de ancho */
+        }
+
+        /* Colores de relleno específicos */
+        #energy-fill { background-color: #3498db; } /* Azul */
+        #power-fill { background-color: #e74c3c; } /* Rojo */
+
+        /* Etiqueta de la estadística */
+        .stat-label {
+            font-weight: bold;
+            margin-bottom: 5px;
+            text-shadow: 1px 1px 2px black; /* Sombra de texto para legibilidad */
+        }
+
+        /* Controles inferiores */
+        #controls {
+            bottom: 20px;
+            display: flex;
+            justify-content: space-between; /* Espacio entre los grupos de botones */
+            align-items: flex-end;
+            padding: 0 40px;
+        }
+
+        /* Contenedor para los controles de la derecha */
+        .right-controls {
+            display: flex;
+            gap: 20px; /* Espacio entre los botones de la derecha */
+        }
+
+        /* Estilo de los botones de control */
+        .control-btn {
+            width: 120px;
+            height: 120px;
+            background-color: rgba(0,0,0,0.4); /* Fondo semitransparente */
+            border: 1px solid rgba(255,255,255,0.1);
+            border-radius: 50%; /* Botones circulares */
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            color: rgba(255,255,255,0.7);
+            font-size: 60px;
+            font-weight: bold;
+            cursor: pointer;
+            user-select: none; /* Evita la selección de texto */
+            transition: background-color 0.2s, transform 0.1s; /* Transiciones suaves */
+            box-shadow: 0 5px 15px rgba(0,0,0,0.5); /* Sombra para un efecto 3D */
+            backdrop-filter: blur(5px); /* Efecto de desenfoque detrás del botón */
+        }
+
+        /* Efecto al presionar el botón */
+        .control-btn:active {
+            background-color: rgba(255, 255, 255, 0.2);
+            transform: scale(0.95); /* Encoge ligeramente el botón */
+            box-shadow: 0 2px 8px rgba(0,0,0,0.7); /* Sombra más pequeña al presionar */
+        }
+
+        /* Estilos del Joystick */
+        #joystick-container {
+            width: 150px;
+            height: 150px;
+            background-color: rgba(0,0,0,0.4);
+            border: 1px solid rgba(255,255,255,0.1);
+            border-radius: 50%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.5);
+            backdrop-filter: blur(5px);
+            position: relative; /* Necesario para posicionar el knob */
+        }
+
+        #joystick-knob {
+            width: 70px;
+            height: 70px;
+            background-color: rgba(255,255,255,0.3);
+            border: 1px solid rgba(255,255,255,0.2);
+            border-radius: 50%;
+            position: absolute;
+            cursor: grab;
+            /* Centrado inicial del knob */
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            transition: transform 0.1s ease-out; /* Transición para el retorno al centro */
+        }
+
+        #joystick-knob:active {
+            cursor: grabbing;
+            background-color: rgba(255,255,255,0.5);
+        }
+
+        /* Estilos para la pantalla de introducción */
+        #intro-screen {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: #000; /* Fondo negro */
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 100; /* Asegura que esté por encima de todo */
+            opacity: 1;
+            transition: opacity 1s ease-out; /* Transición suave para el desvanecimiento */
+        }
+
+        #intro-image {
+            max-width: 100%;
+            max-height: 100%;
+            object-fit: cover; /* Cubre el área manteniendo el aspecto */
+            width: 100%; /* Asegura que la imagen ocupe todo el ancho */
+            height: 100%; /* Asegura que la imagen ocupe toda la altura */
+        }
+
+        /* Estilos para la pantalla del menú */
+        #menu-screen {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            display: none; /* Inicialmente oculto */
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            z-index: 99; /* Justo debajo de la pantalla de introducción */
+            color: white;
+            opacity: 0;
+            transition: opacity 0.5s ease-in; /* Transición suave para aparecer */
+            /* Nuevos estilos para la imagen de fondo del menú */
+            background-size: cover; /* Cubre todo el contenedor */
+            background-position: center; /* Centra la imagen */
+            background-repeat: no-repeat; /* Evita que la imagen se repita */
+        }
+
+        /* Eliminado: #menu-screen h1 */
+
+        .menu-option {
+            margin: 15px 0;
+            font-size: 1.5em;
+            background-color: rgba(0,0,0,0.7); /* Fondo más oscuro para mejor contraste */
+            border: 1px solid rgba(0, 170, 255, 0.5);
+            border-radius: 10px;
+            padding: 15px 30px;
+            cursor: pointer;
+            transition: background-color 0.2s, transform 0.1s, box-shadow 0.2s;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.5);
+            backdrop-filter: blur(5px); /* Mantener el desenfoque para los elementos del menú */
+            color: white;
+            text-align: center;
+            width: 250px;
+        }
+
+        .menu-option:hover {
+            background-color: rgba(0, 170, 255, 0.3); /* Un poco más claro al pasar el ratón */
+            transform: translateY(-3px);
+            box-shadow: 0 8px 20px rgba(0, 170, 255, 0.3);
+        }
+
+        .menu-option:active {
+            transform: scale(0.98);
+            box-shadow: 0 2px 8px rgba(0,0,0,0.7);
+        }
+
+        #language-select {
+            padding: 10px 15px;
+            border-radius: 8px;
+            border: 1px solid #00aaff;
+            background-color: rgba(0,0,0,0.8); /* Fondo más oscuro para el select */
+            color: white;
+            font-size: 1.1em;
+            margin-bottom: 20px;
+            cursor: pointer;
+            outline: none;
+            appearance: none; /* Elimina estilos por defecto del navegador */
+            background-image: url('data:image/svg+xml;charset=US-ASCII,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%22292.4%22%20height%3D%22292.4%22%3E%3Cpath%20fill%3D%22%23ffffff%22%20d%3D%22M287%2069.4L154.1%20202.3c-4.4%204.4-10.9%204.4-15.3%200L5.4%2069.4c-4.4-4.4-4.4-10.9%200-15.3l12.4-12.4c4.4-4.4%2010.9-4.4%2015.3%200L145.7%20174%20259.3%2041.7c4.4-4.4%2010.9-4.4%2015.3%200l12.4%2012.4c4.5%204.5%204.5%2010.9.1%2015.3z%22%2F%3E%3C%2Fsvg%3E');
+            background-repeat: no-repeat;
+            background-position: right 10px center;
+            background-size: 12px;
+        }
+
+        #language-select:focus {
+            border-color: #3498db;
+            box-shadow: 0 0 10px rgba(52, 152, 219, 0.5);
         }
     </style>
 </head>
-<body class="flex items-center justify-center min-h-screen p-4">
-    <!-- Contenedor principal de la aplicación, simulando la pantalla del móvil -->
-    <div id="app-container" class="bg-[#1a2c42] rounded-3xl shadow-2xl overflow-hidden w-full max-w-sm mx-auto border-2 border-[#00bcd4] flex flex-col" style="height: 700px;">
-
-        <!-- Header de la aplicación -->
-        <header class="bg-[#0f2138] p-4 flex items-center justify-between text-white border-b border-[#00bcd4]">
-            <button onclick="goBack()" class="text-[#00bcd4] text-xl font-bold rounded-full p-2 hover:bg-[#00bcd4]/20 transition-colors duration-200">
-                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-6 h-6">
-                    <path stroke-linecap="round" stroke-linejoin="round" d="M15.75 19.5L8.25 12l7.5-7.5" />
-                </svg>
-            </button>
-            <h1 id="screen-title" class="text-xl font-bold text-[#00bcd4]">GUARDIAN+</h1>
-            <div class="w-6 h-6"></div> <!-- Espaciador para centrar el título -->
-        </header>
-
-        <!-- Contenido de las pantallas (se mostrará una a la vez) -->
-        <main class="flex-grow p-6 overflow-y-auto relative">
-
-            <!-- Pantalla de Login/Registro -->
-            <div id="login-screen" class="screen active text-center flex flex-col items-center justify-center h-full">
-                <img src="https://placehold.co/120x120/0f2138/00bcd4?text=LOGO" alt="Logo de GUARDIAN+" class="mb-8 rounded-full border-4 border-[#00bcd4] p-2">
-                <h2 class="text-3xl font-extrabold text-[#00bcd4] mb-6">Bienvenido a GUARDIAN+</h2>
-                <input type="text" placeholder="Correo electrónico" class="w-full p-3 mb-4 bg-[#0f2138] border border-[#00bcd4]/50 rounded-xl text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#00bcd4]">
-                <input type="password" placeholder="Contraseña" class="w-full p-3 mb-6 bg-[#0f2138] border border-[#00bcd4]/50 rounded-xl text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#00bcd4]">
-                <button onclick="showScreen('home-screen')" class="w-full bg-[#00bcd4] text-[#0d1a2a] font-bold py-3 rounded-xl shadow-lg hover:bg-[#00a3bb] transition-colors duration-300 mb-4">Iniciar Sesión</button>
-                <button onclick="showScreen('home-screen')" class="w-full bg-transparent border-2 border-[#00bcd4] text-[#00bcd4] font-bold py-3 rounded-xl hover:bg-[#00bcd4]/20 transition-colors duration-300">Registrarse</button>
-                <div class="mt-8">
-                    <p class="text-gray-400 mb-4">O accede con:</p>
-                    <div class="flex justify-center space-x-6">
-                        <button class="bg-[#0f2138] p-4 rounded-full border-2 border-[#00bcd4]/50 hover:bg-[#00bcd4]/20 transition-colors duration-300">
-                            <!-- Icono de Huella Digital -->
-                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-8 h-8 text-[#00bcd4]">
-                                <path stroke-linecap="round" stroke-linejoin="round" d="M12 11.25v-1.5m0 1.5c-3.195 0-6.23-1.28-8.457-3.507A9.003 9.003 0 0112 3.75c3.195 0 6.23 1.28 8.457 3.507A9.003 9.003 0 0112 11.25zm0 0v7.5m0-7.5c-3.195 0-6.23-1.28-8.457-3.507A9.003 9.003 0 0112 3.75c3.195 0 6.23 1.28 8.457 3.507A9.003 9.003 0 0112 11.25zM12 21.75c3.195 0 6.23-1.28 8.457-3.507A9.003 9.003 0 0112 11.25c-3.195 0-6.23-1.28-8.457-3.507A9.003 9.003 0 0112 21.75z" />
-                            </svg>
-                        </button>
-                        <button class="bg-[#0f2138] p-4 rounded-full border-2 border-[#00bcd4]/50 hover:bg-[#00bcd4]/20 transition-colors duration-300">
-                            <!-- Icono de Face ID -->
-                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-8 h-8 text-[#00bcd4]">
-                                <path stroke-linecap="round" stroke-linejoin="round" d="M15.75 6a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0zM4.501 20.118a7.5 7.5 0 0114.998 0A17.933 17.933 0 0112 21.75c-2.676 0-5.216-.584-7.499-1.632z" />
-                            </svg>
-                        </button>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Pantalla Home (Estado Actual) -->
-            <div id="home-screen" class="screen hidden text-center flex flex-col items-center justify-center h-full">
-                <h2 class="text-2xl font-semibold text-gray-300 mb-4">Tu Estado Actual</h2>
-                <div class="bg-[#0f2138] p-6 rounded-2xl w-full max-w-xs mb-8 border border-[#00bcd4]/50 shadow-lg">
-                    <p class="text-lg text-gray-400">Ritmo Cardíaco</p>
-                    <p class="text-5xl font-extrabold text-[#00bcd4] mt-2">72 <span class="text-3xl">lpm</span></p>
-                    <div class="w-full h-12 bg-transparent border-b-2 border-[#00bcd4] relative mt-4">
-                        <!-- Simulación de línea de latido -->
-                        <div class="absolute w-full h-full flex items-center justify-center">
-                            <svg width="100%" height="100%" viewBox="0 0 300 50" fill="none" xmlns="http://www.w3.org/2000/svg">
-                                <path d="M0 25 L50 25 L60 10 L70 40 L80 25 L100 25 L120 25 L130 15 L140 35 L150 25 L170 25 L200 25 L210 10 L220 40 L230 25 L250 25 L300 25" stroke="#00bcd4" stroke-width="3"/>
-                            </svg>
-                        </div>
-                    </div>
-                    <p class="text-sm text-gray-500 mt-2">Normal</p>
-                </div>
-                <button onclick="showScreen('crisis-detection-screen')" class="w-full max-w-xs bg-red-600 text-white font-bold py-5 rounded-full shadow-xl hover:bg-red-700 transition-colors duration-300 text-2xl animate-pulse">
-                    ALERTA GUARDIAN+
-                </button>
-            </div>
-
-            <!-- Pantalla de Configuración de Contactos -->
-            <div id="contacts-screen" class="screen hidden flex flex-col h-full">
-                <h2 class="text-2xl font-semibold text-[#00bcd4] mb-6 text-center">Contactos de Emergencia</h2>
-                <div class="flex-grow space-y-4 overflow-y-auto pr-2">
-                    <!-- Contacto de ejemplo 1 -->
-                    <div class="bg-[#0f2138] p-4 rounded-xl flex items-center justify-between border border-[#00bcd4]/50 shadow-md">
-                        <div>
-                            <p class="font-bold text-lg text-white">María González</p>
-                            <p class="text-gray-400 text-sm">Madre - Prioridad 1</p>
-                            <p class="text-gray-500 text-xs">+593 99 123 4567</p>
-                        </div>
-                        <button class="text-red-500 hover:text-red-700 transition-colors duration-200">
-                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-6 h-6">
-                                <path stroke-linecap="round" stroke-linejoin="round" d="M14.74 9l-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 01-2.244 2.077H8.924a2.25 2.25 0 01-2.244-2.077L4.74 6.75M9.257 4.75h5.5M15 6.75H9" />
-                            </svg>
-                        </button>
-                    </div>
-                    <!-- Contacto de ejemplo 2 -->
-                    <div class="bg-[#0f2138] p-4 rounded-xl flex items-center justify-between border border-[#00bcd4]/50 shadow-md">
-                        <div>
-                            <p class="font-bold text-lg text-white">Dr. Juan Pérez</p>
-                            <p class="text-gray-400 text-sm">Médico - Prioridad 2</p>
-                            <p class="text-gray-500 text-xs">+593 98 765 4321</p>
-                        </div>
-                        <button class="text-red-500 hover:text-red-700 transition-colors duration-200">
-                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-6 h-6">
-                                <path stroke-linecap="round" stroke-linejoin="round" d="M14.74 9l-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 01-2.244 2.077H8.924a2.25 2.25 0 01-2.244-2.077L4.74 6.75M9.257 4.75h5.5M15 6.75H9" />
-                            </svg>
-                        </button>
-                    </div>
-                    <!-- Contacto de ejemplo 3 -->
-                    <div class="bg-[#0f2138] p-4 rounded-xl flex items-center justify-between border border-[#00bcd4]/50 shadow-md">
-                        <div>
-                            <p class="font-bold text-lg text-white">Roberto Díaz</p>
-                            <p class="text-gray-400 text-sm">Hermano - Prioridad 3</p>
-                            <p class="text-gray-500 text-xs">+593 96 543 2109</p>
-                        </div>
-                        <button class="text-red-500 hover:text-red-700 transition-colors duration-200">
-                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-6 h-6">
-                                <path stroke-linecap="round" stroke-linejoin="round" d="M14.74 9l-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 01-2.244 2.077H8.924a2.25 2.25 0 01-2.244-2.077L4.74 6.75M9.257 4.75h5.5M15 6.75H9" />
-                            </svg>
-                        </button>
-                    </div>
-                </div>
-                <button class="w-full bg-[#00bcd4] text-[#0d1a2a] font-bold py-3 rounded-xl shadow-lg hover:bg-[#00a3bb] transition-colors duration-300 mt-6">
-                    Añadir Nuevo Contacto
-                </button>
-            </div>
-
-            <!-- Pantalla de Detección de Crisis (Automática/Manual) -->
-            <div id="crisis-detection-screen" class="screen hidden text-center flex flex-col items-center justify-center h-full">
-                <h2 class="text-3xl font-bold text-red-500 mb-8 animate-pulse">¡CRISIS DETECTADA!</h2>
-                <div class="relative w-48 h-48 flex items-center justify-center mb-8">
-                    <div class="absolute w-full h-full rounded-full bg-red-800 opacity-30 animate-ping"></div>
-                    <div class="relative w-40 h-40 rounded-full bg-red-600 flex items-center justify-center text-white text-6xl font-extrabold">
-                        <span id="countdown">10</span>
-                    </div>
-                </div>
-                <p class="text-xl text-gray-300 mb-6">¿Estás bien?</p>
-                <button onclick="cancelCrisis()" class="w-full max-w-xs bg-gray-500 text-white font-bold py-4 rounded-xl shadow-lg hover:bg-gray-600 transition-colors duration-300">
-                    Cancelar Alerta
-                </button>
-                <p class="text-sm text-gray-400 mt-4">La alerta se enviará automáticamente si no cancelas.</p>
-            </div>
-
-            <!-- Pantalla de Alerta Enviada -->
-            <div id="alert-sent-screen" class="screen hidden text-center flex flex-col items-center justify-center h-full">
-                <h2 class="text-3xl font-bold text-[#00bcd4] mb-8">¡Alerta Enviada!</h2>
-                <p class="text-xl text-gray-300 mb-6">Mensaje de emergencia enviado a tus 3 contactos principales.</p>
-                <div class="bg-[#0f2138] p-4 rounded-xl w-full max-w-xs mb-8 border border-[#00bcd4]/50 shadow-lg">
-                    <p class="text-lg text-gray-400 mb-2">Ubicación Actual:</p>
-                    <img src="https://placehold.co/300x150/0f2138/00bcd4?text=Mapa+de+Ubicacion" alt="Mapa de Ubicación" class="w-full rounded-lg mb-2">
-                    <a href="#" class="text-[#00bcd4] text-sm hover:underline">Ver en Google Maps</a>
-                </div>
-                <button onclick="showScreen('home-screen')" class="w-full max-w-xs bg-[#00bcd4] text-[#0d1a2a] font-bold py-4 rounded-xl shadow-lg hover:bg-[#00a3bb] transition-colors duration-300">
-                    Volver al Inicio
-                </button>
-            </div>
-
-            <!-- Pantalla Modo Shock Emocional -->
-            <div id="emotional-shock-screen" class="screen hidden text-center flex flex-col items-center justify-center h-full">
-                <h2 class="text-3xl font-bold text-[#00bcd4] mb-8">Modo Calma</h2>
-                <p class="text-xl text-gray-300 mb-6">Respira profundamente contigo.</p>
-                <div class="relative w-48 h-48 flex items-center justify-center mb-10">
-                    <div class="breathing-circle w-full h-full rounded-full bg-[#00bcd4] opacity-70"></div>
-                    <div class="absolute text-white text-2xl font-bold">Inhala / Exhala</div>
-                </div>
-                <button class="w-full max-w-xs bg-[#00bcd4] text-[#0d1a2a] font-bold py-4 rounded-xl shadow-lg hover:bg-[#00a3bb] transition-colors duration-300 mb-4">
-                    Hablar con Alguien de Confianza
-                </button>
-                <button onclick="showScreen('home-screen')" class="w-full max-w-xs bg-transparent border-2 border-[#00bcd4] text-[#00bcd4] font-bold py-3 rounded-xl hover:bg-[#00bcd4]/20 transition-colors duration-300">
-                    Volver al Inicio
-                </button>
-            </div>
-
-            <!-- Pantalla Historial -->
-            <div id="history-screen" class="screen hidden flex flex-col h-full">
-                <h2 class="text-2xl font-semibold text-[#00bcd4] mb-6 text-center">Tu Historial de Salud</h2>
-                <div class="bg-[#0f2138] p-4 rounded-xl w-full mb-6 border border-[#00bcd4]/50 shadow-lg">
-                    <p class="text-lg text-gray-400 mb-2">Frecuencia Cardíaca (Últimos 7 días)</p>
-                    <img src="https://placehold.co/300x100/0f2138/00bcd4?text=Grafico+Ritmo+Cardiaco" alt="Gráfico de Ritmo Cardíaco" class="w-full rounded-lg">
-                </div>
-                <div class="flex-grow space-y-4 overflow-y-auto pr-2">
-                    <!-- Evento de ejemplo 1 -->
-                    <div class="bg-[#0f2138] p-4 rounded-xl border border-[#00bcd4]/50 shadow-md">
-                        <p class="font-bold text-white">20 Jul, 2024 - Alerta enviada (Taquicardia)</p>
-                        <p class="text-gray-400 text-sm">Ritmo cardíaco: 145 lpm. Ubicación: [Link Google Maps]</p>
-                    </div>
-                    <!-- Evento de ejemplo 2 -->
-                    <div class="bg-[#0f2138] p-4 rounded-xl border border-[#00bcd4]/50 shadow-md">
-                        <p class="font-bold text-white">15 Jul, 2024 - Modo Calma activado</p>
-                        <p class="text-gray-400 text-sm">Sesión de respiración completada.</p>
-                    </div>
-                    <!-- Evento de ejemplo 3 -->
-                    <div class="bg-[#0f2138] p-4 rounded-xl border border-[#00bcd4]/50 shadow-md">
-                        <p class="font-bold text-white">10 Jul, 2024 - Ritmo cardíaco elevado</p>
-                        <p class="text-gray-400 text-sm">Pico de 120 lpm durante ejercicio intenso.</p>
-                    </div>
-                </div>
-            </div>
-
-        </main>
-
-        <!-- Menú de navegación inferior -->
-        <footer class="bg-[#0f2138] p-4 flex justify-around items-center border-t border-[#00bcd4]">
-            <button onclick="showScreen('home-screen')" class="flex flex-col items-center text-[#00bcd4] hover:text-white transition-colors duration-200">
-                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-7 h-7">
-                    <path stroke-linecap="round" stroke-linejoin="round" d="M2.25 12l8.954-8.955c.44-.439 1.152-.439 1.591 0L21.75 12M4.5 9.75v10.125c0 .621.504 1.125 1.125 1.125H9.75v-4.875c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125V21h4.125c.621 0 1.125-.504 1.125-1.125V9.75M8.25 21h8.25" />
-                </svg>
-                <span class="text-xs mt-1">Inicio</span>
-            </button>
-            <button onclick="showScreen('contacts-screen')" class="flex flex-col items-center text-gray-400 hover:text-white transition-colors duration-200">
-                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-7 h-7">
-                    <path stroke-linecap="round" stroke-linejoin="round" d="M15.75 6a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0zM4.501 20.118a7.5 7.5 0 0114.998 0A17.933 17.933 0 0112 21.75c-2.676 0-5.216-.584-7.499-1.632z" />
-                </svg>
-                <span class="text-xs mt-1">Contactos</span>
-            </button>
-            <button onclick="showScreen('history-screen')" class="flex flex-col items-center text-gray-400 hover:text-white transition-colors duration-200">
-                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-7 h-7">
-                    <path stroke-linecap="round" stroke-linejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 00-3.375-3.375h-1.5A1.125 1.125 0 0113.5 7.125v-1.5a3.375 3.375 0 00-3.375-3.375H8.25m0 12.75h7.5m-7.5 3H12M10.5 21h2.25m-2.25 0h-1.5m1.5 0v-3.375m-1.5 3.375H9.75m7.5-3v3.375m-1.5 0h-1.5m1.5 0h-1.5m-1.5 0H9.75m7.5-3h-7.5m1.5-6h.008v.008H16.5V12h-1.5V9.75h-1.5V12h-1.5V9.75h-1.5V12h-1.5V9.75H8.25m0 0V21" />
-                </svg>
-                <span class="text-xs mt-1">Historial</span>
-            </button>
-            <button onclick="showScreen('settings-screen')" class="flex flex-col items-center text-gray-400 hover:text-white transition-colors duration-200">
-                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-7 h-7">
-                    <path stroke-linecap="round" stroke-linejoin="round" d="M10.343 3.94c.09-.542.56-.94 1.11-.94h1.093c.55 0 1.02.398 1.11.94l.17.992c.092.542.455 1.005.973 1.256l.87.48c.517.252.62.863.324 1.354l-.37.592a1.125 1.125 0 01-.661.424l-.992.17a1.125 1.125 0 00-.94.974l-.063.992a1.125 1.125 0 01-.94.973l-.992.063a1.125 1.125 0 00-.974.94l-.17.992a1.125 1.125 0 01-.424.661l-.592.37c-.491.296-1.102.193-1.354-.324l-.48-.87a1.125 1.125 0 00-1.255-.973l-.992-.17a1.125 1.125 0 01-.973-.94l-.063-.992a1.125 1.125 0 00-.94-.973l-.992-.063a1.125 1.125 0 01-.661-.424l-.592-.37c-.296-.491-.193-1.102.324-1.354l.87-.48c.517-.252.88-.715.973-1.256l.17-.992c.09-.542.56-.94 1.11-.94h1.093c.55 0 1.02.398 1.11.94z" />
-                    <path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                </svg>
-                <span class="text-xs mt-1">Ajustes</span>
-            </button>
-        </footer>
+<body>
+    <div id="intro-screen">
+        <img id="intro-image" src="" alt="Intro Image">
     </div>
 
+    <div id="menu-screen">
+        <!-- <h1>LUMENFALL</h1> -- Este título ha sido eliminado -->
+        <div class="menu-option">
+            <label for="language-select">IDIOMA:</label>
+            <select id="language-select">
+                <option value="es">Español</option>
+                <option value="en">English</option>
+            </select>
+        </div>
+        <button id="play-button" class="menu-option">JUGAR</button>
+    </div>
+
+    <canvas id="bg-canvas"></canvas>
+    <div id="ui-container">
+        <div id="ui-top">
+            <div><div class="stat-label">ENERGY</div><div class="stat-bar"><div id="energy-fill" class="stat-bar-fill"></div></div></div>
+            <div><div class="stat-label">POWER</div><div class="stat-bar"><div id="power-fill" class="stat-bar-fill"></div></div></div>
+        </div>
+        <div id="controls">
+            <!-- Joystick para movimiento -->
+            <div id="joystick-container">
+                <div id="joystick-knob"></div>
+            </div>
+            <div class="right-controls">
+                <div id="btn-attack" class="control-btn">⚔️</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Carga la librería Three.js -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+
     <script>
-        let currentScreen = 'login-screen'; // Pantalla inicial
-        const screenTitles = {
-            'login-screen': 'Bienvenido',
-            'home-screen': 'GUARDIAN+',
-            'contacts-screen': 'Contactos',
-            'crisis-detection-screen': 'Alerta',
-            'alert-sent-screen': 'Alerta Enviada',
-            'emotional-shock-screen': 'Modo Calma',
-            'history-screen': 'Historial',
-            'settings-screen': 'Ajustes' // Agregado para el menú inferior
-        };
+        // --- URLs de Sprites y Texturas ---
+        // Se utilizan enlaces raw de GitHub para asegurar la disponibilidad
+        const runningSpriteUrl = 'https://raw.githubusercontent.com/Yanzsmartwood2025/JUSN38/91cf7a68151871314da5b27acc5dd1ff015e4290/assets/images/LumenFall.png';
+        const attackSpriteUrl = 'https://raw.githubusercontent.com/Yanzsmartwood2025/JUSN38/7d3c163a9830970f045b805d108c7dec2d5e8674/assets/images/hoja_de_sprites%20(2).png';
+        const flameParticleUrl = 'https://raw.githubusercontent.com/Yanzsmartwood2025/JUSN38/3baccf9aa782b7455c20496cdd2e7fbafa7c8286/assets/images/fuego.png';
 
-        // Función para mostrar una pantalla específica
-        function showScreen(screenId) {
-            const screens = document.querySelectorAll('.screen');
-            screens.forEach(screen => {
-                screen.classList.add('hidden'); // Oculta todas las pantallas
-                screen.classList.remove('active');
-            });
+        const wallTextureUrl = 'https://raw.githubusercontent.com/Yanzsmartwood2025/JUSN38/d42892ab05658bf6dd3817ab92eb7ef1f73e0d85/assets/images/pared-calabozo.png';
+        const doorTextureUrl = 'https://raw.githubusercontent.com/Yanzsmartwood2025/JUSN38/d42892ab05658bf6dd3817ab92eb7ef1f73e0d85/assets/images/puerta-calabozo.png';
+        const floorTextureUrl = 'https://raw.githubusercontent.com/Yanzsmartwood2025/JUSN38/d42892ab05658bf6dd3817ab92eb7ef1f73e0d85/assets/images/piso-calabozo.png';
+        const torchTextureUrl = 'https://raw.githubusercontent.com/Yanzsmartwood2025/JUSN38/d42892ab05658bf6dd3817ab92eb7ef1f73e0d85/assets/images/antorcha.png';
 
-            const targetScreen = document.getElementById(screenId);
-            if (targetScreen) {
-                targetScreen.classList.remove('hidden'); // Muestra la pantalla deseada
-                targetScreen.classList.add('active');
-                document.getElementById('screen-title').innerText = screenTitles[screenId];
-                currentScreen = screenId;
+        // URL de la textura del espectro (ahora usando la URL raw de GitHub)
+        const specterTextureUrl = 'https://raw.githubusercontent.com/Yanzsmartwood2025/JUSN38/f84aac629032d6a02b8c34ac91d4844292e9e1ba/assets/images/fantasma.png'; 
+        
+        // --- NUEVAS URLs de Imágenes ---
+        const introImageUrl = 'https://raw.githubusercontent.com/Yanzsmartwood2025/JUSN38/4b2fc282d18b5dc4b93cb8e04a179854259d421c/assets/images/Intro.jpg';
+        const menuBackgroundImageUrl = 'https://raw.githubusercontent.com/Yanzsmartwood2025/JUSN38/3bcb76b3104ebb775ad3ca7272f3d15f436d9ce3/assets/images/menu-principal.jpg';
+
+        // --- Constantes del Juego ---
+        const totalRunningFrames = 8; // Número total de fotogramas en el sprite de correr
+        const totalAttackFrames = 6;  // Número total de fotogramas en el sprite de ataque
+        const totalSpecterFrames = 5; // Número total de fotogramas en el sprite del espectro (basado en la imagen proporcionada)
+        const animationSpeed = 80;    // Velocidad de la animación (ms por fotograma)
+        const specterAnimationSpeed = 120; // Velocidad de animación del espectro (más lento para un efecto etéreo)
+        const moveSpeed = 0.2;        // Velocidad de movimiento del personaje
+
+        // Ancho del área de juego visible (donde el personaje puede moverse y se colocan las puertas)
+        const playableAreaWidth = 120;
+        // Profundidad del "cuarto" desde la cámara hasta la pared del fondo
+        const roomDepth = 15; // Ajustado para que la cámara se vea más cerca
+
+        // --- Configuración de la Escena 3D ---
+        const scene = new THREE.Scene(); // Crea una nueva escena 3D
+        scene.background = new THREE.Color(0x1a1a2a); // Color de fondo de la escena (azul oscuro)
+
+        // Configuración de la cámara de perspectiva
+        const camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 1000);
+        camera.position.set(0, 4, 10); // Posición original y cercana de la cámara
+        camera.lookAt(0, 2, 0);        // Punto al que mira la cámara
+        camera.far = roomDepth + 50; // Asegura que el plano lejano de la cámara cubra toda la profundidad
+        camera.updateProjectionMatrix();
+
+        // Configuración del renderizador WebGL
+        const renderer = new THREE.WebGLRenderer({ canvas: document.getElementById('bg-canvas'), antialias: true });
+        renderer.setSize(window.innerWidth, window.innerHeight); // Ajusta el tamaño del renderizador al tamaño de la ventana
+        renderer.shadowMap.enabled = true; // Habilita las sombras
+
+        // --- Iluminación ---
+        // Luz ambiental: ilumina uniformemente toda la escena.
+        const ambientLight = new THREE.AmbientLight(0x808080, 1.5); // Color gris claro, intensidad aumentada
+        scene.add(ambientLight);
+
+        // Luz direccional: simula la luz del sol o una fuente de luz distante, proyecta sombras.
+        const directionalLight = new THREE.DirectionalLight(0xaaaaaa, 0.5); // Color gris claro, intensidad moderada
+        directionalLight.position.set(5, 10, 5); // Posición de la luz (arriba, derecha, adelante)
+        directionalLight.castShadow = true; // Permite que esta luz proyecte sombras
+        directionalLight.shadow.mapSize.width = 1024; // Resolución del mapa de sombras
+        directionalLight.shadow.mapSize.height = 1024;
+        directionalLight.shadow.camera.near = 0.5; // Rango de la cámara de sombra
+        directionalLight.shadow.camera.far = 50;
+        directionalLight.shadow.camera.left = -20;
+        directionalLight.shadow.camera.right = 20;
+        directionalLight.shadow.camera.top = 20;
+        directionalLight.shadow.camera.bottom = -20;
+        directionalLight.shadow.bias = -0.0001; // Pequeño ajuste para evitar "shadow acne"
+        scene.add(directionalLight);
+
+        // --- Cargador de Texturas ---
+        const textureLoader = new THREE.TextureLoader();
+
+        // Cargar y configurar las texturas para el suelo, paredes, puertas y antorchas
+        const floorTexture = textureLoader.load(floorTextureUrl);
+        floorTexture.wrapS = floorTexture.wrapT = THREE.RepeatWrapping; // Permite que la textura se repita
+        // Ajusta la repetición de la textura del suelo para el ancho y profundidad del cuarto
+        floorTexture.repeat.set(playableAreaWidth / 4, roomDepth / 5);
+        const floorMaterial = new THREE.MeshStandardMaterial({ map: floorTexture });
+
+        const wallTexture = textureLoader.load(wallTextureUrl);
+        wallTexture.wrapS = wallTexture.wrapT = THREE.RepeatWrapping;
+        // Ajusta la repetición de la textura de la pared para el ancho del cuarto
+        wallTexture.repeat.set(playableAreaWidth / 3, 6);
+        const wallMaterial = new THREE.MeshStandardMaterial({ map: wallTexture, color: 0x454555 });
+
+        const doorTexture = textureLoader.load(doorTextureUrl);
+        // El material de la puerta debe ser transparente y usar alphaTest para renderizar correctamente
+        const doorMaterial = new THREE.MeshStandardMaterial({ map: doorTexture, transparent: true, alphaTest: 0.5 });
+
+        const torchTexture = textureLoader.load(torchTextureUrl);
+        // El material de la antorcha también debe ser transparente y usar alphaTest
+        const torchMaterial = new THREE.MeshStandardMaterial({ map: torchTexture, transparent: true, alphaTest: 0.5, side: THREE.DoubleSide });
+
+        // --- Clase para la Llama Realista ---
+        class RealisticFlame {
+            constructor(scene, position) {
+                this.scene = scene;
+                this.position = position;
+                this.particleCount = 300; // Número de partículas en la llama
+                this.particles = null;
+                this.light = null;
+                this.init();
             }
 
-            // Lógica específica para la pantalla de crisis
-            if (screenId === 'crisis-detection-screen') {
-                startCountdown();
-            } else {
-                stopCountdown(); // Asegura que el contador se detenga si cambias de pantalla
-            }
-        }
+            init() {
+                const particleTexture = textureLoader.load(flameParticleUrl); // Textura para las partículas de fuego
+                const particleMaterial = new THREE.PointsMaterial({
+                    color: 0x00aaff, // Color de las partículas (azul brillante)
+                    size: 0.4,       // Tamaño de las partículas
+                    map: particleTexture,
+                    blending: THREE.AdditiveBlending, // Modo de mezcla aditivo para un efecto de brillo
+                    transparent: true,
+                    depthWrite: false, // Importante para evitar problemas de renderizado con transparencia
+                });
 
-        // Función para volver a la pantalla anterior (rudimentario, para este prototipo)
-        function goBack() {
-            if (currentScreen === 'home-screen') {
-                showScreen('login-screen'); // Vuelve al login si estás en home
-            } else if (currentScreen === 'contacts-screen' || currentScreen === 'history-screen' || currentScreen === 'settings-screen' || currentScreen === 'alert-sent-screen' || currentScreen === 'emotional-shock-screen') {
-                showScreen('home-screen'); // Vuelve al home desde otras pantallas
-            } else if (currentScreen === 'crisis-detection-screen') {
-                cancelCrisis(); // Cancela la crisis si se vuelve desde ahí
-            }
-        }
+                const particleGeometry = new THREE.BufferGeometry();
+                const positions = new Float32Array(this.particleCount * 3); // Array para las posiciones de las partículas
+                this.velocities = []; // Almacena las velocidades y el tiempo de vida de cada partícula
 
-        // --- Lógica del Contador para Detección de Crisis ---
-        let countdownInterval;
-        let countdownValue = 10;
-
-        function startCountdown() {
-            countdownValue = 10;
-            document.getElementById('countdown').innerText = countdownValue;
-            countdownInterval = setInterval(() => {
-                countdownValue--;
-                document.getElementById('countdown').innerText = countdownValue;
-                if (countdownValue <= 0) {
-                    clearInterval(countdownInterval);
-                    showScreen('alert-sent-screen'); // Muestra la pantalla de alerta enviada
+                // Inicializa las posiciones y velocidades de las partículas
+                for (let i = 0; i < this.particleCount; i++) {
+                    positions[i * 3] = this.position.x;
+                    positions[i * 3 + 1] = this.position.y;
+                    positions[i * 3 + 2] = this.position.z;
+                    this.velocities.push({
+                        x: (Math.random() - 0.5) * 0.02, // Velocidad X aleatoria
+                        y: Math.random() * 0.1,          // Velocidad Y (hacia arriba) aleatoria
+                        z: (Math.random() - 0.5) * 0.02, // Velocidad Z aleatoria
+                        lifetime: Math.random() * 2      // Tiempo de vida aleatorio
+                    });
                 }
-            }, 1000);
+                particleGeometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+                this.particles = new THREE.Points(particleGeometry, particleMaterial);
+                this.scene.add(this.particles);
+
+                // Luz de la llama: ilumina el área alrededor de la antorcha
+                this.light = new THREE.PointLight(0x00aaff, 2.0, 20); // Color azul, intensidad aumentada, distancia
+                this.light.position.copy(this.position); // Posición de la luz igual a la de la llama
+                this.light.castShadow = true; // Permite que la luz de la llama proyecte sombras
+                this.scene.add(this.light);
+            }
+
+            update(deltaTime) {
+                const positions = this.particles.geometry.attributes.position.array;
+                for (let i = 0; i < this.particleCount; i++) {
+                    const vel = this.velocities[i];
+                    vel.lifetime -= deltaTime; // Reduce el tiempo de vida de la partícula
+
+                    // Si la partícula ha "muerto", la reinicia en la posición inicial
+                    if (vel.lifetime <= 0) {
+                        positions[i * 3] = this.position.x;
+                        positions[i * 3 + 1] = this.position.y;
+                        positions[i * 3 + 2] = this.position.z;
+                        vel.lifetime = Math.random() * 2; // Nuevo tiempo de vida
+                        vel.y = Math.random() * 0.1;      // Nueva velocidad Y
+                    }
+
+                    // Actualiza la posición de la partícula
+                    positions[i * 3] += vel.x;
+                    positions[i * 3 + 1] += vel.y;
+                    positions[i * 3 + 2] += vel.z;
+                }
+                this.particles.geometry.attributes.position.needsUpdate = true; // Notifica a Three.js que las posiciones han cambiado
+
+                // Hace que la intensidad de la luz parpadee
+                this.light.intensity = 1.0 + Math.sin(Date.now() * 0.01 + this.position.x) * 0.5;
+            }
         }
 
-        function stopCountdown() {
-            clearInterval(countdownInterval);
+        // --- Clase para el Espectro ---
+        class Specter {
+            constructor(scene, initialX, initialY, torchPositions = []) {
+                this.scene = scene;
+                this.mesh = null;
+                this.initialX = initialX; // Initial X for spawning
+                this.floatingCenterY = initialY; // Y-coordinate for floating center
+
+                this.moveDirectionX = 1; // 1 for right, -1 for left
+                this.moveSpeedX = moveSpeed * 0.5; // Slower horizontal movement
+
+                this.floatingOffset = Math.random() * Math.PI * 2;
+                this.floatingSpeed = 2; // Speed of Y oscillation
+                this.floatingAmplitude = 0.5; // Amplitude of Y oscillation
+
+                this.currentFrame = 0;
+                this.lastFrameTime = 0;
+                this.spriteFlipX = 1; // 1 for normal, -1 for flipped horizontally
+
+                // Z-axis movement properties
+                this.zDirection = 1; // 1 for forward (towards camera), -1 for backward
+                this.zSpeed = 1.0; // Speed of Z movement (can be faster)
+                this.minZ = camera.position.z - 5; // Closer to camera
+                this.maxZ = camera.position.z - roomDepth + 1; // Further back, near the wall
+
+                // Teleportation properties
+                this.isTeleporting = false;
+                this.teleportingState = 'idle'; // 'idle', 'fadingOut', 'movingToNewPos', 'fadingIn'
+                this.teleportProgress = 0;
+                this.teleportDurationPhase = 0.3; // seconds for each fade phase (total 0.6 for fade in/out)
+                this.teleportCooldown = 2 + Math.random() * 2; // 2 to 4 seconds before next teleport
+                this.currentTeleportCooldown = this.teleportCooldown; // Initial cooldown
+                this.torchPositions = torchPositions; // Array of torch positions (x,y,z)
+
+                this.init();
+            }
+
+            init() {
+                const specterTexture = textureLoader.load(specterTextureUrl);
+                specterTexture.wrapS = specterTexture.wrapT = THREE.RepeatWrapping;
+                specterTexture.repeat.x = 1 / totalSpecterFrames;
+
+                const specterMaterial = new THREE.MeshStandardMaterial({
+                    map: specterTexture,
+                    color: 0x88bbff,
+                    transparent: true,
+                    opacity: 0.7,
+                    side: THREE.DoubleSide,
+                    alphaTest: 0.1
+                });
+
+                const specterGeometry = new THREE.PlaneGeometry(3, 3);
+                this.mesh = new THREE.Mesh(specterGeometry, specterMaterial);
+                
+                // Set initial position: X from constructor, Y from floatingCenterY, Z at maxZ (back)
+                this.mesh.position.set(this.initialX, this.floatingCenterY, this.maxZ);
+                this.scene.add(this.mesh);
+                this.initialScaleX = this.mesh.scale.x; // Store initial scale for flipping
+            }
+
+            update(deltaTime) {
+                // Actualiza el fotograma de animación del espectro
+                if (Date.now() - this.lastFrameTime > specterAnimationSpeed) {
+                    this.lastFrameTime = Date.now();
+                    this.currentFrame = (this.currentFrame + 1) % totalSpecterFrames;
+                    this.mesh.material.map.offset.x = this.currentFrame / totalSpecterFrames;
+                }
+
+                if (!this.isTeleporting) {
+                    // Movimiento horizontal (eje X)
+                    const oldMoveDirectionX = this.moveDirectionX;
+                    this.mesh.position.x += this.moveDirectionX * this.moveSpeedX;
+
+                    const minX = -playableAreaWidth / 2 + 1.5;
+                    const maxX = playableAreaWidth / 2 - 1.5;
+
+                    if (this.mesh.position.x < minX) {
+                        this.mesh.position.x = minX;
+                        this.moveDirectionX = 1;
+                    } else if (this.mesh.position.x > maxX) {
+                        this.mesh.position.x = maxX;
+                        this.moveDirectionX = -1;
+                    }
+
+                    // Actualiza spriteFlipX si la dirección horizontal cambió
+                    if (this.moveDirectionX !== oldMoveDirectionX) {
+                        this.spriteFlipX = (this.moveDirectionX === 1) ? 1 : -1;
+                    }
+                    this.mesh.scale.x = this.initialScaleX * this.spriteFlipX;
+
+                    // Flotación vertical (eje Y)
+                    this.floatingOffset += this.floatingSpeed * deltaTime;
+                    this.mesh.position.y = this.floatingCenterY + Math.sin(this.floatingOffset) * this.floatingAmplitude;
+
+                    // Movimiento en el eje Z (adelante/atrás)
+                    this.mesh.position.z += this.zDirection * this.zSpeed * deltaTime;
+
+                    // Invierte la dirección Z si golpea los límites
+                    if (this.mesh.position.z > this.minZ) {
+                        this.mesh.position.z = this.minZ;
+                        this.zDirection = -1;
+                    } else if (this.mesh.position.z < this.maxZ) {
+                        this.mesh.position.z = this.maxZ;
+                        this.zDirection = 1;
+                    }
+
+                    // Disparador de teletransporte
+                    this.currentTeleportCooldown -= deltaTime;
+                    if (this.currentTeleportCooldown <= 0 && this.torchPositions.length > 0) {
+                        this.isTeleporting = true;
+                        this.teleportingState = 'fadingOut';
+                        this.teleportProgress = 0;
+                        this.currentTeleportCooldown = this.teleportCooldown + Math.random() * 2; // Reinicia el cooldown
+                    }
+
+                } else {
+                    // Maneja los estados de teletransporte
+                    if (this.teleportingState === 'fadingOut') {
+                        this.teleportProgress += deltaTime / this.teleportDurationPhase;
+                        this.mesh.material.opacity = 0.7 * (1 - this.teleportProgress);
+                        if (this.teleportProgress >= 1) {
+                            this.teleportingState = 'movingToNewPos';
+                            this.mesh.material.opacity = 0; // Asegura que sea completamente invisible
+
+                            // Elige una nueva posición de antorcha aleatoria
+                            const randomIndex = Math.floor(Math.random() * this.torchPositions.length);
+                            const newTorchPos = this.torchPositions[randomIndex];
+                            
+                            // Teletransporta a la nueva X, Y (centro de flotación) y Z (fondo de la habitación)
+                            this.mesh.position.x = newTorchPos.x;
+                            this.floatingCenterY = newTorchPos.y; // Actualiza el centro de flotación Y
+                            this.mesh.position.z = this.maxZ; // Siempre inicia el movimiento Z desde el fondo
+                            this.zDirection = 1; // Siempre comienza a moverse hacia adelante después del teletransporte
+
+                            this.teleportProgress = 0;
+                        }
+                    } else if (this.teleportingState === 'movingToNewPos') {
+                        // Reposicionamiento instantáneo
+                        this.teleportingState = 'fadingIn';
+                    } else if (this.teleportingState === 'fadingIn') {
+                        this.teleportProgress += deltaTime / this.teleportDurationPhase;
+                        this.mesh.material.opacity = 0.7 * this.teleportProgress;
+                        if (this.teleportProgress >= 1) {
+                            this.isTeleporting = false;
+                            this.teleportingState = 'idle';
+                            this.mesh.material.opacity = 0.7; // Restaura la opacidad completa
+                        }
+                    }
+                }
+
+                // Efecto billboard: siempre mira a la cámara
+                this.mesh.lookAt(camera.position);
+            }
         }
 
-        function cancelCrisis() {
-            stopCountdown();
-            showScreen('home-screen'); // Vuelve a la pantalla de inicio
+        // --- Geometría del Mundo 3D ---
+        // Suelo: Extiende desde la cámara hasta la pared del fondo
+        const floorGeometry = new THREE.PlaneGeometry(playableAreaWidth, roomDepth);
+        const floor = new THREE.Mesh(floorGeometry, floorMaterial);
+        floor.rotation.x = -Math.PI / 2; // Rota el plano para que sea horizontal
+        // Posiciona el centro del piso para que cubra desde la cámara (z=10) hasta la pared del fondo (z=-5)
+        floor.position.z = camera.position.z - (roomDepth / 2); // 10 - (15/2) = 2.5
+        floor.receiveShadow = true; // El suelo puede recibir sombras
+        scene.add(floor);
+
+        // Pared trasera: Colocada al final de la profundidad del cuarto
+        const wallGeometry = new THREE.PlaneGeometry(playableAreaWidth, 20);
+        const wall = new THREE.Mesh(wallGeometry, wallMaterial);
+        wall.position.z = camera.position.z - roomDepth; // 10 - 15 = -5
+        wall.position.y = 10;
+        wall.receiveShadow = true;
+        scene.add(wall);
+
+        // Nuevas paredes laterales para el efecto de "cuarto encerrado" y diagonal
+        const sideWallHeight = 20; // Misma altura que la pared trasera
+        const sideWallLength = roomDepth; // La longitud de las paredes laterales es la profundidad del cuarto
+        const sideWallAngle = Math.PI / 6; // Ángulo de inclinación para el efecto diagonal (30 grados)
+
+        const sideWallGeometry = new THREE.PlaneGeometry(sideWallLength, sideWallHeight);
+        
+        // Pared Lateral Izquierda
+        const leftSideWall = new THREE.Mesh(sideWallGeometry, wallMaterial);
+        leftSideWall.rotation.y = Math.PI / 2 + sideWallAngle; // Rota 90 grados y luego un poco más para inclinar
+        // Posiciona en el extremo izquierdo del área de juego, centrado en Y, y a la misma Z que el centro del piso
+        leftSideWall.position.set(-playableAreaWidth / 2, sideWallHeight / 2, floor.position.z);
+        leftSideWall.receiveShadow = true;
+        leftSideWall.castShadow = true; // También pueden proyectar sombras
+        scene.add(leftSideWall);
+
+        // Pared Lateral Derecha
+        const rightSideWall = new THREE.Mesh(sideWallGeometry, wallMaterial);
+        rightSideWall.rotation.y = -Math.PI / 2 - sideWallAngle; // Rota -90 grados y luego un poco más para inclinar
+        // Posiciona en el extremo derecho del área de juego, centrado en Y, y a la misma Z que el centro del piso
+        rightSideWall.position.set(playableAreaWidth / 2, sideWallHeight / 2, floor.position.z);
+        rightSideWall.receiveShadow = true;
+        rightSideWall.castShadow = true;
+        scene.add(rightSideWall);
+
+
+        const allFlames = []; // Array para almacenar todas las instancias de llamas
+        const torchWorldPositions = []; // Array para almacenar las posiciones de las antorchas
+
+        // Función para crear una "puerta" (arco con antorchas)
+        function createGate(xPos) {
+            const gateGroup = new THREE.Group(); // Grupo para contener la puerta y sus elementos
+            const gateGeometry = new THREE.PlaneGeometry(8, 8);
+            const gate = new THREE.Mesh(gateGeometry, doorMaterial);
+            gate.position.set(0, 4, 0.3); // Posición relativa dentro del grupo (ligeramente delante de la pared trasera)
+            gate.receiveShadow = true;
+            gateGroup.add(gate);
+
+            // Añadir las mallas estáticas de la antorcha (la imagen de la antorcha)
+            const torchGeometry = new THREE.PlaneGeometry(0.5, 1.8); // Tamaño de la antorcha
+            const torchLeftMesh = new THREE.Mesh(torchGeometry, torchMaterial);
+            // Posición absoluta de la antorcha izquierda, alineada con la pared trasera
+            torchLeftMesh.position.set(xPos - 6, 3.2, camera.position.z - roomDepth + 0.5); // Alineada con la pared trasera
+            torchLeftMesh.castShadow = true; // La antorcha puede proyectar sombras
+            torchLeftMesh.receiveShadow = true; // La antorcha puede recibir sombras
+            scene.add(torchLeftMesh);
+            // Almacena la posición de la antorcha para el teletransporte del espectro, ajustando Y y Z para el espectro
+            torchWorldPositions.push(new THREE.Vector3(xPos - 6, 4.5, camera.position.z - roomDepth + 0.7)); 
+
+            const torchRightMesh = new THREE.Mesh(torchGeometry, torchMaterial);
+            // Posición absoluta de la antorcha derecha, alineada con la pared trasera
+            torchRightMesh.position.set(xPos + 6, 3.2, camera.position.z - roomDepth + 0.5); // Alineada con la pared trasera
+            torchRightMesh.castShadow = true;
+            torchRightMesh.receiveShadow = true;
+            scene.add(torchRightMesh);
+            // Almacena la posición de la antorcha para el teletransporte del espectro, ajustando Y y Z para el espectro
+            torchWorldPositions.push(new THREE.Vector3(xPos + 6, 4.5, camera.position.z - roomDepth + 0.7)); 
+
+            // Posición de la llama ajustada para que coincida con la nueva posición de la antorcha
+            const flameLeft = new RealisticFlame(scene, new THREE.Vector3(xPos - 6, 4.5, camera.position.z - roomDepth + 0.7));
+            const flameRight = new RealisticFlame(scene, new THREE.Vector3(xPos + 6, 4.5, camera.position.z - roomDepth + 0.7));
+            allFlames.push(flameLeft, flameRight); // Añade las llamas al array para su actualización
+
+            gateGroup.position.x = xPos; // Posiciona el grupo completo de la puerta en X
+            gateGroup.position.z = camera.position.z - roomDepth; // Posiciona el grupo de la puerta en la pared trasera
+            scene.add(gateGroup);
         }
 
-        // Inicializa la pantalla de login al cargar
-        document.addEventListener('DOMContentLoaded', () => {
-            showScreen('login-screen');
+        // Crea varias puertas a lo largo del ancho del área de juego
+        const spacing = playableAreaWidth / 6;
+        for (let i = 0; i < 5; i++) {
+            createGate(-playableAreaWidth / 2 + spacing * (i + 1));
+        }
+
+        // --- Personaje 2.5D ---
+        // Carga las texturas de los sprites para correr y atacar
+        const runningTexture = textureLoader.load(runningSpriteUrl);
+        const attackTexture = textureLoader.load(attackSpriteUrl);
+
+        // Configura la repetición de la textura para mostrar un solo fotograma del sprite
+        runningTexture.repeat.x = 1 / totalRunningFrames;
+        attackTexture.repeat.x = 1 / totalAttackFrames;
+
+        // Material del personaje, usando la textura de ataque por defecto
+        const playerMaterial = new THREE.MeshStandardMaterial({
+            map: attackTexture,
+            transparent: true,
+            side: THREE.DoubleSide, // Renderiza ambos lados del plano
+            alphaTest: 0.5          // Para manejar la transparencia de los sprites
+        });
+        const playerGeometry = new THREE.PlaneGeometry(2, 2); // Geometría del personaje (un plano)
+        const player = new THREE.Mesh(playerGeometry, playerMaterial);
+        player.position.y = 1; // Posición inicial del personaje
+        player.castShadow = true; // El personaje puede proyectar sombras
+        scene.add(player);
+
+        // Luz puntual para el personaje
+        const playerLight = new THREE.PointLight(0xffffff, 0.5, 8); // Luz blanca, intensidad 0.5, distancia 8
+        scene.add(playerLight);
+
+        // --- Doble Llama de Ataque ---
+        // Crea un grupo de llamas para el efecto de ataque
+        function createAttackFlame() {
+            const flameGroup = new THREE.Group();
+            const flameLight = new THREE.PointLight(0x00aaff, 1.5, 4); // Luz de la llama de ataque
+            flameLight.castShadow = true;
+            flameGroup.add(flameLight);
+
+            const attackFlameMaterial = new THREE.MeshBasicMaterial({
+                map: textureLoader.load(flameParticleUrl), // Misma textura de partícula de fuego
+                color: 0xaaddff, // Color azulado
+                transparent: true,
+                blending: THREE.AdditiveBlending,
+            });
+            const flameCore = new THREE.Mesh(new THREE.PlaneGeometry(0.5, 0.5), attackFlameMaterial);
+            flameGroup.add(flameCore);
+            flameGroup.visible = false; // Inicialmente invisible
+            player.add(flameGroup); // Añade el grupo de llamas como hijo del personaje
+            return flameGroup;
+        }
+
+        const rightHandFlame = createAttackFlame();
+        rightHandFlame.position.set(-0.6, 0.3, 0.3); // Posición de la llama de la mano derecha (relativa al personaje)
+        const leftHandFlame = createAttackFlame();
+        leftHandFlame.position.set(0.6, 0.3, 0.3); // Posición de la llama de la mano izquierda
+
+        // --- Controles y Estado del Juego ---
+        const btnAttack = document.getElementById('btn-attack');
+        const joystickContainer = document.getElementById('joystick-container');
+        const joystickKnob = document.getElementById('joystick-knob');
+
+        let isMovingLeft = false;  // Indica si el personaje se mueve a la izquierda
+        let isMovingRight = false; // Indica si el personaje se mueve a la derecha
+        let isFacingLeft = false;  // Indica si el personaje está mirando a la izquierda
+        let attackHeld = false;    // Indica si el botón de ataque está presionado
+
+        let lastTime = 0;        // Último tiempo de actualización de la animación
+        let currentFrame = 0;    // Fotograma actual de la animación
+
+        let currentState = 'idle';     // Estado actual del personaje (idle, running, attacking)
+        let previousState = 'idle';    // Estado anterior del personaje
+
+        // Límites de movimiento del personaje en el eje X (basados en el área de juego)
+        const minPlayerX = -playableAreaWidth / 2 + 1.5;
+        const maxPlayerX = playableAreaWidth / 2 - 1.5;
+
+        // Joystick variables
+        let isDraggingJoystick = false;
+        let joystickRect; // Para almacenar el bounding client rect del contenedor del joystick
+        let joystickRadius; // Se calculará dinámicamente
+
+        // Función para actualizar las dimensiones del joystick (posición y radio)
+        function updateJoystickDimensions() {
+            joystickRect = joystickContainer.getBoundingClientRect();
+            // Calcula el radio del joystick, restando la mitad del ancho del knob para el límite
+            joystickRadius = joystickContainer.clientWidth / 2 - joystickKnob.clientWidth / 2;
+        }
+
+        // Listeners de eventos del Joystick
+        joystickKnob.addEventListener('mousedown', (e) => {
+            isDraggingJoystick = true;
+            joystickKnob.style.transition = 'none'; // Deshabilita la transición durante el arrastre
+            updateJoystickDimensions(); // Asegura que las dimensiones estén actualizadas al iniciar el arrastre
+        });
+        joystickKnob.addEventListener('touchstart', (e) => {
+            e.preventDefault(); // Previene el desplazamiento de la página
+            isDraggingJoystick = true;
+            joystickKnob.style.transition = 'none'; // Deshabilita la transición durante el arrastre
+            updateJoystickDimensions(); // Asegura que las dimensiones estén actualizadas al iniciar el arrastre
+        }, { passive: false });
+
+        document.addEventListener('mousemove', (e) => {
+            if (!isDraggingJoystick) return;
+            moveJoystick(e.clientX, e.clientY);
+        });
+        document.addEventListener('touchmove', (e) => {
+            if (!isDraggingJoystick) return;
+            e.preventDefault(); // Previene el desplazamiento de la página
+            moveJoystick(e.touches[0].clientX, e.touches[0].clientY);
+        }, { passive: false });
+
+        document.addEventListener('mouseup', () => {
+            if (isDraggingJoystick) {
+                isDraggingJoystick = false;
+                resetJoystick();
+            }
+        });
+        document.addEventListener('touchend', () => {
+            if (isDraggingJoystick) {
+                isDraggingJoystick = false;
+                resetJoystick();
+            }
+        });
+        document.addEventListener('mouseleave', () => { // Para cuando el ratón sale de la ventana
+            if (isDraggingJoystick) {
+                isDraggingJoystick = false;
+                resetJoystick();
+            }
+        });
+
+        function moveJoystick(clientX, clientY) {
+            // Calcula el delta (desplazamiento) relativo al centro del contenedor del joystick
+            let deltaX = clientX - (joystickRect.left + joystickRect.width / 2);
+            let deltaY = clientY - (joystickRect.top + joystickRect.height / 2);
+
+            // Calcula la distancia desde el centro
+            const distance = Math.sqrt(deltaX * deltaX + deltaY * deltaY);
+
+            // Limita la posición del knob al radio del contenedor del joystick
+            if (distance > joystickRadius) {
+                const angle = Math.atan2(deltaY, deltaX);
+                deltaX = joystickRadius * Math.cos(angle);
+                deltaY = joystickRadius * Math.sin(angle);
+            }
+
+            // Aplica la transformación para mover el knob desde su posición centrada
+            joystickKnob.style.transform = `translate(-50%, -50%) translate(${deltaX}px, ${deltaY}px)`;
+
+            // Determina la dirección del movimiento basándose en la posición horizontal
+            const deadZone = 10; // Píxeles desde el centro para ignorar movimientos ligeros
+            isMovingLeft = deltaX < -deadZone;
+            isMovingRight = deltaX > deadZone;
+
+            // Establece la dirección en la que mira el personaje según la entrada del joystick
+            if (isMovingLeft) {
+                isFacingLeft = true;
+            } else if (isMovingRight) {
+                isFacingLeft = false;
+            }
+        }
+
+        function resetJoystick() {
+            joystickKnob.style.transition = 'transform 0.1s ease-out'; // Reactiva la transición
+            joystickKnob.style.transform = 'translate(-50%, -50%)'; // Vuelve al centro
+            isMovingLeft = false;
+            isMovingRight = false;
+        }
+
+        // Listeners del botón de ataque
+        btnAttack.addEventListener('mousedown', () => attackHeld = true);
+        btnAttack.addEventListener('mouseup', () => attackHeld = false);
+        btnAttack.addEventListener('mouseleave', () => attackHeld = false); // Si el ratón sale del botón
+        btnAttack.addEventListener('touchstart', (e) => { e.preventDefault(); attackHeld = true; }); // Para dispositivos táctiles
+        btnAttack.addEventListener('touchend', () => attackHeld = false);
+
+        const clock = new THREE.Clock(); // Reloj para calcular el tiempo transcurrido (deltaTime)
+
+        // Array para almacenar todos los espectros
+        const allSpecters = [];
+
+        // Ejemplo: Añadir un espectro en el centro de la habitación, un poco más atrás
+        // Posición inicial del espectro: X aleatoria dentro del área de juego, Y en altura de flotación, Z se ajustará a maxZ en init
+        const initialSpecterX = THREE.MathUtils.randFloat(-playableAreaWidth / 2 + 3, playableAreaWidth / 2 - 3);
+        const specter1 = new Specter(scene, initialSpecterX, 4.5, torchWorldPositions);
+        allSpecters.push(specter1);
+
+        // --- Bucle principal de animación ---
+        function animate(time) {
+            requestAnimationFrame(animate); // Solicita el siguiente fotograma de animación
+
+            const deltaTime = clock.getDelta(); // Tiempo transcurrido desde el último fotograma
+            const isMoving = isMovingLeft || isMovingRight; // Comprueba si el personaje se está moviendo
+
+            // --- Lógica de Movimiento y Rotación del Personaje ---
+            if (isMovingRight) {
+                player.position.x += moveSpeed;
+                isFacingLeft = false; // Mira a la derecha
+            } else if (isMovingLeft) {
+                player.position.x -= moveSpeed;
+                isFacingLeft = true; // Mira a la izquierda
+            }
+            
+            // Limita la posición del personaje dentro de los límites del área de juego
+            player.position.x = Math.max(minPlayerX, Math.min(maxPlayerX, player.position.x));
+
+            // Ajusta la rotación del personaje para que mire en la dirección correcta
+            player.rotation.y = isFacingLeft ? Math.PI : 0;
+
+            // La cámara sigue la posición X del jugador
+            camera.position.x = player.position.x;
+
+            // La luz del jugador sigue la posición del jugador
+            playerLight.position.set(player.position.x, player.position.y + 1, player.position.z + 2);
+
+            // ***** LÓGICA DE ESTADO Y ANIMACIÓN REESTRUCTURADA *****
+            previousState = currentState; // Guarda el estado actual como el anterior
+
+            if (attackHeld) {
+                currentState = 'attacking'; // Si el ataque está presionado, el estado es atacando
+            } else if (isMoving) {
+                currentState = 'running'; // Si se está moviendo, el estado es corriendo
+            } else {
+                currentState = 'idle'; // Si no se mueve ni ataca, el estado es inactivo
+            }
+
+            // Si el estado acaba de cambiar, reiniciamos el contador de fotogramas
+            if (currentState !== previousState) {
+                currentFrame = 0;
+            }
+
+            // Controla la visibilidad de las llamas de ataque
+            rightHandFlame.visible = (currentState === 'attacking');
+            leftHandFlame.visible = (currentState === 'attacking');
+
+            // Actualiza la animación del sprite solo si ha pasado suficiente tiempo
+            if (time - lastTime > animationSpeed) {
+                lastTime = time; // Actualiza el último tiempo de animación
+
+                switch (currentState) {
+                    case 'attacking':
+                        playerMaterial.map = attackTexture; // Usa la textura de ataque
+                        // Avanza el fotograma, pero se detiene en el último fotograma de ataque
+                        if (currentFrame < totalAttackFrames - 1) {
+                            currentFrame++;
+                        }
+                        attackTexture.offset.x = currentFrame / totalAttackFrames; // Actualiza el offset de la textura
+                        break;
+                    case 'running':
+                        playerMaterial.map = runningTexture; // Usa la textura de correr
+                        currentFrame = (currentFrame + 1) % totalRunningFrames; // Cicla los fotogramas de correr
+                        runningTexture.offset.x = currentFrame / totalRunningFrames;
+                        break;
+                    case 'idle':
+                        playerMaterial.map = attackTexture; // Vuelve a la textura de ataque para el estado inactivo
+                        attackTexture.offset.x = 0; // Muestra el primer fotograma (inactivo)
+                        currentFrame = 0; // Reinicia el fotograma
+                        break;
+                }
+            }
+
+            // Actualiza las llamas de ataque si están visibles
+            if (rightHandFlame.visible) {
+                [rightHandFlame, leftHandFlame].forEach(flame => {
+                    const light = flame.children[0]; // La luz de la llama
+                    const core = flame.children[1];  // La malla de la partícula principal
+                    light.intensity = 1.0 + Math.random() * 0.5; // Parpadeo de la luz
+                    const scale = 0.8 + Math.random() * 0.4; // Escala aleatoria para el efecto de llama
+                    core.scale.set(scale, scale, scale);
+                    core.rotation.z += 0.1; // Pequeña rotación para el efecto
+                });
+            }
+
+            // Actualiza todas las llamas del mundo
+            allFlames.forEach(flame => flame.update(deltaTime));
+
+            // Actualiza todos los espectros
+            allSpecters.forEach(specter => specter.update(deltaTime));
+
+            renderer.render(scene, camera); // Renderiza la escena
+        }
+
+        // --- Lógica de la pantalla de introducción y menú ---
+        const introScreen = document.getElementById('intro-screen');
+        const introImage = document.getElementById('intro-image');
+        const menuScreen = document.getElementById('menu-screen');
+        const playButton = document.getElementById('play-button');
+        const languageSelect = document.getElementById('language-select');
+
+        let currentLanguage = 'es'; // Idioma por defecto
+
+        function showMenu() {
+            // Establece la imagen de fondo del menú
+            menuScreen.style.backgroundImage = `url('${menuBackgroundImageUrl}')`;
+            menuScreen.style.display = 'flex'; // Muestra el menú
+            setTimeout(() => {
+                menuScreen.style.opacity = 1; // Inicia el desvanecimiento del menú
+            }, 10); // Pequeño retraso para que la transición de opacidad funcione
+        }
+
+        function startGame() {
+            menuScreen.style.opacity = 0; // Inicia el desvanecimiento del menú
+            menuScreen.addEventListener('transitionend', () => {
+                menuScreen.style.display = 'none'; // Oculta el menú
+                document.getElementById('bg-canvas').style.display = 'block'; // Muestra el canvas del juego
+                document.getElementById('ui-container').style.display = 'block'; // Muestra la UI del juego
+                animate(0); // Inicia el bucle de animación del juego
+            }, { once: true });
+        }
+
+        function handleLanguageChange() {
+            currentLanguage = languageSelect.value;
+            console.log('Idioma seleccionado:', currentLanguage);
+            // Aquí podrías añadir lógica para cambiar el texto de la UI según el idioma
+            // Por ejemplo:
+            // if (currentLanguage === 'en') {
+            //     playButton.textContent = 'PLAY';
+            //     document.querySelector('.stat-label').textContent = 'ENERGY';
+            //     // ... y así para todos los textos que necesites traducir
+            // } else {
+            //     playButton.textContent = 'JUGAR';
+            //     document.querySelector('.stat-label').textContent = 'ENERGY'; // O el texto en español
+            // }
+        }
+
+        // Event listeners para el menú
+        playButton.addEventListener('click', startGame);
+        languageSelect.addEventListener('change', handleLanguageChange);
+
+        // Iniciar la introducción al cargar la ventana
+        window.addEventListener('load', () => {
+            updateJoystickDimensions(); // Asegura que el joystick se inicialice correctamente
+            introImage.src = introImageUrl; // Establece la nueva imagen de la intro
+            
+            // Después de 4 segundos, oculta la pantalla de introducción y muestra el menú
+            setTimeout(() => {
+                introScreen.style.opacity = 0; // Inicia el desvanecimiento de la intro
+                introScreen.addEventListener('transitionend', () => {
+                    introScreen.style.display = 'none'; // Oculta la intro
+                    showMenu(); // Muestra el menú
+                }, { once: true }); // El listener se ejecuta solo una vez
+            }, 4000); // 4 segundos
+        });
+
+        // Actualiza las dimensiones del joystick y el renderizador al redimensionar la ventana
+        window.addEventListener('resize', () => {
+            updateJoystickDimensions();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
         });
     </script>
 </body>
