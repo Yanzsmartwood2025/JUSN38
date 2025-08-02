@@ -1122,7 +1122,6 @@
         // --- src/level_loader.js (Lógica para cargar niveles) ---
         const wallTexture = textureLoader.load(assetUrls.wallTexture);
         wallTexture.wrapS = wallTexture.wrapT = THREE.RepeatWrapping;
-        wallTexture.repeat.set(playableAreaWidth / 3, 6);
         const wallMaterial = new THREE.MeshStandardMaterial({ map: wallTexture, color: 0x454555 });
 
         const doorTexture = textureLoader.load(assetUrls.doorTexture);
@@ -1137,8 +1136,6 @@
         const torchMaterial = new THREE.MeshStandardMaterial({ map: torchTexture, transparent: true, alphaTest: 0.5, side: THREE.DoubleSide });
         
         const floorGeometry = new THREE.PlaneGeometry(playableAreaWidth, roomDepth);
-        const wallGeometry = new THREE.PlaneGeometry(playableAreaWidth, 20);
-        const sideWallGeometry = new THREE.PlaneGeometry(roomDepth, 20);
 
         function clearScene() {
             while (scene.children.length > 0) {
@@ -1175,22 +1172,28 @@
             floor.receiveShadow = true;
             scene.add(floor);
 
-            const wall = new THREE.Mesh(wallGeometry, wallMaterial);
+            const wall = new THREE.Mesh(new THREE.PlaneGeometry(playableAreaWidth, 20), wallMaterial);
             wall.position.z = camera.position.z - roomDepth;
             wall.position.y = 10;
             wall.receiveShadow = true;
             scene.add(wall);
 
-            const sideWallAngle = Math.PI / 6;
+            const visibleWidth = Math.tan(camera.fov / 2 * Math.PI / 180) * 2 * camera.position.z;
+            const sideWallLength = visibleWidth + 50; // Añade un poco de buffer para asegurar que cubra todo
+            const sideWallGeometry = new THREE.PlaneGeometry(sideWallLength, 20);
+
+            wallTexture.repeat.set(sideWallLength / 3, 6);
+
             const leftSideWall = new THREE.Mesh(sideWallGeometry, wallMaterial);
-            leftSideWall.rotation.y = Math.PI / 2 + sideWallAngle;
-            leftSideWall.position.set(-playableAreaWidth / 2, 10, floor.position.z);
+            leftSideWall.rotation.y = Math.PI / 2;
+            leftSideWall.position.set(-playableAreaWidth / 2, 10, camera.position.z - roomDepth / 2);
             leftSideWall.receiveShadow = true;
             leftSideWall.castShadow = true;
             scene.add(leftSideWall);
+
             const rightSideWall = new THREE.Mesh(sideWallGeometry, wallMaterial);
-            rightSideWall.rotation.y = -Math.PI / 2 - sideWallAngle;
-            rightSideWall.position.set(playableAreaWidth / 2, 10, floor.position.z);
+            rightSideWall.rotation.y = -Math.PI / 2;
+            rightSideWall.position.set(playableAreaWidth / 2, 10, camera.position.z - roomDepth / 2);
             rightSideWall.receiveShadow = true;
             rightSideWall.castShadow = true;
             scene.add(rightSideWall);
