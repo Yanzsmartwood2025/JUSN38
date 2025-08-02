@@ -32,6 +32,9 @@
             height: 100vh;
             pointer-events: none;
             display: none;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
         }
 
         #ui-container > * {
@@ -40,7 +43,7 @@
 
         /* Estilos para la parte superior de la UI y los controles */
         #ui-top, #controls {
-            position: absolute;
+            position: relative;
             width: 100%;
             box-sizing: border-box;
             color: white;
@@ -48,7 +51,6 @@
         }
 
         #ui-top {
-            top: 0;
             padding: 20px;
             display: flex;
             gap: 20px;
@@ -90,7 +92,7 @@
             border-radius: 50%;
             box-shadow: 0 0 15px #e0f7ff, inset 0 0 10px #ffffff;
             transition: box-shadow 0.3s ease-out;
-            pointer-events: auto; /* Permite clics */
+            pointer-events: auto;
             cursor: pointer;
         }
         
@@ -163,11 +165,10 @@
         }
 
         #controls {
-            bottom: 20px;
+            padding: 0 40px;
             display: flex;
             justify-content: space-between;
             align-items: flex-end;
-            padding: 0 40px;
         }
 
         .right-controls {
@@ -295,7 +296,7 @@
         .menu-option:hover {
             background-color: rgba(0, 170, 255, 0.3);
             transform: translateY(-3px);
-            box-shadow: 8px 8px 20px rgba(0, 170, 255, 0.3);
+            box-shadow: 0 8px 20px rgba(0, 170, 255, 0.3);
         }
 
         .menu-option:active {
@@ -750,12 +751,16 @@
                     loadAudio('pasos', 'https://raw.githubusercontent.com/Yanzsmartwood2025/JUSN38/main/assets/mp3/Pasos-Joziel.mp3'),
                     loadAudio('ambiente', 'https://raw.githubusercontent.com/Yanzsmartwood2025/JUSN38/main/assets/mp3/calabozo_de_piedra.mp3')
                 ]);
+                console.log("Todos los audios se cargaron correctamente.");
             } catch (error) {
                 console.error("Error cargando audios, el juego continuará sin sonido.", error);
             }
             
             // Iniciar el audio ambiental aquí
             playAudio('ambiente', true);
+            setAudioVolume('ambiente', musicVolumeSlider.value);
+            setAudioVolume('pasos', sfxVolumeSlider.value);
+
 
             menuScreen.style.opacity = 0;
             menuScreen.addEventListener('transitionend', () => {
@@ -920,7 +925,6 @@
 
         window.addEventListener('load', () => {
             updateJoystickDimensions();
-            // No iniciar audio aquí, se hará en startGame
         });
 
         window.addEventListener('resize', () => {
