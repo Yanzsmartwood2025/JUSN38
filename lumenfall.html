@@ -74,7 +74,6 @@
             width: 100%;
             height: 100%;
             border-radius: 50%;
-            /* CÓDIGO ACTUALIZADO: Se eliminó el borde y la sombra de la imagen para que solo el halo sea visible */
             border: none;
             box-shadow: none;
             position: relative;
@@ -91,7 +90,8 @@
             border-radius: 50%;
             box-shadow: 0 0 15px #e0f7ff, inset 0 0 10px #ffffff;
             transition: box-shadow 0.3s ease-out;
-            pointer-events: none;
+            pointer-events: auto; /* Permite clics */
+            cursor: pointer;
         }
         
         .stats-group {
@@ -295,7 +295,7 @@
         .menu-option:hover {
             background-color: rgba(0, 170, 255, 0.3);
             transform: translateY(-3px);
-            box-shadow: 0 8px 20px rgba(0, 170, 255, 0.3);
+            box-shadow: 8px 8px 20px rgba(0, 170, 255, 0.3);
         }
 
         .menu-option:active {
@@ -348,9 +348,96 @@
         #interaction-btn:hover {
             background-color: rgba(0, 170, 255, 0.8);
         }
+
+        #start-button-container {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.8);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 101;
+        }
+
+        #start-button {
+            padding: 20px 40px;
+            font-size: 2em;
+            background-color: #3498db;
+            border: none;
+            border-radius: 15px;
+            color: white;
+            cursor: pointer;
+            box-shadow: 0 5px 20px rgba(0, 170, 255, 0.5);
+            transition: background-color 0.3s, transform 0.1s;
+        }
+
+        #start-button:hover {
+            background-color: #2980b9;
+        }
+
+        #start-button:active {
+            transform: scale(0.95);
+        }
+
+        /* Estilos del menú de pausa */
+        #pause-menu {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.8);
+            display: none;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            z-index: 102;
+            color: white;
+            opacity: 0;
+            transition: opacity 0.3s ease-in;
+            text-align: center;
+        }
+
+        #pause-menu.active {
+            display: flex;
+            opacity: 1;
+        }
+
+        .menu-item {
+            margin: 10px;
+            font-size: 1.5em;
+        }
+
+        .slider-container {
+            width: 250px;
+            margin: 10px auto;
+        }
+
+        .slider {
+            width: 100%;
+            cursor: pointer;
+        }
+
+        .close-btn {
+            margin-top: 20px;
+            padding: 10px 20px;
+            background-color: #3498db;
+            border: none;
+            border-radius: 10px;
+            color: white;
+            cursor: pointer;
+            font-size: 1.2em;
+        }
     </style>
 </head>
 <body>
+    <div id="start-button-container">
+        <button id="start-button">Empezar</button>
+    </div>
+
     <div id="intro-screen">
         <img id="intro-image" src="" alt="Intro Image">
     </div>
@@ -382,7 +469,8 @@
                         </div>
                     </div>
                     <div class="stat-group">
-                        <div class="stat-label">POWER</div>
+                        <!-- Eliminado el label "POWER" -->
+                        <div class="stat-label"></div>
                         <div id="power-bar">
                             <div id="power-fill" class="stat-bar-fill"></div>
                         </div>
@@ -402,7 +490,31 @@
         <button id="interaction-btn" style="display: none;">Interactuar (E)</button>
     </div>
 
-    <!-- Carga la librería Three.js -->
+    <!-- Menú de pausa -->
+    <div id="pause-menu">
+        <h2>Configuración</h2>
+        <div class="menu-item">
+            <p>Idioma:</p>
+            <select id="pause-language-select">
+                <option value="es">Español</option>
+                <option value="en">English</option>
+            </select>
+        </div>
+        <div class="menu-item">
+            <p>Volumen de la música:</p>
+            <div class="slider-container">
+                <input type="range" id="music-volume" class="slider" min="0" max="1" step="0.1" value="0.5">
+            </div>
+        </div>
+        <div class="menu-item">
+            <p>Volumen de los efectos:</p>
+            <div class="slider-container">
+                <input type="range" id="sfx-volume" class="slider" min="0" max="1" step="0.1" value="0.5">
+            </div>
+        </div>
+        <button id="resume-button" class="close-btn">Reanudar</button>
+    </div>
+
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 
     <script>
@@ -435,6 +547,73 @@
         const playableAreaWidth = 120;
         const roomDepth = 15;
 
+        // --- Manejo de Audio con Web Audio API ---
+        const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+        const audioBuffers = {};
+        const audioSources = {};
+        const gainNodes = {};
+
+        // Función para cargar un archivo de audio (ahora devuelve una Promesa)
+        async function loadAudio(name, url) {
+            return new Promise(async (resolve, reject) => {
+                try {
+                    const response = await fetch(url);
+                    if (!response.ok) {
+                        throw new Error(`HTTP error! status: ${response.status}`);
+                    }
+                    const arrayBuffer = await response.arrayBuffer();
+                    audioBuffers[name] = await audioContext.decodeAudioData(arrayBuffer);
+                    console.log(`Audio "${name}" cargado exitosamente.`);
+                    resolve();
+                } catch (error) {
+                    console.error(`Error al cargar el audio "${name}":`, error);
+                    reject(error);
+                }
+            });
+        }
+        
+        // Función para reproducir un audio
+        function playAudio(name, loop = false) {
+            if (!audioBuffers[name]) {
+                console.error(`Audio "${name}" no está cargado.`);
+                return;
+            }
+
+            if (audioSources[name] && audioSources[name].buffer) {
+                stopAudio(name);
+            }
+            
+            const source = audioContext.createBufferSource();
+            source.buffer = audioBuffers[name];
+            source.loop = loop;
+            
+            const gainNode = audioContext.createGain();
+            gainNode.gain.value = 0.5; // Volumen predeterminado
+            
+            source.connect(gainNode);
+            gainNode.connect(audioContext.destination);
+            
+            source.start(0);
+            
+            audioSources[name] = source;
+            gainNodes[name] = gainNode;
+        }
+
+        // Función para detener un audio
+        function stopAudio(name) {
+            if (audioSources[name]) {
+                audioSources[name].stop();
+                delete audioSources[name];
+            }
+        }
+
+        // Función para actualizar el volumen de un audio
+        function setAudioVolume(name, volume) {
+            if (gainNodes[name]) {
+                gainNodes[name].gain.value = volume;
+            }
+        }
+
         // --- Configuración de la Escena 3D ---
         const scene = new THREE.Scene();
         const camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 1000);
@@ -448,6 +627,8 @@
         const allGates = [];
 
         let currentLevelId = 'dungeon_1';
+        let isPaused = false;
+        let animationFrameId;
 
         // --- Controles y Estado del Juego ---
         let attackHeld = false;
@@ -475,7 +656,10 @@
 
         // --- Bucle principal de animación ---
         function animate() {
-            requestAnimationFrame(animate);
+            if (isPaused) {
+                return;
+            }
+            animationFrameId = requestAnimationFrame(animate);
 
             const deltaTime = clock.getDelta();
             
@@ -499,6 +683,18 @@
                 });
 
                 interactionButton.style.display = isNearGate ? 'block' : 'none';
+
+                // Lógica para reproducir/pausar el audio de los pasos
+                const isMoving = Math.abs(joyVector.x) > 0.1;
+                if (isMoving) {
+                    if (!audioSources['pasos']) {
+                        playAudio('pasos', true);
+                    }
+                } else {
+                    if (audioSources['pasos']) {
+                        stopAudio('pasos');
+                    }
+                }
             }
 
             allFlames.forEach(flame => flame.update(deltaTime));
@@ -508,6 +704,8 @@
         }
 
         // --- Lógica del menú y la introducción ---
+        const startButtonContainer = document.getElementById('start-button-container');
+        const startButton = document.getElementById('start-button');
         const introScreen = document.getElementById('intro-screen');
         const introImage = document.getElementById('intro-image');
         const menuScreen = document.getElementById('menu-screen');
@@ -515,21 +713,26 @@
         const languageSelect = document.getElementById('language-select');
         const btnAttack = document.getElementById('btn-attack');
         const interactionButton = document.getElementById('interaction-btn');
-        const powerFill = document.getElementById('power-fill');
-        const energyFill = document.getElementById('energy-fill');
-        const jozielProfileImage = document.getElementById('player-profile-image');
+        
+        // Elementos del nuevo menú de pausa
+        const jozielHalo = document.getElementById('joziel-halo');
+        const pauseMenu = document.getElementById('pause-menu');
+        const resumeButton = document.getElementById('resume-button');
+        const musicVolumeSlider = document.getElementById('music-volume');
+        const sfxVolumeSlider = document.getElementById('sfx-volume');
+        const pauseLanguageSelect = document.getElementById('pause-language-select');
 
         let currentLanguage = 'es';
         let jozielHealth = 100;
         let jozielPower = 100;
 
         function updateJozielEnergyUI(health) {
-                energyFill.style.width = `${health}%`;
+            energyFill.style.width = `${health}%`;
         }
 
         function updateJozielPowerUI(power) {
-                const powerWidth = power / 100;
-                powerFill.style.width = `${powerWidth * 100}%`;
+            const powerWidth = power / 100;
+            powerFill.style.width = `${powerWidth * 100}%`;
         }
 
         function showMenu() {
@@ -540,7 +743,20 @@
             }, 10);
         }
 
-        function startGame() {
+        async function startGame() {
+            // Cargar los audios antes de empezar el juego
+            try {
+                await Promise.all([
+                    loadAudio('pasos', 'https://raw.githubusercontent.com/Yanzsmartwood2025/JUSN38/main/assets/mp3/Pasos-Joziel.mp3'),
+                    loadAudio('ambiente', 'https://raw.githubusercontent.com/Yanzsmartwood2025/JUSN38/main/assets/mp3/calabozo_de_piedra.mp3')
+                ]);
+            } catch (error) {
+                console.error("Error cargando audios, el juego continuará sin sonido.", error);
+            }
+            
+            // Iniciar el audio ambiental aquí
+            playAudio('ambiente', true);
+
             menuScreen.style.opacity = 0;
             menuScreen.addEventListener('transitionend', () => {
                 menuScreen.style.display = 'none';
@@ -558,8 +774,48 @@
             console.log('Idioma seleccionado:', currentLanguage);
         }
 
+        function pauseGame() {
+            isPaused = true;
+            stopAudio('ambiente');
+            stopAudio('pasos');
+            cancelAnimationFrame(animationFrameId);
+            
+            // Mostrar menú de pausa
+            pauseMenu.classList.add('active');
+        }
+
+        function resumeGame() {
+            isPaused = false;
+            // Reanudar audio y animaciones
+            playAudio('ambiente', true);
+            
+            // Ocultar menú de pausa
+            pauseMenu.classList.remove('active');
+            animate();
+        }
+
         playButton.addEventListener('click', startGame);
         languageSelect.addEventListener('change', handleLanguageChange);
+        
+        // Evento para el nuevo botón de pausa/configuración
+        jozielHalo.addEventListener('click', pauseGame);
+        
+        resumeButton.addEventListener('click', resumeGame);
+
+        musicVolumeSlider.addEventListener('input', (e) => {
+            setAudioVolume('ambiente', e.target.value);
+        });
+
+        sfxVolumeSlider.addEventListener('input', (e) => {
+            setAudioVolume('pasos', e.target.value);
+            // Aquí puedes agregar otros sonidos de efectos
+        });
+
+        pauseLanguageSelect.addEventListener('change', (e) => {
+            currentLanguage = e.target.value;
+            console.log('Idioma cambiado en el menú de pausa:', currentLanguage);
+            // Aquí puedes implementar la lógica para cambiar los textos del juego
+        });
         
         const joystickContainer = document.getElementById('joystick-container');
         const joystickKnob = document.getElementById('joystick-knob');
@@ -575,11 +831,13 @@
         }
 
         joystickKnob.addEventListener('mousedown', (e) => {
+            if (isPaused) return;
             isDraggingJoystick = true;
             joystickKnob.style.transition = 'none';
             updateJoystickDimensions();
         });
         joystickKnob.addEventListener('touchstart', (e) => {
+            if (isPaused) return;
             e.preventDefault();
             isDraggingJoystick = true;
             joystickKnob.style.transition = 'none';
@@ -639,27 +897,30 @@
             joyVector.set(0, 0);
         }
 
-        btnAttack.addEventListener('mousedown', () => attackHeld = true);
-        btnAttack.addEventListener('mouseup', () => attackHeld = false);
-        btnAttack.addEventListener('touchstart', (e) => { e.preventDefault(); attackHeld = true; }, { passive: false });
-        btnAttack.addEventListener('touchend', () => attackHeld = false);
+        btnAttack.addEventListener('mousedown', () => { if (!isPaused) attackHeld = true; });
+        btnAttack.addEventListener('mouseup', () => { if (!isPaused) attackHeld = false; });
+        btnAttack.addEventListener('touchstart', (e) => { if (!isPaused) { e.preventDefault(); attackHeld = true; }}, { passive: false });
+        btnAttack.addEventListener('touchend', () => { if (!isPaused) attackHeld = false; });
 
-        interactionButton.addEventListener('mousedown', () => interactHeld = true);
-        interactionButton.addEventListener('mouseup', () => interactHeld = false);
-        interactionButton.addEventListener('touchstart', (e) => { e.preventDefault(); interactHeld = true; }, { passive: false });
-        interactionButton.addEventListener('touchend', () => interactHeld = false);
+        interactionButton.addEventListener('mousedown', () => { if (!isPaused) interactHeld = true; });
+        interactionButton.addEventListener('mouseup', () => { if (!isPaused) interactHeld = false; });
+        interactionButton.addEventListener('touchstart', (e) => { if (!isPaused) { e.preventDefault(); interactHeld = true; }}, { passive: false });
+        interactionButton.addEventListener('touchend', () => { if (!isPaused) interactHeld = false; });
 
+        // Agregamos el event listener para el botón de inicio
+        startButton.addEventListener('click', () => {
+            startButtonContainer.style.display = 'none';
+            introImage.src = assetUrls.introImage;
+            introScreen.style.opacity = 0;
+            introScreen.addEventListener('transitionend', () => {
+                introScreen.style.display = 'none';
+                showMenu();
+            }, { once: true });
+        });
 
         window.addEventListener('load', () => {
             updateJoystickDimensions();
-            introImage.src = assetUrls.introImage;
-            setTimeout(() => {
-                introScreen.style.opacity = 0;
-                introScreen.addEventListener('transitionend', () => {
-                    introScreen.style.display = 'none';
-                    showMenu();
-                }, { once: true });
-            }, 4000);
+            // No iniciar audio aquí, se hará en startGame
         });
 
         window.addEventListener('resize', () => {
