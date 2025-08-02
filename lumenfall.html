@@ -74,8 +74,9 @@
             width: 100%;
             height: 100%;
             border-radius: 50%;
-            border: 2px solid #555;
-            box-shadow: 0 0 10px rgba(0, 0, 0, 0.5);
+            /* CÓDIGO ACTUALIZADO: Se eliminó el borde y la sombra de la imagen para que solo el halo sea visible */
+            border: none;
+            box-shadow: none;
             position: relative;
             object-fit: contain;
             object-position: 50% 50%;
@@ -88,7 +89,7 @@
             width: 90px;
             height: 90px;
             border-radius: 50%;
-            box-shadow: 0 0 15px #00ff00, inset 0 0 10px #00ff00;
+            box-shadow: 0 0 15px #e0f7ff, inset 0 0 10px #ffffff;
             transition: box-shadow 0.3s ease-out;
             pointer-events: none;
         }
@@ -370,7 +371,6 @@
         <div id="ui-top">
             <div class="player-info">
                 <div id="player-profile-container">
-                    <!-- URL de la imagen de la barra de energía ajustada para mostrarse en el círculo -->
                     <img id="player-profile-image" src="https://raw.githubusercontent.com/Yanzsmartwood2025/JUSN38/701301ad76b7ae323e026cd8577529b52229e75f/assets/images/barra-de-energia.png" alt="Energy Bar Profile">
                     <div id="joziel-halo"></div>
                 </div>
@@ -515,7 +515,6 @@
         const languageSelect = document.getElementById('language-select');
         const btnAttack = document.getElementById('btn-attack');
         const interactionButton = document.getElementById('interaction-btn');
-        const jozielHalo = document.getElementById('joziel-halo');
         const powerFill = document.getElementById('power-fill');
         const energyFill = document.getElementById('energy-fill');
         const jozielProfileImage = document.getElementById('player-profile-image');
@@ -525,12 +524,12 @@
         let jozielPower = 100;
 
         function updateJozielEnergyUI(health) {
-             energyFill.style.width = `${health}%`;
+                energyFill.style.width = `${health}%`;
         }
 
         function updateJozielPowerUI(power) {
-             const powerWidth = power / 100;
-             powerFill.style.width = `${powerWidth * 100}%`;
+                const powerWidth = power / 100;
+                powerFill.style.width = `${powerWidth * 100}%`;
         }
 
         function showMenu() {
@@ -882,6 +881,7 @@
             }
             allFlames.length = 0;
             allSpecters.length = 0;
+            allGates.length = 0;
         }
         
         function createTorch(x, y, z) {
