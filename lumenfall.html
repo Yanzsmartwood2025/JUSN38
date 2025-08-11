@@ -494,6 +494,34 @@
             pointer-events: none;
             text-shadow: 0 0 5px #fff, 0 0 10px #fff, 0 0 15px #fff, 0 0 20px #00aaff, 0 0 30px #00aaff;
         }
+        
+        /* --- Estilos para el Diálogo --- */
+        #dialogue-box {
+            position: fixed;
+            bottom: 25%;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 80%;
+            max-width: 700px;
+            background-color: rgba(0, 0, 0, 0.8);
+            border: 2px solid #00aaff;
+            border-radius: 15px;
+            padding: 20px;
+            color: white;
+            font-size: 1.5em;
+            font-family: 'Cinzel', serif;
+            text-align: center;
+            z-index: 50;
+            display: none;
+            pointer-events: none;
+            box-shadow: 0 0 15px rgba(0, 170, 255, 0.5);
+            opacity: 0;
+            transition: opacity 0.3s ease-in-out;
+        }
+        #dialogue-box.visible {
+            display: block;
+            opacity: 1;
+        }
 
     </style>
 </head>
@@ -547,6 +575,7 @@
             </div>
         </div>
         <div id="door-prompt-flame"></div>
+        <div id="dialogue-box"></div>
     </div>
 
     <!-- Menú de pausa -->
@@ -673,11 +702,16 @@
         const allSpecters = [];
         const allGates = [];
         const allStatues = [];
+        const allOrbs = [];
+        const allPuzzles = [];
 
         let currentLevelId = 'dungeon_1';
         let isPaused = false;
         let isTransitioning = false;
         let animationFrameId;
+        
+        const completedRooms = { room_1: false, room_2: false, room_3: false, room_4: false, room_5: false };
+
 
         // --- Controles y Estado del Juego ---
         let attackHeld = false;
@@ -710,18 +744,18 @@
             if (player && !isTransitioning) {
                 player.update(deltaTime, { joyVector, attackHeld });
 
-                let isNearGate = false;
-                let nearbyGate = null;
+                let isNearInteractable = false;
+                let interactableObject = null;
+                
+                // Check for gates
                 allGates.forEach(gate => {
                     const distanceX = Math.abs(player.mesh.position.x - gate.mesh.position.x);
                     if (distanceX < 4) {
-                        isNearGate = true;
-                        nearbyGate = gate;
+                        isNearInteractable = true;
+                        interactableObject = {type: 'gate', object: gate};
                     }
-
-                    // Update numeral position
                     const screenPosition = gate.mesh.position.clone();
-                    screenPosition.y += 6.8; // Adjust Y to be over the door
+                    screenPosition.y += 6.8;
                     const vector = screenPosition.project(camera);
                     const x = (vector.x * 0.5 + 0.5) * renderer.domElement.clientWidth;
                     const y = (-vector.y * 0.5 + 0.5) * renderer.domElement.clientHeight;
@@ -729,9 +763,20 @@
                     gate.numeralElement.style.top = `${y}px`;
                 });
                 
-                if (isNearGate) {
-                    const screenPosition = nearbyGate.mesh.position.clone();
-                    screenPosition.y += 5;
+                // Check for puzzles
+                allPuzzles.forEach(puzzle => {
+                    if (!puzzle.isSolved) {
+                        const distanceX = Math.abs(player.mesh.position.x - puzzle.mesh.position.x);
+                        if (distanceX < 5) {
+                            isNearInteractable = true;
+                            interactableObject = {type: 'puzzle', object: puzzle};
+                        }
+                    }
+                });
+
+                if (isNearInteractable) {
+                    const screenPosition = interactableObject.object.mesh.position.clone();
+                    screenPosition.y += (interactableObject.type === 'gate' ? 5 : 4);
                     const vector = screenPosition.project(camera);
                     const x = (vector.x * 0.5 + 0.5) * renderer.domElement.clientWidth;
                     const y = (-vector.y * 0.5 + 0.5) * renderer.domElement.clientHeight;
@@ -740,12 +785,23 @@
                     doorPromptFlame.style.display = 'block';
 
                     if (interactPressed) {
-                        const destinationId = nearbyGate.destination;
-                        let spawnX = null;
-                        if (destinationId === 'dungeon_1') {
-                            spawnX = MAPS.dungeon_1.gates[0].x;
+                        if (interactableObject.type === 'gate') {
+                            const gate = interactableObject.object;
+                            const destinationId = gate.destination;
+                            let spawnX = null;
+                            if (destinationId === 'dungeon_1') {
+                                // Correctly find the corresponding gate in the main hall
+                                const roomNumber = gate.id.split('_')[1];
+                                const targetGateId = `gate_${roomNumber}`;
+                                const targetGate = MAPS.dungeon_1.gates.find(g => g.id === targetGateId);
+                                if (targetGate) {
+                                    spawnX = targetGate.x;
+                                }
+                            }
+                            triggerTransition(destinationId, spawnX);
+                        } else if (interactableObject.type === 'puzzle') {
+                            interactableObject.object.solve();
                         }
-                        triggerTransition(destinationId, spawnX);
                     }
                 } else {
                     doorPromptFlame.style.display = 'none';
@@ -762,6 +818,7 @@
             interactPressed = false;
             allFlames.forEach(flame => flame.update(deltaTime));
             allSpecters.forEach(specter => specter.update(deltaTime, player));
+            allPuzzles.forEach(puzzle => puzzle.update(deltaTime));
             renderer.render(scene, camera);
         }
 
@@ -785,6 +842,7 @@
         const loadingContent = document.getElementById('loading-content');
         const loadingText = document.getElementById('loading-text');
         const numeralsContainer = document.getElementById('numerals-container');
+        const dialogueBox = document.getElementById('dialogue-box');
         
         let currentLanguage = 'es';
         const translations = {
@@ -795,7 +853,8 @@
                 settings: "Configuración",
                 musicVolume: "Volumen de la música:",
                 sfxVolume: "Volumen de los efectos:",
-                resume: "Reanudar"
+                resume: "Reanudar",
+                statueDialogue: "Siento un poder extraño emanando de esta estatua..."
             },
             en: {
                 loading: "Loading...",
@@ -804,7 +863,8 @@
                 settings: "Settings",
                 musicVolume: "Music Volume:",
                 sfxVolume: "SFX Volume:",
-                resume: "Resume"
+                resume: "Resume",
+                statueDialogue: "I feel a strange power emanating from this statue..."
             }
         };
 
@@ -1132,16 +1192,24 @@
             allSpecters.length = 0;
             allGates.length = 0;
             allStatues.length = 0;
+            allOrbs.length = 0;
+            allPuzzles.length = 0;
             numeralsContainer.innerHTML = '';
         }
         
-        function createTorch(x, y, z) {
+        function createTorch(x, y, z, isLit) {
             const torchMesh = new THREE.Mesh(new THREE.PlaneGeometry(0.5, 1.8), torchMaterial);
             torchMesh.position.set(x, y, z);
             scene.add(torchMesh);
-            allFlames.push(new RealisticFlame(scene, new THREE.Vector3(x, y + 1.3, z + 0.2)));
+            if (isLit) {
+                allFlames.push(new RealisticFlame(scene, new THREE.Vector3(x, y + 1.3, z + 0.2)));
+            }
         }
         
+        function areAllRoomsComplete() {
+            return Object.values(completedRooms).every(status => status === true);
+        }
+
         function loadLevel(levelData) {
             const floor = new THREE.Mesh(floorGeometry, floorMaterial);
             floor.rotation.x = -Math.PI / 2;
@@ -1164,6 +1232,10 @@
             scene.add(rightSideWall);
 
             levelData.gates.forEach(gateData => {
+                if (gateData.id === 'gate_boss' && !areAllRoomsComplete()) {
+                    return; // Skip creating the boss door if not all rooms are complete
+                }
+
                 const gateGroup = new THREE.Group();
                 const gateMesh = new THREE.Mesh(new THREE.PlaneGeometry(8, 8), doorMaterial.clone());
                 gateMesh.position.set(0, 4, 0.3);
@@ -1176,19 +1248,21 @@
                 numeralElement.className = 'door-numeral';
                 numeralElement.textContent = gateData.numeral;
                 numeralsContainer.appendChild(numeralElement);
-
+                
+                const isLit = currentLevelId === 'dungeon_1' ? completedRooms[gateData.destination] : true;
+                
                 allGates.push({ mesh: gateGroup, id: gateData.id, destination: gateData.destination, numeralElement: numeralElement });
-                createTorch(gateData.x - 6, 3.2, camera.position.z - roomDepth + 0.5);
-                createTorch(gateData.x + 6, 3.2, camera.position.z - roomDepth + 0.5);
+                createTorch(gateData.x - 6, 3.2, camera.position.z - roomDepth + 0.5, isLit);
+                createTorch(gateData.x + 6, 3.2, camera.position.z - roomDepth + 0.5, isLit);
             });
 
             levelData.specters.forEach(specterData => {
                 allSpecters.push(new Specter(scene, specterData.x, specterData.y));
             });
 
-            if (levelData.statues) {
-                levelData.statues.forEach(statueData => {
-                    allStatues.push(new Statue(scene, statueData.x, statueData.y));
+            if (levelData.puzzles) {
+                levelData.puzzles.forEach(puzzleData => {
+                    allPuzzles.push(new Puzzle(scene, puzzleData.x, levelData.id));
                 });
             }
         }
@@ -1218,20 +1292,16 @@
                     { id: 'gate_3', x: -10, destination: 'room_3', numeral: 'III' },
                     { id: 'gate_4', x: 10, destination: 'room_4', numeral: 'IV' },
                     { id: 'gate_5', x: 30, destination: 'room_5', numeral: 'V' },
+                    { id: 'gate_boss', x: 55, destination: 'boss_room', numeral: 'VI' },
                 ],
                 specters: [ { type: 'fear', x: 45, y: 3.5 } ],
             },
-            room_1: { id: 'room_1', name: 'Habitación 1', gates: [{ id: 'return_1', x: 0, destination: 'dungeon_1', numeral: 'I' }], specters: [] },
+            room_1: { id: 'room_1', name: 'Habitación 1', gates: [{ id: 'return_1', x: 0, destination: 'dungeon_1', numeral: 'I' }], specters: [], puzzles: [{x: 15}] },
             room_2: { id: 'room_2', name: 'Habitación 2', gates: [{ id: 'return_2', x: 0, destination: 'dungeon_1', numeral: 'II' }], specters: [] },
             room_3: { id: 'room_3', name: 'Habitación 3', gates: [{ id: 'return_3', x: 0, destination: 'dungeon_1', numeral: 'III' }], specters: [] },
             room_4: { id: 'room_4', name: 'Habitación 4', gates: [{ id: 'return_4', x: 0, destination: 'dungeon_1', numeral: 'IV' }], specters: [] },
-            room_5: { 
-                id: 'room_5', 
-                name: 'Habitación 5', 
-                gates: [{ id: 'return_5', x: 0, destination: 'dungeon_1', numeral: 'V' }], 
-                specters: [],
-                statues: [{ x: -15, y: 4 }]
-            },
+            room_5: { id: 'room_5', name: 'Habitación 5', gates: [{ id: 'return_5', x: 0, destination: 'dungeon_1', numeral: 'V' }], specters: [] },
+            boss_room: { id: 'boss_room', name: 'Sala del Jefe', gates: [{ id: 'return_boss', x: 0, destination: 'dungeon_1', numeral: 'VI' }], specters: [] },
         };
 
         // --- src/flame.js (Lógica de las llamas) ---
@@ -1398,29 +1468,119 @@
             }
         }
         
-        // --- src/statue.js (Lógica de la Estatua) ---
-        class Statue {
-            constructor(scene, x, y) {
+        // --- src/puzzle.js (Lógica del Puzzle) ---
+        class Puzzle {
+            constructor(scene, x, roomId) {
                 this.scene = scene;
-                this.init(x, y);
+                this.roomId = roomId;
+                this.isSolved = completedRooms[roomId];
+                this.pieces = [];
+                this.init(x);
+                this.mesh = this.table; // for interaction checks
             }
 
-            init(x, y) {
-                const texture = textureLoader.load(assetUrls.halleyStatueTexture);
-                const material = new THREE.MeshStandardMaterial({ map: texture });
-                const geometry = new THREE.BoxGeometry(4, 8, 4);
-                this.mesh = new THREE.Mesh(geometry, material);
-                this.mesh.position.set(x, y, camera.position.z - roomDepth + 3);
-                this.mesh.castShadow = true;
-                this.mesh.receiveShadow = true;
-                this.scene.add(this.mesh);
+            init(x) {
+                const tableGeometry = new THREE.BoxGeometry(8, 2, 4);
+                const tableMaterial = new THREE.MeshStandardMaterial({ color: 0x333333 });
+                this.table = new THREE.Mesh(tableGeometry, tableMaterial);
+                this.table.position.set(x, 1, camera.position.z - roomDepth + 4);
+                this.scene.add(this.table);
 
-                // Add a spotlight to highlight the statue
-                const spotLight = new THREE.SpotLight(0xffffff, 1, 20, Math.PI / 6, 0.5);
-                spotLight.position.set(x, y + 10, this.mesh.position.z + 5);
-                spotLight.target = this.mesh;
-                spotLight.castShadow = true;
-                this.scene.add(spotLight);
+                if (this.isSolved) {
+                    this.createOrb();
+                    this.orb.activate();
+                    return;
+                }
+
+                const texture = textureLoader.load(assetUrls.halleyStatueTexture);
+                const pieceSize = 3;
+                
+                const correctPositions = [
+                    new THREE.Vector3(-pieceSize/2, pieceSize/2, 0), // Top-left
+                    new THREE.Vector3(pieceSize/2, pieceSize/2, 0), // Top-right
+                    new THREE.Vector3(-pieceSize/2, -pieceSize/2, 0), // Bottom-left
+                    new THREE.Vector3(pieceSize/2, -pieceSize/2, 0), // Bottom-right
+                ];
+
+                let initialPositions = [...correctPositions].sort(() => Math.random() - 0.5);
+
+                for (let i = 0; i < 4; i++) {
+                    const material = new THREE.MeshStandardMaterial({
+                        map: texture.clone(),
+                        transparent: true,
+                        alphaTest: 0.1
+                    });
+                    material.map.repeat.set(0.5, 0.5);
+                    material.map.offset.set((i % 2) * 0.5, (i < 2 ? 0.5 : 0));
+
+                    const piece = new THREE.Mesh(new THREE.PlaneGeometry(pieceSize, pieceSize), material);
+                    piece.position.copy(initialPositions[i]).add(new THREE.Vector3(x, 4, this.table.position.z + 2.1));
+                    piece.userData.targetPosition = correctPositions[i].clone().add(new THREE.Vector3(x, 4, this.table.position.z + 2.1));
+                    this.pieces.push(piece);
+                    this.scene.add(piece);
+                }
+            }
+            
+            solve() {
+                if (this.isSolved) return;
+                this.isSolved = true;
+                
+                this.pieces.forEach(piece => {
+                    const startPos = piece.position.clone();
+                    const endPos = piece.userData.targetPosition;
+                    let t = 0;
+                    const duration = 1; // 1 second animation
+                    const animatePiece = () => {
+                        t += 0.05;
+                        piece.position.lerpVectors(startPos, endPos, Math.min(t/duration, 1.0));
+                        if (t < duration) requestAnimationFrame(animatePiece);
+                    };
+                    animatePiece();
+                });
+
+                setTimeout(() => {
+                    this.createOrb();
+                    this.orb.activate();
+                }, 1200);
+            }
+
+            createOrb() {
+                this.orb = new Orb(this.scene, this.mesh.position.x, this.mesh.position.y + 2.5, this.roomId);
+                allOrbs.push(this.orb);
+            }
+
+            update(deltaTime) {
+                // Future update logic if needed
+            }
+        }
+        
+        // --- src/orb.js (Lógica de los Orbes) ---
+        class Orb {
+            constructor(scene, x, y, roomId) {
+                this.scene = scene;
+                this.roomId = roomId;
+                this.isActive = completedRooms[roomId];
+                
+                this.inactiveMaterial = new THREE.MeshStandardMaterial({ color: 0x222222, roughness: 0.8 });
+                this.activeMaterial = new THREE.MeshStandardMaterial({ color: 0xffffff, emissive: 0xffffff, emissiveIntensity: 2, roughness: 0.2 });
+                
+                const geometry = new THREE.SphereGeometry(0.5, 32, 32);
+                this.mesh = new THREE.Mesh(geometry, this.isActive ? this.activeMaterial : this.inactiveMaterial);
+                this.mesh.position.set(x, y, camera.position.z - roomDepth + 3);
+                scene.add(this.mesh);
+                
+                this.light = new THREE.PointLight(0xffffff, 1, 10);
+                this.light.position.copy(this.mesh.position);
+                this.light.visible = this.isActive;
+                scene.add(this.light);
+            }
+
+            activate() {
+                if (this.isActive) return;
+                this.isActive = true;
+                this.mesh.material = this.activeMaterial;
+                this.light.visible = true;
+                completedRooms[this.roomId] = true;
             }
         }
     </script>
