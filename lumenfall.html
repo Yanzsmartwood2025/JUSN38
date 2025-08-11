@@ -4,6 +4,9 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
     <title>Lumenfall Demo</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@700&family=Inter&display=swap" rel="stylesheet">
     <style>
         /* Estilos generales del cuerpo */
         body {
@@ -32,7 +35,6 @@
             height: 100vh;
             pointer-events: none;
             display: none;
-            display: flex;
             flex-direction: column;
             justify-content: space-between;
         }
@@ -51,22 +53,26 @@
         }
 
         #ui-top {
-            padding: 20px;
+            padding: 10px; /* Reduced padding */
             display: flex;
             gap: 20px;
-            align-items: center;
+            align-items: flex-start;
             justify-content: flex-start;
         }
 
         /* --- CSS para las barras y la imagen de perfil --- */
         .player-info {
-            display: flex;
+            display: grid; /* Use grid for more complex layout */
+            grid-template-areas:
+                "profile stats"
+                "profile name";
+            grid-template-columns: auto 1fr;
             align-items: center;
-            gap: 15px;
-            padding: 10px 20px;
+            gap: 5px 15px; /* row-gap column-gap */
         }
         
         #player-profile-container {
+            grid-area: profile;
             position: relative;
             width: 80px;
             height: 80px;
@@ -97,9 +103,11 @@
         }
         
         .stats-group {
+            grid-area: stats;
             display: flex;
             flex-direction: column;
-            gap: 5px;
+            gap: 8px;
+            align-self: end; /* Align to the bottom of the grid area */
         }
         
         .stat-group {
@@ -111,17 +119,18 @@
         }
 
         .stat-label {
-            font-weight: bold;
+            grid-area: name;
+            font-family: 'Cinzel', serif; /* Ancient Font */
+            font-weight: 700;
             text-shadow: 1px 1px 2px black;
-            font-size: 1.1em;
+            font-size: 1.2em;
             text-align: left;
-            margin-left: 5px;
-            z-index: 2;
+            align-self: start; /* Align to the top of the grid area */
         }
 
-        #energy-bar {
-            width: 250px;
-            height: 5px;
+        #energy-bar, #power-bar {
+            width: 200px; /* Slightly smaller bars */
+            height: 8px; /* Thicker bars */
             background-color: rgba(0,0,0,0.5);
             border: 1px solid #555;
             border-radius: 10px;
@@ -131,28 +140,17 @@
             overflow: hidden;
         }
         
-        #energy-fill {
+        #energy-fill, #power-fill {
             height: 100%;
             border-radius: 6px;
+        }
+
+        #energy-fill {
             background-color: #00ff00;
             width: 100%;
         }
         
-        #power-bar {
-            width: 250px;
-            height: 5px;
-            background-color: rgba(0,0,0,0.5);
-            border: 1px solid #555;
-            border-radius: 10px;
-            padding: 2px;
-            box-shadow: 0 0 8px rgba(0,0,0,0.5);
-            position: relative;
-            overflow: hidden;
-        }
-
         #power-fill {
-            height: 100%;
-            border-radius: 6px;
             background: linear-gradient(90deg, transparent 0%, rgba(52, 152, 219, 0.5) 10%, #00aaff 50%, rgba(52, 152, 219, 0.5) 90%, transparent 100%);
             transition: width 0.3s ease-out, box-shadow 0.3s ease-out;
             box-shadow: 0 0 8px #00aaff;
@@ -165,7 +163,7 @@
         }
 
         #controls {
-            padding: 0 40px;
+            padding: 20px 40px;
             display: flex;
             justify-content: space-between;
             align-items: flex-end;
@@ -326,29 +324,27 @@
             box-shadow: 0 0 10px rgba(52, 152, 219, 0.5);
         }
         
-        #interaction-btn {
+        #door-prompt-flame {
             position: absolute;
-            bottom: 200px;
-            left: 50%;
-            transform: translateX(-50%);
-            width: 150px;
-            padding: 10px 20px;
-            background-color: rgba(0, 170, 255, 0.6);
-            border: 2px solid #00aaff;
-            color: white;
-            font-size: 1.2em;
-            font-weight: bold;
-            border-radius: 10px;
-            cursor: pointer;
-            box-shadow: 0 0 15px rgba(0, 170, 255, 0.5);
-            text-shadow: 1px 1px 2px black;
+            width: 30px;
+            height: 45px;
+            background: radial-gradient(circle, rgba(255,255,255,1) 0%, rgba(200,225,255,0.8) 40%, rgba(150,200,255,0) 70%);
+            border-radius: 50% 50% 50% 50% / 60% 60% 40% 40%;
+            box-shadow: 0 0 10px #fff, 0 0 20px #fff, 0 0 30px #00aaff;
+            transform: translate(-50%, -50%) rotate(-45deg);
             display: none;
+            z-index: 10;
             pointer-events: auto;
+            cursor: pointer;
+            animation: pulse 1.5s infinite ease-in-out;
         }
 
-        #interaction-btn:hover {
-            background-color: rgba(0, 170, 255, 0.8);
+        @keyframes pulse {
+            0% { transform: translate(-50%, -50%) rotate(-45deg) scale(1); opacity: 0.8; }
+            50% { transform: translate(-50%, -50%) rotate(-45deg) scale(1.1); opacity: 1; }
+            100% { transform: translate(-50%, -50%) rotate(-45deg) scale(1); opacity: 0.8; }
         }
+
 
         #start-button-container {
             position: fixed;
@@ -432,6 +428,73 @@
             cursor: pointer;
             font-size: 1.2em;
         }
+
+        /* --- Estilos para la Transición --- */
+        #transition-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            background-color: #000;
+            z-index: 200;
+            pointer-events: none;
+            opacity: 0;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            transition: opacity 0.4s ease-in-out;
+        }
+
+        #transition-overlay.visible {
+            opacity: 1;
+        }
+
+        #loading-content {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 20px;
+        }
+
+        #loading-image {
+            width: 80vw;
+            max-width: 800px;
+            height: auto;
+            object-fit: contain;
+            border-radius: 15px;
+            box-shadow: 0 0 20px rgba(0, 170, 255, 0.5);
+        }
+
+        #loading-text {
+            font-size: 2.5em;
+            color: white;
+            text-shadow: 2px 2px 5px black;
+        }
+        
+        /* --- Estilos para los Numerales --- */
+        #numerals-container {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 5;
+        }
+
+        .door-numeral {
+            position: absolute;
+            transform: translate(-50%, -100%); /* Position above the center point */
+            font-family: 'Cinzel', serif; /* Ancient Font */
+            color: #fff;
+            font-size: 2em; /* Reduced size */
+            font-weight: 700;
+            pointer-events: none;
+            text-shadow: 0 0 5px #fff, 0 0 10px #fff, 0 0 15px #fff, 0 0 20px #00aaff, 0 0 30px #00aaff;
+        }
+
     </style>
 </head>
 <body>
@@ -445,17 +508,18 @@
 
     <div id="menu-screen">
         <div class="menu-option">
-            <label for="language-select">IDIOMA:</label>
+            <label for="language-select" data-translate-key="languageLabel">IDIOMA:</label>
             <select id="language-select">
                 <option value="es">Español</option>
                 <option value="en">English</option>
             </select>
         </div>
-        <button id="play-button" class="menu-option">JUGAR</button>
+        <button id="play-button" class="menu-option" data-translate-key="play">JUGAR</button>
     </div>
 
     <canvas id="bg-canvas"></canvas>
     <div id="ui-container">
+        <div id="numerals-container"></div>
         <div id="ui-top">
             <div class="player-info">
                 <div id="player-profile-container">
@@ -463,20 +527,14 @@
                     <div id="joziel-halo"></div>
                 </div>
                 <div class="stats-group">
-                    <div class="stat-group">
-                        <div class="stat-label">JOZIEL</div>
-                        <div id="energy-bar">
-                            <div id="energy-fill"></div>
-                        </div>
+                    <div id="energy-bar">
+                        <div id="energy-fill"></div>
                     </div>
-                    <div class="stat-group">
-                        <!-- Eliminado el label "POWER" -->
-                        <div class="stat-label"></div>
-                        <div id="power-bar">
-                            <div id="power-fill" class="stat-bar-fill"></div>
-                        </div>
+                    <div id="power-bar">
+                        <div id="power-fill" class="stat-bar-fill"></div>
                     </div>
                 </div>
+                <div class="stat-label">JOZIEL</div>
             </div>
         </div>
         <div id="controls">
@@ -488,32 +546,40 @@
                 <div id="btn-attack" class="control-btn">⚔️</div>
             </div>
         </div>
-        <button id="interaction-btn" style="display: none;">Interactuar (E)</button>
+        <div id="door-prompt-flame"></div>
     </div>
 
     <!-- Menú de pausa -->
     <div id="pause-menu">
-        <h2>Configuración</h2>
+        <h2 data-translate-key="settings">Configuración</h2>
         <div class="menu-item">
-            <p>Idioma:</p>
+            <p data-translate-key="languageLabel">Idioma:</p>
             <select id="pause-language-select">
                 <option value="es">Español</option>
                 <option value="en">English</option>
             </select>
         </div>
         <div class="menu-item">
-            <p>Volumen de la música:</p>
+            <p data-translate-key="musicVolume">Volumen de la música:</p>
             <div class="slider-container">
                 <input type="range" id="music-volume" class="slider" min="0" max="1" step="0.1" value="0.5">
             </div>
         </div>
         <div class="menu-item">
-            <p>Volumen de los efectos:</p>
+            <p data-translate-key="sfxVolume">Volumen de los efectos:</p>
             <div class="slider-container">
                 <input type="range" id="sfx-volume" class="slider" min="0" max="1" step="0.1" value="0.5">
             </div>
         </div>
-        <button id="resume-button" class="close-btn">Reanudar</button>
+        <button id="resume-button" class="close-btn" data-translate-key="resume">Reanudar</button>
+    </div>
+
+    <!-- Capa para la transición -->
+    <div id="transition-overlay">
+        <div id="loading-content">
+            <img id="loading-image" src="https://raw.githubusercontent.com/Yanzsmartwood2025/JUSN38/3bcb76b3104ebb775ad3ca7272f3d15f436d9ce3/assets/images/menu-principal.jpg" alt="Loading Screen">
+            <span id="loading-text"></span>
+        </div>
     </div>
 
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
@@ -534,7 +600,8 @@
             specterTexture: 'https://raw.githubusercontent.com/Yanzsmartwood2025/JUSN38/f84aac629032d6a02b8c34ac91d4844292e9e1ba/assets/images/fantasma.png',
             introImage: 'https://raw.githubusercontent.com/Yanzsmartwood2025/JUSN38/4b2fc282d18b5dc4b93cb8e04a179854259d421c/assets/images/Intro.jpg',
             menuBackgroundImage: 'https://raw.githubusercontent.com/Yanzsmartwood2025/JUSN38/3bcb76b3104ebb775ad3ca7272f3d15f436d9ce3/assets/images/menu-principal.jpg',
-            animatedEnergyBar: 'https://raw.githubusercontent.com/Yanzsmartwood2025/JUSN38/701301ad76b7ae323e026cd8577529b52229e75f/assets/images/barra-de-energia.png'
+            animatedEnergyBar: 'https://raw.githubusercontent.com/Yanzsmartwood2025/JUSN38/701301ad76b7ae323e026cd8577529b52229e75f/assets/images/barra-de-energia.png',
+            halleyStatueTexture: 'https://raw.githubusercontent.com/Yanzsmartwood2025/JUSN38/main/assets/images/Halley-piedra.png'
         };
 
         // --- Constantes del Juego ---
@@ -554,17 +621,13 @@
         const audioSources = {};
         const gainNodes = {};
 
-        // Función para cargar un archivo de audio (ahora devuelve una Promesa)
         async function loadAudio(name, url) {
             return new Promise(async (resolve, reject) => {
                 try {
                     const response = await fetch(url);
-                    if (!response.ok) {
-                        throw new Error(`HTTP error! status: ${response.status}`);
-                    }
+                    if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
                     const arrayBuffer = await response.arrayBuffer();
                     audioBuffers[name] = await audioContext.decodeAudioData(arrayBuffer);
-                    console.log(`Audio "${name}" cargado exitosamente.`);
                     resolve();
                 } catch (error) {
                     console.error(`Error al cargar el audio "${name}":`, error);
@@ -573,34 +636,20 @@
             });
         }
         
-        // Función para reproducir un audio
         function playAudio(name, loop = false) {
-            if (!audioBuffers[name]) {
-                console.error(`Audio "${name}" no está cargado.`);
-                return;
-            }
-
-            if (audioSources[name] && audioSources[name].buffer) {
-                stopAudio(name);
-            }
-            
+            if (!audioBuffers[name]) return;
+            if (audioSources[name] && audioSources[name].buffer) stopAudio(name);
             const source = audioContext.createBufferSource();
             source.buffer = audioBuffers[name];
             source.loop = loop;
-            
             const gainNode = audioContext.createGain();
-            gainNode.gain.value = 0.5; // Volumen predeterminado
-            
-            source.connect(gainNode);
-            gainNode.connect(audioContext.destination);
-            
+            gainNode.gain.value = 0.5;
+            source.connect(gainNode).connect(audioContext.destination);
             source.start(0);
-            
             audioSources[name] = source;
             gainNodes[name] = gainNode;
         }
 
-        // Función para detener un audio
         function stopAudio(name) {
             if (audioSources[name]) {
                 audioSources[name].stop();
@@ -608,17 +657,14 @@
             }
         }
 
-        // Función para actualizar el volumen de un audio
         function setAudioVolume(name, volume) {
-            if (gainNodes[name]) {
-                gainNodes[name].gain.value = volume;
-            }
+            if (gainNodes[name]) gainNodes[name].gain.value = volume;
         }
 
         // --- Configuración de la Escena 3D ---
         const scene = new THREE.Scene();
-        const camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 1000);
-        const renderer = new THREE.WebGLRenderer({ canvas: document.getElementById('bg-canvas'), antialias: true });
+        const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+        const renderer = new THREE.WebGLRenderer({ canvas: document.getElementById('bg-canvas'), antialias: true, alpha: true });
         const textureLoader = new THREE.TextureLoader();
         const clock = new THREE.Clock();
 
@@ -626,30 +672,30 @@
         const allFlames = [];
         const allSpecters = [];
         const allGates = [];
+        const allStatues = [];
 
         let currentLevelId = 'dungeon_1';
         let isPaused = false;
+        let isTransitioning = false;
         let animationFrameId;
 
         // --- Controles y Estado del Juego ---
         let attackHeld = false;
-        let interactHeld = false;
-        
+        let interactPressed = false;
         let joyVector = new THREE.Vector2(0, 0);
 
-        camera.position.set(0, 4, 10);
+        camera.position.set(0, 4, 8); // Closer camera
         camera.lookAt(0, 2, 0);
         camera.far = roomDepth + 50;
         camera.updateProjectionMatrix();
 
         renderer.setSize(window.innerWidth, window.innerHeight);
         renderer.shadowMap.enabled = true;
-        scene.background = new THREE.Color(0x1a1a2a);
+        renderer.setClearColor(0x000000, 0);
 
         // --- Iluminación ---
         const ambientLight = new THREE.AmbientLight(0x808080, 1.5);
         scene.add(ambientLight);
-
         const directionalLight = new THREE.DirectionalLight(0xaaaaaa, 0.5);
         directionalLight.position.set(5, 10, 5);
         directionalLight.castShadow = true;
@@ -657,54 +703,69 @@
 
         // --- Bucle principal de animación ---
         function animate() {
-            if (isPaused) {
-                return;
-            }
+            if (isPaused) return;
             animationFrameId = requestAnimationFrame(animate);
-
             const deltaTime = clock.getDelta();
             
-            if (player) {
-                player.update(deltaTime, { joyVector, attackHeld, interactHeld });
+            if (player && !isTransitioning) {
+                player.update(deltaTime, { joyVector, attackHeld });
 
-                // Lógica de interacción con las puertas
                 let isNearGate = false;
+                let nearbyGate = null;
                 allGates.forEach(gate => {
-                    const distance = player.mesh.position.distanceTo(gate.mesh.position);
-                    if (distance < 5) {
+                    const distanceX = Math.abs(player.mesh.position.x - gate.mesh.position.x);
+                    if (distanceX < 4) {
                         isNearGate = true;
-                        if (interactHeld && gate.isLocked) {
-                            console.log('Interacción con la puerta: ', gate.id);
-                            gate.isLocked = false;
-                            gate.mesh.material.color.set(0x00ff00);
-                        } else if (interactHeld && !gate.isLocked) {
-                            console.log('Puerta abierta, cargando nuevo nivel...');
-                        }
+                        nearbyGate = gate;
                     }
+
+                    // Update numeral position
+                    const screenPosition = gate.mesh.position.clone();
+                    screenPosition.y += 6.8; // Adjust Y to be over the door
+                    const vector = screenPosition.project(camera);
+                    const x = (vector.x * 0.5 + 0.5) * renderer.domElement.clientWidth;
+                    const y = (-vector.y * 0.5 + 0.5) * renderer.domElement.clientHeight;
+                    gate.numeralElement.style.left = `${x}px`;
+                    gate.numeralElement.style.top = `${y}px`;
                 });
+                
+                if (isNearGate) {
+                    const screenPosition = nearbyGate.mesh.position.clone();
+                    screenPosition.y += 5;
+                    const vector = screenPosition.project(camera);
+                    const x = (vector.x * 0.5 + 0.5) * renderer.domElement.clientWidth;
+                    const y = (-vector.y * 0.5 + 0.5) * renderer.domElement.clientHeight;
+                    doorPromptFlame.style.left = `${x}px`;
+                    doorPromptFlame.style.top = `${y}px`;
+                    doorPromptFlame.style.display = 'block';
 
-                interactionButton.style.display = isNearGate ? 'block' : 'none';
-
-                // Lógica para reproducir/pausar el audio de los pasos
-                const isMoving = Math.abs(joyVector.x) > 0.1;
-                if (isMoving) {
-                    if (!audioSources['pasos']) {
-                        playAudio('pasos', true);
+                    if (interactPressed) {
+                        const destinationId = nearbyGate.destination;
+                        let spawnX = null;
+                        if (destinationId === 'dungeon_1') {
+                            spawnX = MAPS.dungeon_1.gates[0].x;
+                        }
+                        triggerTransition(destinationId, spawnX);
                     }
                 } else {
-                    if (audioSources['pasos']) {
-                        stopAudio('pasos');
-                    }
+                    doorPromptFlame.style.display = 'none';
+                }
+
+                const isMoving = Math.abs(joyVector.x) > 0.1;
+                if (isMoving && player.isGrounded) {
+                    if (!audioSources['pasos']) playAudio('pasos', true);
+                } else {
+                    if (audioSources['pasos']) stopAudio('pasos');
                 }
             }
-
+            
+            interactPressed = false;
             allFlames.forEach(flame => flame.update(deltaTime));
-            allSpecters.forEach(specter => specter.update(deltaTime));
-
+            allSpecters.forEach(specter => specter.update(deltaTime, player));
             renderer.render(scene, camera);
         }
 
-        // --- Lógica del menú y la introducción ---
+        // --- Lógica del menú, UI y Transición ---
         const startButtonContainer = document.getElementById('start-button-container');
         const startButton = document.getElementById('start-button');
         const introScreen = document.getElementById('intro-screen');
@@ -712,71 +773,89 @@
         const menuScreen = document.getElementById('menu-screen');
         const playButton = document.getElementById('play-button');
         const languageSelect = document.getElementById('language-select');
+        const pauseLanguageSelect = document.getElementById('pause-language-select');
         const btnAttack = document.getElementById('btn-attack');
-        const interactionButton = document.getElementById('interaction-btn');
-        
-        // Elementos del nuevo menú de pausa
+        const doorPromptFlame = document.getElementById('door-prompt-flame');
         const jozielHalo = document.getElementById('joziel-halo');
         const pauseMenu = document.getElementById('pause-menu');
         const resumeButton = document.getElementById('resume-button');
         const musicVolumeSlider = document.getElementById('music-volume');
         const sfxVolumeSlider = document.getElementById('sfx-volume');
-        const pauseLanguageSelect = document.getElementById('pause-language-select');
-
+        const transitionOverlay = document.getElementById('transition-overlay');
+        const loadingContent = document.getElementById('loading-content');
+        const loadingText = document.getElementById('loading-text');
+        const numeralsContainer = document.getElementById('numerals-container');
+        
         let currentLanguage = 'es';
-        let jozielHealth = 100;
-        let jozielPower = 100;
+        const translations = {
+            es: {
+                loading: "Cargando...",
+                play: "JUGAR",
+                languageLabel: "IDIOMA:",
+                settings: "Configuración",
+                musicVolume: "Volumen de la música:",
+                sfxVolume: "Volumen de los efectos:",
+                resume: "Reanudar"
+            },
+            en: {
+                loading: "Loading...",
+                play: "PLAY",
+                languageLabel: "LANGUAGE:",
+                settings: "Settings",
+                musicVolume: "Music Volume:",
+                sfxVolume: "SFX Volume:",
+                resume: "Resume"
+            }
+        };
 
-        function updateJozielEnergyUI(health) {
-            energyFill.style.width = `${health}%`;
+        function updateUIText() {
+            document.querySelectorAll('[data-translate-key]').forEach(el => {
+                const key = el.dataset.translateKey;
+                if (translations[currentLanguage][key]) {
+                    el.textContent = translations[currentLanguage][key];
+                }
+            });
         }
 
-        function updateJozielPowerUI(power) {
-            const powerWidth = power / 100;
-            powerFill.style.width = `${powerWidth * 100}%`;
-        }
+        function triggerTransition(destinationId, spawnX = null) {
+            if (isTransitioning) return;
+            isTransitioning = true;
 
-        function showMenu() {
-            menuScreen.style.backgroundImage = `url('${assetUrls.menuBackgroundImage}')`;
-            menuScreen.style.display = 'flex';
+            loadingText.textContent = translations[currentLanguage].loading;
+            transitionOverlay.classList.add('visible');
+
             setTimeout(() => {
-                menuScreen.style.opacity = 1;
-            }, 10);
+                loadLevelById(destinationId, spawnX);
+                
+                setTimeout(() => {
+                    transitionOverlay.classList.remove('visible');
+                    isTransitioning = false;
+                }, 2000); 
+            }, 400);
         }
 
         async function startGame() {
-            // Cargar los audios antes de empezar el juego
             try {
                 await Promise.all([
                     loadAudio('pasos', 'https://raw.githubusercontent.com/Yanzsmartwood2025/JUSN38/main/assets/mp3/Pasos-Joziel.mp3'),
                     loadAudio('ambiente', 'https://raw.githubusercontent.com/Yanzsmartwood2025/JUSN38/main/assets/mp3/calabozo_de_piedra.mp3')
                 ]);
-                console.log("Todos los audios se cargaron correctamente.");
             } catch (error) {
-                console.error("Error cargando audios, el juego continuará sin sonido.", error);
+                console.error("Error cargando audios", error);
             }
-            
-            // Iniciar el audio ambiental aquí
             playAudio('ambiente', true);
             setAudioVolume('ambiente', musicVolumeSlider.value);
             setAudioVolume('pasos', sfxVolumeSlider.value);
-
 
             menuScreen.style.opacity = 0;
             menuScreen.addEventListener('transitionend', () => {
                 menuScreen.style.display = 'none';
                 document.getElementById('bg-canvas').style.display = 'block';
-                document.getElementById('ui-container').style.display = 'block';
-                
-                loadLevel(MAPS[currentLevelId]);
+                document.getElementById('ui-container').style.display = 'flex';
                 player = new Player();
+                loadLevelById(currentLevelId);
                 animate();
             }, { once: true });
-        }
-
-        function handleLanguageChange() {
-            currentLanguage = languageSelect.value;
-            console.log('Idioma seleccionado:', currentLanguage);
         }
 
         function pauseGame() {
@@ -784,44 +863,32 @@
             stopAudio('ambiente');
             stopAudio('pasos');
             cancelAnimationFrame(animationFrameId);
-            
-            // Mostrar menú de pausa
             pauseMenu.classList.add('active');
         }
 
         function resumeGame() {
             isPaused = false;
-            // Reanudar audio y animaciones
             playAudio('ambiente', true);
-            
-            // Ocultar menú de pausa
             pauseMenu.classList.remove('active');
             animate();
         }
+        
+        function handleLanguageChange(e) {
+            currentLanguage = e.target.value;
+            languageSelect.value = currentLanguage;
+            pauseLanguageSelect.value = currentLanguage;
+            updateUIText();
+        }
+
+        languageSelect.addEventListener('change', handleLanguageChange);
+        pauseLanguageSelect.addEventListener('change', handleLanguageChange);
 
         playButton.addEventListener('click', startGame);
-        languageSelect.addEventListener('change', handleLanguageChange);
-        
-        // Evento para el nuevo botón de pausa/configuración
         jozielHalo.addEventListener('click', pauseGame);
-        
         resumeButton.addEventListener('click', resumeGame);
+        musicVolumeSlider.addEventListener('input', (e) => setAudioVolume('ambiente', e.target.value));
+        sfxVolumeSlider.addEventListener('input', (e) => setAudioVolume('pasos', e.target.value));
 
-        musicVolumeSlider.addEventListener('input', (e) => {
-            setAudioVolume('ambiente', e.target.value);
-        });
-
-        sfxVolumeSlider.addEventListener('input', (e) => {
-            setAudioVolume('pasos', e.target.value);
-            // Aquí puedes agregar otros sonidos de efectos
-        });
-
-        pauseLanguageSelect.addEventListener('change', (e) => {
-            currentLanguage = e.target.value;
-            console.log('Idioma cambiado en el menú de pausa:', currentLanguage);
-            // Aquí puedes implementar la lógica para cambiar los textos del juego
-        });
-        
         const joystickContainer = document.getElementById('joystick-container');
         const joystickKnob = document.getElementById('joystick-knob');
         let isDraggingJoystick = false;
@@ -835,62 +902,16 @@
             }
         }
 
-        joystickKnob.addEventListener('mousedown', (e) => {
-            if (isPaused) return;
-            isDraggingJoystick = true;
-            joystickKnob.style.transition = 'none';
-            updateJoystickDimensions();
-        });
-        joystickKnob.addEventListener('touchstart', (e) => {
-            if (isPaused) return;
-            e.preventDefault();
-            isDraggingJoystick = true;
-            joystickKnob.style.transition = 'none';
-            updateJoystickDimensions();
-        }, { passive: false });
-
-        document.addEventListener('mousemove', (e) => {
-            if (!isDraggingJoystick) return;
-            moveJoystick(e.clientX, e.clientY);
-        });
-        document.addEventListener('touchmove', (e) => {
-            if (!isDraggingJoystick) return;
-            e.preventDefault();
-            moveJoystick(e.touches[0].clientX, e.touches[0].clientY);
-        }, { passive: false });
-
-        document.addEventListener('mouseup', () => {
-            if (isDraggingJoystick) {
-                isDraggingJoystick = false;
-                resetJoystick();
-            }
-        });
-        document.addEventListener('touchend', () => {
-            if (isDraggingJoystick) {
-                isDraggingJoystick = false;
-                resetJoystick();
-            }
-        });
-        document.addEventListener('mouseleave', () => {
-            if (isDraggingJoystick) {
-                isDraggingJoystick = false;
-                resetJoystick();
-            }
-        });
-
         function moveJoystick(clientX, clientY) {
             let deltaX = clientX - (joystickRect.left + joystickRect.width / 2);
             let deltaY = clientY - (joystickRect.top + joystickRect.height / 2);
             const distance = Math.sqrt(deltaX * deltaX + deltaY * deltaY);
-            
             if (distance > joystickRadius) {
                 const angle = Math.atan2(deltaY, deltaX);
                 deltaX = joystickRadius * Math.cos(angle);
                 deltaY = joystickRadius * Math.sin(angle);
             }
-            
             joystickKnob.style.transform = `translate(-50%, -50%) translate(${deltaX}px, ${deltaY}px)`;
-            
             const deadZone = 10;
             joyVector.x = Math.abs(deltaX) > deadZone ? deltaX / joystickRadius : 0;
             joyVector.y = Math.abs(deltaY) > deadZone ? -deltaY / joystickRadius : 0;
@@ -902,42 +923,58 @@
             joyVector.set(0, 0);
         }
 
+        joystickKnob.addEventListener('mousedown', (e) => { if (!isPaused) { isDraggingJoystick = true; joystickKnob.style.transition = 'none'; updateJoystickDimensions(); } });
+        joystickKnob.addEventListener('touchstart', (e) => { if (!isPaused) { e.preventDefault(); isDraggingJoystick = true; joystickKnob.style.transition = 'none'; updateJoystickDimensions(); } }, { passive: false });
+        document.addEventListener('mousemove', (e) => { if (isDraggingJoystick) moveJoystick(e.clientX, e.clientY); });
+        document.addEventListener('touchmove', (e) => { if (isDraggingJoystick) { e.preventDefault(); moveJoystick(e.touches[0].clientX, e.touches[0].clientY); } }, { passive: false });
+        document.addEventListener('mouseup', () => { if (isDraggingJoystick) { isDraggingJoystick = false; resetJoystick(); } });
+        document.addEventListener('touchend', () => { if (isDraggingJoystick) { isDraggingJoystick = false; resetJoystick(); } });
+        document.addEventListener('mouseleave', () => { if (isDraggingJoystick) { isDraggingJoystick = false; resetJoystick(); } });
+        
         btnAttack.addEventListener('mousedown', () => { if (!isPaused) attackHeld = true; });
         btnAttack.addEventListener('mouseup', () => { if (!isPaused) attackHeld = false; });
-        btnAttack.addEventListener('touchstart', (e) => { if (!isPaused) { e.preventDefault(); attackHeld = true; }}, { passive: false });
+        btnAttack.addEventListener('touchstart', (e) => { if (!isPaused) { e.preventDefault(); attackHeld = true; } }, { passive: false });
         btnAttack.addEventListener('touchend', () => { if (!isPaused) attackHeld = false; });
 
-        interactionButton.addEventListener('mousedown', () => { if (!isPaused) interactHeld = true; });
-        interactionButton.addEventListener('mouseup', () => { if (!isPaused) interactHeld = false; });
-        interactionButton.addEventListener('touchstart', (e) => { if (!isPaused) { e.preventDefault(); interactHeld = true; }}, { passive: false });
-        interactionButton.addEventListener('touchend', () => { if (!isPaused) interactHeld = false; });
-
-        // Agregamos el event listener para el botón de inicio
+        doorPromptFlame.addEventListener('mousedown', (e) => { if (!isPaused) { e.preventDefault(); interactPressed = true; } });
+        doorPromptFlame.addEventListener('touchstart', (e) => { if (!isPaused) { e.preventDefault(); interactPressed = true; } }, { passive: false });
+        
         startButton.addEventListener('click', () => {
             startButtonContainer.style.display = 'none';
             introImage.src = assetUrls.introImage;
             introScreen.style.opacity = 0;
             introScreen.addEventListener('transitionend', () => {
                 introScreen.style.display = 'none';
-                showMenu();
+                menuScreen.style.backgroundImage = `url('${assetUrls.menuBackgroundImage}')`;
+                menuScreen.style.display = 'flex';
+                setTimeout(() => menuScreen.style.opacity = 1, 10);
             }, { once: true });
         });
-
-        window.addEventListener('load', () => {
-            updateJoystickDimensions();
-        });
-
-        window.addEventListener('resize', () => {
+        
+        function handleResize() {
             updateJoystickDimensions();
             renderer.setSize(window.innerWidth, window.innerHeight);
             camera.aspect = window.innerWidth / window.innerHeight;
+            
+            // Adjust camera zoom based on aspect ratio
+            if (camera.aspect < 1) { // Portrait
+                camera.zoom = 1.2;
+            } else { // Landscape
+                camera.zoom = 1.0;
+            }
+            
             camera.updateProjectionMatrix();
-        });
+        }
 
+        window.addEventListener('load', () => {
+            updateUIText();
+            handleResize();
+        });
+        window.addEventListener('resize', handleResize);
 
         // --- src/player.js (Lógica del Personaje) ---
         class Player {
-            constructor() {
+             constructor() {
                 this.runningTexture = textureLoader.load(assetUrls.runningSprite);
                 this.attackTexture = textureLoader.load(assetUrls.attackSprite);
                 this.jumpTexture = textureLoader.load(assetUrls.jumpSprite);
@@ -946,12 +983,7 @@
                 this.attackTexture.repeat.x = 1 / totalAttackFrames;
                 this.jumpTexture.repeat.x = 1 / totalJumpFrames;
 
-                const playerMaterial = new THREE.MeshStandardMaterial({
-                    map: this.runningTexture,
-                    transparent: true,
-                    side: THREE.DoubleSide,
-                    alphaTest: 0.5,
-                });
+                const playerMaterial = new THREE.MeshStandardMaterial({ map: this.runningTexture, transparent: true, side: THREE.DoubleSide, alphaTest: 0.5 });
                 const playerGeometry = new THREE.PlaneGeometry(2, 2);
                 this.mesh = new THREE.Mesh(playerGeometry, playerMaterial);
                 this.mesh.position.y = 1;
@@ -967,16 +999,13 @@
                 this.currentFrame = 0;
                 this.lastFrameTime = 0;
                 this.isFacingLeft = false;
-
                 this.isGrounded = true;
                 this.velocity = new THREE.Vector3();
                 this.jumpPower = 0.35;
                 this.gravity = -0.025;
                 this.isJumping = false;
-
-                this.minPlayerX = -60 + 1.5;
-                this.maxPlayerX = 60 - 1.5;
-
+                this.minPlayerX = -playableAreaWidth/2 + 1.5;
+                this.maxPlayerX = playableAreaWidth/2 - 1.5;
                 this.jumpInputReceived = false;
             }
 
@@ -985,14 +1014,7 @@
                 const flameLight = new THREE.PointLight(0x00aaff, 1.5, 4);
                 flameLight.castShadow = true;
                 flameGroup.add(flameLight);
-
-                const attackFlameMaterial = new THREE.MeshBasicMaterial({
-                    map: textureLoader.load(assetUrls.flameParticle),
-                    color: 0xaaddff,
-                    transparent: true,
-                    blending: THREE.AdditiveBlending,
-                    side: THREE.DoubleSide,
-                });
+                const attackFlameMaterial = new THREE.MeshBasicMaterial({ map: textureLoader.load(assetUrls.flameParticle), color: 0xaaddff, transparent: true, blending: THREE.AdditiveBlending, side: THREE.DoubleSide });
                 const flameCore = new THREE.Mesh(new THREE.PlaneGeometry(0.5, 0.5), attackFlameMaterial);
                 flameGroup.add(flameCore);
                 flameGroup.visible = false;
@@ -1000,13 +1022,7 @@
                 this.rightHandFlame = flameGroup;
                 this.rightHandFlame.position.set(-0.6, 0.3, 0.3);
 
-                const leftHandFlame = new THREE.Group();
-                const leftFlameLight = new THREE.PointLight(0x00aaff, 1.5, 4);
-                leftFlameLight.castShadow = true;
-                leftHandFlame.add(leftFlameLight);
-                const leftFlameCore = new THREE.Mesh(new THREE.PlaneGeometry(0.5, 0.5), attackFlameMaterial);
-                leftHandFlame.add(leftFlameCore);
-                leftHandFlame.visible = false;
+                const leftHandFlame = flameGroup.clone();
                 this.mesh.add(leftHandFlame);
                 this.leftHandFlame = leftHandFlame;
                 this.leftHandFlame.position.set(0.6, 0.3, 0.3);
@@ -1033,7 +1049,6 @@
                     this.currentState = 'attacking';
                 } else {
                     const isJumpingInput = joyY > 0.5;
-
                     if (isJumpingInput && this.isGrounded && !this.jumpInputReceived) {
                         this.isJumping = true;
                         this.isGrounded = false;
@@ -1053,9 +1068,7 @@
                     }
                 }
                 
-                if (!this.isGrounded) {
-                    this.velocity.y += this.gravity;
-                }
+                if (!this.isGrounded) this.velocity.y += this.gravity;
                 this.mesh.position.y += this.velocity.y;
                 
                 if (this.mesh.position.y <= 1.0) {
@@ -1070,47 +1083,22 @@
                 camera.position.x = this.mesh.position.x;
                 this.playerLight.position.set(this.mesh.position.x, this.mesh.position.y + 1, this.mesh.position.z + 2);
 
-                if (this.currentState !== previousState) {
-                    this.currentFrame = 0;
-                }
+                if (this.currentState !== previousState) this.currentFrame = 0;
                 
-                this.rightHandFlame.visible = (this.currentState === 'attacking');
-                this.leftHandFlame.visible = (this.currentState === 'attacking');
-                if (this.currentState === 'attacking') {
-                    this.updateAttackFlames();
-                }
+                const isAttacking = this.currentState === 'attacking';
+                this.rightHandFlame.visible = isAttacking;
+                this.leftHandFlame.visible = isAttacking;
+                if (isAttacking) this.updateAttackFlames();
 
                 if (Date.now() - this.lastFrameTime > animationSpeed) {
                     this.lastFrameTime = Date.now();
-                    let totalFrames = 0;
-                    let currentTexture = null;
-
+                    let totalFrames, currentTexture;
                     switch (this.currentState) {
-                        case 'attacking':
-                            totalFrames = totalAttackFrames;
-                            currentTexture = this.attackTexture;
-                            if (this.currentFrame < totalFrames - 1) {
-                                this.currentFrame++;
-                            }
-                            break;
-                        case 'running':
-                            totalFrames = totalRunningFrames;
-                            currentTexture = this.runningTexture;
-                            this.currentFrame = (this.currentFrame + 1) % totalFrames;
-                            break;
-                        case 'jumping':
-                            totalFrames = totalJumpFrames;
-                            currentTexture = this.jumpTexture;
-                            this.currentFrame = this.velocity.y > 0 ? 1 : 2;
-                            break;
-                        case 'idle':
-                        default:
-                            totalFrames = totalAttackFrames;
-                            currentTexture = this.attackTexture;
-                            this.currentFrame = 0;
-                            break;
+                        case 'attacking': [totalFrames, currentTexture] = [totalAttackFrames, this.attackTexture]; if (this.currentFrame < totalFrames - 1) this.currentFrame++; break;
+                        case 'running': [totalFrames, currentTexture] = [totalRunningFrames, this.runningTexture]; this.currentFrame = (this.currentFrame + 1) % totalFrames; break;
+                        case 'jumping': [totalFrames, currentTexture] = [totalJumpFrames, this.jumpTexture]; this.currentFrame = this.velocity.y > 0 ? 1 : 2; break;
+                        default: [totalFrames, currentTexture] = [totalAttackFrames, this.attackTexture]; this.currentFrame = 0; break;
                     }
-
                     if (currentTexture) {
                         this.mesh.material.map = currentTexture;
                         currentTexture.offset.x = this.currentFrame / totalFrames;
@@ -1123,49 +1111,38 @@
         const wallTexture = textureLoader.load(assetUrls.wallTexture);
         wallTexture.wrapS = wallTexture.wrapT = THREE.RepeatWrapping;
         const wallMaterial = new THREE.MeshStandardMaterial({ map: wallTexture, color: 0x454555 });
-
         const doorTexture = textureLoader.load(assetUrls.doorTexture);
         const doorMaterial = new THREE.MeshStandardMaterial({ map: doorTexture, transparent: true, alphaTest: 0.5 });
-
         const floorTexture = textureLoader.load(assetUrls.floorTexture);
         floorTexture.wrapS = floorTexture.wrapT = THREE.RepeatWrapping;
         floorTexture.repeat.set(playableAreaWidth / 4, roomDepth / 5);
         const floorMaterial = new THREE.MeshStandardMaterial({ map: floorTexture });
-
         const torchTexture = textureLoader.load(assetUrls.torchTexture);
         const torchMaterial = new THREE.MeshStandardMaterial({ map: torchTexture, transparent: true, alphaTest: 0.5, side: THREE.DoubleSide });
-        
         const floorGeometry = new THREE.PlaneGeometry(playableAreaWidth, roomDepth);
 
-        function clearScene() {
-            while (scene.children.length > 0) {
-                scene.remove(scene.children[0]);
+        function clearSceneForLevelLoad() {
+            for (let i = scene.children.length - 1; i >= 0; i--) {
+                const obj = scene.children[i];
+                if (obj !== player.mesh && obj !== player.playerLight && !(obj instanceof THREE.Camera) && !(obj instanceof THREE.Light)) {
+                    scene.remove(obj);
+                }
             }
             allFlames.length = 0;
             allSpecters.length = 0;
             allGates.length = 0;
+            allStatues.length = 0;
+            numeralsContainer.innerHTML = '';
         }
         
         function createTorch(x, y, z) {
             const torchMesh = new THREE.Mesh(new THREE.PlaneGeometry(0.5, 1.8), torchMaterial);
             torchMesh.position.set(x, y, z);
-            torchMesh.castShadow = true;
-            torchMesh.receiveShadow = true;
             scene.add(torchMesh);
-
-            const flame = new RealisticFlame(scene, new THREE.Vector3(x, y + 1.3, z + 0.2));
-            allFlames.push(flame);
+            allFlames.push(new RealisticFlame(scene, new THREE.Vector3(x, y + 1.3, z + 0.2)));
         }
         
         function loadLevel(levelData) {
-            clearScene();
-
-            const ambientLight = new THREE.AmbientLight(0x808080, 1.5);
-            const directionalLight = new THREE.DirectionalLight(0xaaaaaa, 0.5);
-            directionalLight.position.set(5, 10, 5);
-            directionalLight.castShadow = true;
-            scene.add(ambientLight, directionalLight);
-
             const floor = new THREE.Mesh(floorGeometry, floorMaterial);
             floor.rotation.x = -Math.PI / 2;
             floor.position.z = camera.position.z - (roomDepth / 2);
@@ -1173,74 +1150,87 @@
             scene.add(floor);
 
             const wall = new THREE.Mesh(new THREE.PlaneGeometry(playableAreaWidth, 20), wallMaterial);
-            wall.position.z = camera.position.z - roomDepth;
-            wall.position.y = 10;
-            wall.receiveShadow = true;
+            wall.position.set(0, 10, camera.position.z - roomDepth);
             scene.add(wall);
 
-            const visibleWidth = Math.tan(camera.fov / 2 * Math.PI / 180) * 2 * camera.position.z;
-            const sideWallLength = visibleWidth + 50; // Añade un poco de buffer para asegurar que cubra todo
-            const sideWallGeometry = new THREE.PlaneGeometry(sideWallLength, 20);
-
-            wallTexture.repeat.set(sideWallLength / 3, 6);
-
+            const sideWallGeometry = new THREE.PlaneGeometry(roomDepth, 20);
             const leftSideWall = new THREE.Mesh(sideWallGeometry, wallMaterial);
             leftSideWall.rotation.y = Math.PI / 2;
             leftSideWall.position.set(-playableAreaWidth / 2, 10, camera.position.z - roomDepth / 2);
-            leftSideWall.receiveShadow = true;
-            leftSideWall.castShadow = true;
             scene.add(leftSideWall);
-
             const rightSideWall = new THREE.Mesh(sideWallGeometry, wallMaterial);
             rightSideWall.rotation.y = -Math.PI / 2;
             rightSideWall.position.set(playableAreaWidth / 2, 10, camera.position.z - roomDepth / 2);
-            rightSideWall.receiveShadow = true;
-            rightSideWall.castShadow = true;
             scene.add(rightSideWall);
 
-            levelData.gates.forEach(gate => {
+            levelData.gates.forEach(gateData => {
                 const gateGroup = new THREE.Group();
-                const gateMesh = new THREE.Mesh(new THREE.PlaneGeometry(8, 8), doorMaterial);
+                const gateMesh = new THREE.Mesh(new THREE.PlaneGeometry(8, 8), doorMaterial.clone());
                 gateMesh.position.set(0, 4, 0.3);
-                gateMesh.receiveShadow = true;
                 gateGroup.add(gateMesh);
-                gateGroup.position.x = gate.x;
+                gateGroup.position.x = gateData.x;
                 gateGroup.position.z = camera.position.z - roomDepth;
                 scene.add(gateGroup);
-                allGates.push({ mesh: gateGroup, id: gate.id, isLocked: true });
 
-                createTorch(gate.x - 6, 3.2, camera.position.z - roomDepth + 0.5);
-                createTorch(gate.x + 6, 3.2, camera.position.z - roomDepth + 0.5);
+                const numeralElement = document.createElement('div');
+                numeralElement.className = 'door-numeral';
+                numeralElement.textContent = gateData.numeral;
+                numeralsContainer.appendChild(numeralElement);
+
+                allGates.push({ mesh: gateGroup, id: gateData.id, destination: gateData.destination, numeralElement: numeralElement });
+                createTorch(gateData.x - 6, 3.2, camera.position.z - roomDepth + 0.5);
+                createTorch(gateData.x + 6, 3.2, camera.position.z - roomDepth + 0.5);
             });
 
-            levelData.specters.forEach(specter => {
-                const newSpecter = new Specter(scene, specter.x, specter.y);
-                allSpecters.push(newSpecter);
+            levelData.specters.forEach(specterData => {
+                allSpecters.push(new Specter(scene, specterData.x, specterData.y));
             });
+
+            if (levelData.statues) {
+                levelData.statues.forEach(statueData => {
+                    allStatues.push(new Statue(scene, statueData.x, statueData.y));
+                });
+            }
         }
-
+        
+        function loadLevelById(levelId, spawnX = null) {
+            const levelData = MAPS[levelId];
+            if (!levelData) return;
+            currentLevelId = levelId;
+            clearSceneForLevelLoad();
+            loadLevel(levelData);
+            if (player) {
+                player.mesh.position.x = spawnX !== null ? spawnX : 0;
+                player.mesh.position.y = 1;
+                player.mesh.position.z = 0;
+                camera.position.x = player.mesh.position.x;
+            }
+        }
 
         // --- src/maps.js (Data de niveles) ---
         const MAPS = {
             dungeon_1: {
                 id: 'dungeon_1',
-                name: 'El Trauma del Miedo',
-                abilities: ['jump'],
+                name: 'El Salón Principal',
                 gates: [
-                    { id: 'gate_1', x: -40, destination: 'dungeon_2' },
-                    { id: 'gate_2', x: -20, destination: 'dungeon_2' },
-                    { id: 'gate_3', x: 0, destination: 'dungeon_2' },
-                    { id: 'gate_4', x: 20, destination: 'dungeon_2' },
-                    { id: 'gate_5', x: 40, destination: 'dungeon_2' },
+                    { id: 'gate_1', x: -50, destination: 'room_1', numeral: 'I' },
+                    { id: 'gate_2', x: -30, destination: 'room_2', numeral: 'II' },
+                    { id: 'gate_3', x: -10, destination: 'room_3', numeral: 'III' },
+                    { id: 'gate_4', x: 10, destination: 'room_4', numeral: 'IV' },
+                    { id: 'gate_5', x: 30, destination: 'room_5', numeral: 'V' },
                 ],
-                specters: [
-                    { type: 'fear', x: 0, y: 3.5 },
-                ],
-                puzzle: {
-                    description: 'Usa el salto para alcanzar al espectro temeroso.',
-                    solution: 'Saltar cerca del espectro',
-                    reward: 'Habilidad: Salto Flotante',
-                }
+                specters: [ { type: 'fear', x: 45, y: 3.5 } ],
+            },
+            room_1: { id: 'room_1', name: 'Habitación 1', gates: [{ id: 'return_1', x: 0, destination: 'dungeon_1', numeral: 'I' }], specters: [] },
+            room_2: { id: 'room_2', name: 'Habitación 2', gates: [{ id: 'return_2', x: 0, destination: 'dungeon_1', numeral: 'II' }], specters: [] },
+            room_3: { id: 'room_3', name: 'Habitación 3', gates: [{ id: 'return_3', x: 0, destination: 'dungeon_1', numeral: 'III' }], specters: [] },
+            room_4: { id: 'room_4', name: 'Habitación 4', gates: [{ id: 'return_4', x: 0, destination: 'dungeon_1', numeral: 'IV' }], specters: [] },
+            room_5: { 
+                id: 'room_5', 
+                name: 'Habitación 5', 
+                gates: [{ id: 'return_5', x: 0, destination: 'dungeon_1', numeral: 'V' }], 
+                specters: [],
+                statues: [{ x: -15, y: 4 }]
             },
         };
 
@@ -1250,41 +1240,23 @@
                 this.scene = scene;
                 this.position = position;
                 this.particleCount = 20;
-                this.particles = null;
-                this.light = null;
+                this.velocities = [];
                 this.init();
             }
 
             init() {
-                const particleTexture = textureLoader.load(assetUrls.flameParticle);
-                const particleMaterial = new THREE.PointsMaterial({
-                    color: 0x00aaff,
-                    size: 0.4,
-                    map: particleTexture,
-                    blending: THREE.AdditiveBlending,
-                    transparent: true,
-                    depthWrite: false,
-                });
-
+                const particleMaterial = new THREE.PointsMaterial({ color: 0x00aaff, size: 0.4, map: textureLoader.load(assetUrls.flameParticle), blending: THREE.AdditiveBlending, transparent: true, depthWrite: false });
                 const particleGeometry = new THREE.BufferGeometry();
                 const positions = new Float32Array(this.particleCount * 3);
-                this.velocities = [];
-
                 for (let i = 0; i < this.particleCount; i++) {
                     positions[i * 3] = this.position.x;
                     positions[i * 3 + 1] = this.position.y;
                     positions[i * 3 + 2] = this.position.z;
-                    this.velocities.push({
-                        x: (Math.random() - 0.5) * 0.02,
-                        y: Math.random() * 0.1,
-                        z: (Math.random() - 0.5) * 0.02,
-                        lifetime: Math.random() * 2
-                    });
+                    this.velocities.push({ x: (Math.random() - 0.5) * 0.02, y: Math.random() * 0.1, z: (Math.random() - 0.5) * 0.02, lifetime: Math.random() * 2 });
                 }
                 particleGeometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
                 this.particles = new THREE.Points(particleGeometry, particleMaterial);
                 this.scene.add(this.particles);
-
                 this.light = new THREE.PointLight(0x00aaff, 2.0, 20);
                 this.light.position.copy(this.position);
                 this.light.castShadow = true;
@@ -1296,7 +1268,6 @@
                 for (let i = 0; i < this.particleCount; i++) {
                     const vel = this.velocities[i];
                     vel.lifetime -= deltaTime;
-
                     if (vel.lifetime <= 0) {
                         positions[i * 3] = this.position.x;
                         positions[i * 3 + 1] = this.position.y;
@@ -1304,80 +1275,152 @@
                         vel.lifetime = Math.random() * 2;
                         vel.y = Math.random() * 0.1;
                     }
-
                     positions[i * 3] += vel.x;
                     positions[i * 3 + 1] += vel.y;
                     positions[i * 3 + 2] += vel.z;
                 }
                 this.particles.geometry.attributes.position.needsUpdate = true;
-
                 this.light.intensity = 1.0 + Math.sin(Date.now() * 0.01 + this.position.x) * 0.5;
             }
         }
-
 
         // --- src/specter.js (Lógica de los espectros) ---
         class Specter {
             constructor(scene, initialX, initialY) {
                 this.scene = scene;
-                this.mesh = null;
                 this.initialX = initialX;
                 this.floatingCenterY = initialY;
-                
-                this.moveDirectionX = 0;
-                this.moveSpeedX = 0;
-                this.zDirection = 0;
-                this.zSpeed = 0;
-                
-                this.floatingOffset = Math.random() * Math.PI * 2;
-                this.floatingSpeed = 2;
-                this.floatingAmplitude = 0.5;
-                this.currentFrame = 0;
+                this.state = 'IDLE';
+                this.stateTimer = Math.random() * 2 + 2; // Idle for 2-4 seconds
+                this.targetPosition = new THREE.Vector3();
+                this.moveSpeed = 0.05;
                 this.lastFrameTime = 0;
-                this.spriteFlipX = 1;
-                this.minZ = camera.position.z - 5;
-                this.maxZ = camera.position.z - roomDepth + 1;
-                this.isTeleporting = false;
-                this.teleportingState = 'idle';
-                this.teleportProgress = 0;
-                this.teleportDurationPhase = 0.3;
-                this.teleportCooldown = 2 + Math.random() * 2;
-                this.currentTeleportCooldown = this.teleportCooldown;
+                this.currentFrame = 0;
                 this.init();
             }
 
             init() {
-                const specterTexture = textureLoader.load(assetUrls.specterTexture);
-                specterTexture.wrapS = specterTexture.wrapT = THREE.RepeatWrapping;
-                specterTexture.repeat.x = 1 / totalSpecterFrames;
-
-                const specterMaterial = new THREE.MeshStandardMaterial({
-                    map: specterTexture,
-                    color: 0x88bbff,
-                    transparent: true,
-                    opacity: 0.7,
-                    side: THREE.DoubleSide,
-                    alphaTest: 0.1
-                });
-
+                this.texture = textureLoader.load(assetUrls.specterTexture);
+                this.texture.repeat.x = 1 / totalSpecterFrames;
+                const specterMaterial = new THREE.MeshStandardMaterial({ map: this.texture, color: 0x88bbff, transparent: true, opacity: 0.8, side: THREE.DoubleSide, alphaTest: 0.1 });
                 const specterGeometry = new THREE.PlaneGeometry(3, 3);
                 this.mesh = new THREE.Mesh(specterGeometry, specterMaterial);
-                this.mesh.position.set(this.initialX, this.floatingCenterY, this.maxZ);
+                this.mesh.position.set(this.initialX, this.floatingCenterY, camera.position.z - roomDepth + 1);
                 this.scene.add(this.mesh);
-                this.initialScaleX = this.mesh.scale.x;
+            }
+            
+            setNewState(newState) {
+                this.state = newState;
+                switch(this.state) {
+                    case 'IDLE':
+                        this.stateTimer = Math.random() * 2 + 2;
+                        break;
+                    case 'MOVING':
+                        const newX = Math.random() * (playableAreaWidth - 20) - (playableAreaWidth / 2 - 10);
+                        this.targetPosition.set(newX, this.floatingCenterY, this.mesh.position.z);
+                        this.stateTimer = 10; // Max time to reach target
+                        break;
+                    case 'PHASING_DOWN':
+                        this.stateTimer = 1.5; // Duration of phase down
+                        break;
+                    case 'PHASING_UP':
+                        const spawnX = Math.random() * (playableAreaWidth - 20) - (playableAreaWidth / 2 - 10);
+                        this.mesh.position.set(spawnX, -5, this.mesh.position.z);
+                        this.stateTimer = 1.5; // Duration of phase up
+                        break;
+                    case 'FLEEING':
+                         this.targetPosition.x = this.mesh.position.x + (this.mesh.position.x - player.mesh.position.x > 0 ? 15 : -15);
+                         this.targetPosition.x = Math.max(-playableAreaWidth/2 + 5, Math.min(playableAreaWidth/2 - 5, this.targetPosition.x));
+                         this.stateTimer = 3;
+                        break;
+                }
             }
 
-            update(deltaTime) {
+            update(deltaTime, player) {
+                this.stateTimer -= deltaTime;
+
+                // Animate sprite
                 if (Date.now() - this.lastFrameTime > specterAnimationSpeed) {
                     this.lastFrameTime = Date.now();
                     this.currentFrame = (this.currentFrame + 1) % totalSpecterFrames;
-                    this.mesh.material.map.offset.x = this.currentFrame / totalSpecterFrames;
+                    this.texture.offset.x = this.currentFrame / totalSpecterFrames;
                 }
-
-                this.floatingOffset += this.floatingSpeed * deltaTime;
-                this.mesh.position.y = this.floatingCenterY + Math.sin(this.floatingOffset) * this.floatingAmplitude;
                 
-                this.mesh.lookAt(camera.position);
+                // State machine logic
+                switch(this.state) {
+                    case 'IDLE':
+                        this.mesh.position.y = this.floatingCenterY + Math.sin(Date.now() * 0.002) * 0.5;
+                        if (this.stateTimer <= 0) {
+                            this.setNewState(Math.random() > 0.3 ? 'MOVING' : 'PHASING_DOWN');
+                        }
+                        break;
+                    
+                    case 'MOVING':
+                    case 'FLEEING':
+                        const direction = this.targetPosition.clone().sub(this.mesh.position).normalize();
+                        const speed = this.state === 'FLEEING' ? this.moveSpeed * 2 : this.moveSpeed;
+                        this.mesh.position.x += direction.x * speed;
+
+                        // Flip sprite based on direction
+                        if (direction.x > 0.01) this.mesh.scale.x = -1;
+                        if (direction.x < -0.01) this.mesh.scale.x = 1;
+
+                        if (this.mesh.position.distanceTo(this.targetPosition) < 1 || this.stateTimer <= 0) {
+                            this.setNewState('IDLE');
+                        }
+                        break;
+                    
+                    case 'PHASING_DOWN':
+                        this.mesh.material.opacity = Math.max(0, 1 - (1.5 - this.stateTimer) / 1.5);
+                        this.mesh.position.y -= 0.1;
+                        if (this.stateTimer <= 0) {
+                            this.setNewState('PHASING_UP');
+                        }
+                        break;
+
+                    case 'PHASING_UP':
+                        this.mesh.material.opacity = Math.min(0.8, (1.5 - this.stateTimer) / 1.5);
+                        this.mesh.position.y = Math.min(this.floatingCenterY, this.mesh.position.y + 0.1);
+                         if (this.stateTimer <= 0) {
+                            this.mesh.material.opacity = 0.8;
+                            this.mesh.position.y = this.floatingCenterY;
+                            this.setNewState('IDLE');
+                        }
+                        break;
+                }
+                
+                // Check if player is too close (but not when phasing)
+                if (player && this.state !== 'PHASING_DOWN' && this.state !== 'PHASING_UP' && this.state !== 'FLEEING') {
+                    if (player.mesh.position.distanceTo(this.mesh.position) < 8) {
+                        this.setNewState('FLEEING');
+                    }
+                }
+            }
+        }
+        
+        // --- src/statue.js (Lógica de la Estatua) ---
+        class Statue {
+            constructor(scene, x, y) {
+                this.scene = scene;
+                this.init(x, y);
+            }
+
+            init(x, y) {
+                const texture = textureLoader.load(assetUrls.halleyStatueTexture);
+                const material = new THREE.MeshStandardMaterial({ map: texture });
+                const geometry = new THREE.BoxGeometry(4, 8, 4);
+                this.mesh = new THREE.Mesh(geometry, material);
+                this.mesh.position.set(x, y, camera.position.z - roomDepth + 3);
+                this.mesh.castShadow = true;
+                this.mesh.receiveShadow = true;
+                this.scene.add(this.mesh);
+
+                // Add a spotlight to highlight the statue
+                const spotLight = new THREE.SpotLight(0xffffff, 1, 20, Math.PI / 6, 0.5);
+                spotLight.position.set(x, y + 10, this.mesh.position.z + 5);
+                spotLight.target = this.mesh;
+                spotLight.castShadow = true;
+                this.scene.add(spotLight);
             }
         }
     </script>
