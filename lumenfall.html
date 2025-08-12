@@ -1172,13 +1172,59 @@
             joyVector.set(0, 0);
         }
         
-        joystickKnob.addEventListener('mousedown', (e) => { if (!isPaused && !isGamepadModeActive) { isDraggingJoystick = true; joystickKnob.style.transition = 'none'; updateJoystickDimensions(); } });
-        joystickKnob.addEventListener('touchstart', (e) => { if (!isPaused && !isGamepadModeActive) { e.preventDefault(); isDraggingJoystick = true; joystickKnob.style.transition = 'none'; updateJoystickDimensions(); } }, { passive: false });
-        document.addEventListener('mousemove', (e) => { if (isDraggingJoystick && !isGamepadModeActive) moveJoystick(e.clientX, e.clientY); });
-        document.addEventListener('touchmove', (e) => { if (isDraggingJoystick && !isGamepadModeActive) { e.preventDefault(); moveJoystick(e.touches[0].clientX, e.touches[0].clientY); } }, { passive: false });
-        document.addEventListener('mouseup', () => { if (isDraggingJoystick && !isGamepadModeActive) { isDraggingJoystick = false; resetJoystick(); } });
-        document.addEventListener('touchend', () => { if (isDraggingJoystick && !isGamepadModeActive) { isDraggingJoystick = false; resetJoystick(); } });
-        document.addEventListener('mouseleave', () => { if (isDraggingJoystick && !isGamepadModeActive) { isDraggingJoystick = false; resetJoystick(); } });
+        // --- JOYSTICK FIX STARTS HERE ---
+        // The original code required the touch to start on the small knob.
+        // This version allows the touch to start anywhere in the larger joystick container,
+        // which is more user-friendly on touch devices.
+        joystickContainer.addEventListener('mousedown', (e) => { 
+            if (!isPaused && !isGamepadModeActive) { 
+                isDraggingJoystick = true; 
+                joystickKnob.style.transition = 'none'; 
+                updateJoystickDimensions(); 
+                moveJoystick(e.clientX, e.clientY); // Immediately move knob to click position
+            } 
+        });
+        joystickContainer.addEventListener('touchstart', (e) => { 
+            if (!isPaused && !isGamepadModeActive) { 
+                e.preventDefault(); 
+                isDraggingJoystick = true; 
+                joystickKnob.style.transition = 'none'; 
+                updateJoystickDimensions(); 
+                moveJoystick(e.touches[0].clientX, e.touches[0].clientY); // Immediately move knob to touch position
+            } 
+        }, { passive: false });
+
+        document.addEventListener('mousemove', (e) => { 
+            if (isDraggingJoystick && !isGamepadModeActive) {
+                moveJoystick(e.clientX, e.clientY); 
+            }
+        });
+        document.addEventListener('touchmove', (e) => { 
+            if (isDraggingJoystick && !isGamepadModeActive) { 
+                e.preventDefault(); 
+                moveJoystick(e.touches[0].clientX, e.touches[0].clientY); 
+            } 
+        }, { passive: false });
+        
+        document.addEventListener('mouseup', () => { 
+            if (isDraggingJoystick && !isGamepadModeActive) { 
+                isDraggingJoystick = false; 
+                resetJoystick(); 
+            } 
+        });
+        document.addEventListener('touchend', () => { 
+            if (isDraggingJoystick && !isGamepadModeActive) { 
+                isDraggingJoystick = false; 
+                resetJoystick(); 
+            } 
+        });
+        document.addEventListener('mouseleave', () => { 
+            if (isDraggingJoystick && !isGamepadModeActive) { 
+                isDraggingJoystick = false; 
+                resetJoystick(); 
+            } 
+        });
+        // --- JOYSTICK FIX ENDS HERE ---
         
         function handleAttackPressStart() {
             if (isPaused) return;
