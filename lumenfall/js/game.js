@@ -352,7 +352,7 @@
                 await Promise.all([
                     loadAudio('pasos', '../assets/mp3/LUMENFALL/Pasos-Joziel.mp3'),
                     loadAudio('ambiente', '../assets/mp3/LUMENFALL/calabozo_de_piedra.mp3'),
-                    loadAudio('puerta', '../assets/audio/puerta-calabozo.mp3')
+                    loadAudio('puerta', 'assets/audio/puerta-calabozo.mp3')
                 ]);
             } catch (error) {
                 console.error("Error loading audio", error);
