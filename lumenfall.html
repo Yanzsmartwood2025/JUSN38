@@ -1141,6 +1141,7 @@
         const joystickContainer = document.getElementById('joystick-container');
         const joystickKnob = document.getElementById('joystick-knob');
         let isDraggingJoystick = false;
+        let joystickTouchId = null; // <-- NEW: To store the ID of the touch on the joystick
         let joystickRect;
         let joystickRadius;
 
@@ -1172,59 +1173,86 @@
             joyVector.set(0, 0);
         }
         
-        // --- JOYSTICK FIX STARTS HERE ---
-        // The original code required the touch to start on the small knob.
-        // This version allows the touch to start anywhere in the larger joystick container,
-        // which is more user-friendly on touch devices.
+        // --- MOBILE-FRIENDLY JOYSTICK CONTROLS ---
+
+        // Mouse Events (for desktop)
         joystickContainer.addEventListener('mousedown', (e) => { 
             if (!isPaused && !isGamepadModeActive) { 
                 isDraggingJoystick = true; 
                 joystickKnob.style.transition = 'none'; 
                 updateJoystickDimensions(); 
-                moveJoystick(e.clientX, e.clientY); // Immediately move knob to click position
+                moveJoystick(e.clientX, e.clientY);
+            }
+        });
+
+        document.addEventListener('mousemove', (e) => {
+            if (isDraggingJoystick && joystickTouchId === null && !isGamepadModeActive) { // Only move if controlled by mouse
+                moveJoystick(e.clientX, e.clientY);
+            }
+        });
+
+        document.addEventListener('mouseup', () => {
+            if (isDraggingJoystick && joystickTouchId === null && !isGamepadModeActive) { // Only reset if controlled by mouse
+                isDraggingJoystick = false;
+                resetJoystick();
             } 
         });
+
+        // Touch Events (for mobile)
         joystickContainer.addEventListener('touchstart', (e) => { 
-            if (!isPaused && !isGamepadModeActive) { 
-                e.preventDefault(); 
+            if (!isPaused && !isGamepadModeActive && joystickTouchId === null) { // Only start a new drag if not already dragging
+                e.preventDefault();
+                const touch = e.changedTouches[0]; // Get the touch that started
+                joystickTouchId = touch.identifier; // Store its ID
                 isDraggingJoystick = true; 
                 joystickKnob.style.transition = 'none'; 
                 updateJoystickDimensions(); 
-                moveJoystick(e.touches[0].clientX, e.touches[0].clientY); // Immediately move knob to touch position
+                moveJoystick(touch.clientX, touch.clientY);
             } 
         }, { passive: false });
 
-        document.addEventListener('mousemove', (e) => { 
-            if (isDraggingJoystick && !isGamepadModeActive) {
-                moveJoystick(e.clientX, e.clientY); 
-            }
-        });
         document.addEventListener('touchmove', (e) => { 
-            if (isDraggingJoystick && !isGamepadModeActive) { 
-                e.preventDefault(); 
-                moveJoystick(e.touches[0].clientX, e.touches[0].clientY); 
+            if (isDraggingJoystick && joystickTouchId !== null && !isGamepadModeActive) {
+                e.preventDefault();
+                // Find the touch that corresponds to our joystick drag
+                for (let i = 0; i < e.changedTouches.length; i++) {
+                    const touch = e.changedTouches[i];
+                    if (touch.identifier === joystickTouchId) {
+                        moveJoystick(touch.clientX, touch.clientY);
+                        break;
+                    }
+                }
             } 
         }, { passive: false });
         
-        document.addEventListener('mouseup', () => { 
-            if (isDraggingJoystick && !isGamepadModeActive) { 
-                isDraggingJoystick = false; 
-                resetJoystick(); 
+        document.addEventListener('touchend', (e) => {
+            if (isDraggingJoystick && joystickTouchId !== null && !isGamepadModeActive) {
+                // Check if the touch that ended is the one we were tracking
+                for (let i = 0; i < e.changedTouches.length; i++) {
+                    const touch = e.changedTouches[i];
+                    if (touch.identifier === joystickTouchId) {
+                        isDraggingJoystick = false;
+                        joystickTouchId = null; // Release the touch ID
+                        resetJoystick();
+                        break;
+                    }
+                }
             } 
         });
-        document.addEventListener('touchend', () => { 
-            if (isDraggingJoystick && !isGamepadModeActive) { 
-                isDraggingJoystick = false; 
-                resetJoystick(); 
-            } 
+
+        document.addEventListener('touchcancel', (e) => { // Also handle touchcancel
+             if (isDraggingJoystick && joystickTouchId !== null && !isGamepadModeActive) {
+                for (let i = 0; i < e.changedTouches.length; i++) {
+                    const touch = e.changedTouches[i];
+                    if (touch.identifier === joystickTouchId) {
+                        isDraggingJoystick = false;
+                        joystickTouchId = null;
+                        resetJoystick();
+                        break;
+                    }
+                }
+            }
         });
-        document.addEventListener('mouseleave', () => { 
-            if (isDraggingJoystick && !isGamepadModeActive) { 
-                isDraggingJoystick = false; 
-                resetJoystick(); 
-            } 
-        });
-        // --- JOYSTICK FIX ENDS HERE ---
         
         function handleAttackPressStart() {
             if (isPaused) return;
