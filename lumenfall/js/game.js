@@ -88,6 +88,7 @@
         const allOrbs = [];
         const allPuzzles = [];
         const allProjectiles = [];
+        const allPowerUps = [];
 
         let currentLevelId = 'dungeon_1';
         let isPaused = false;
@@ -224,6 +225,7 @@
             allSpecters.forEach(specter => specter.update(deltaTime, player));
             allSimpleEnemies.forEach(enemy => enemy.update(deltaTime));
             allPuzzles.forEach(puzzle => puzzle.update(deltaTime));
+            allPowerUps.forEach(powerUp => powerUp.update(deltaTime));
 
             for (let i = allProjectiles.length - 1; i >= 0; i--) {
                 if (!allProjectiles[i].update(deltaTime)) {
@@ -762,6 +764,21 @@
                 this.isInvincible = false;
                 this.invincibilityDuration = 2.0; // 2 segundos de invencibilidad
                 this.invincibilityTimer = 0;
+
+                this.maxPower = 100;
+                this.power = this.maxPower;
+                this.powerBarFill = document.getElementById('power-fill');
+            }
+
+            restorePowerAndHealth() {
+                const healthRestore = this.maxHealth * 0.05;
+                const powerRestore = this.maxPower * 0.05;
+
+                this.health = Math.min(this.maxHealth, this.health + healthRestore);
+                this.power = Math.min(this.maxPower, this.power + powerRestore);
+
+                this.energyBarFill.style.width = `${(this.health / this.maxHealth) * 100}%`;
+                this.powerBarFill.style.width = `${(this.power / this.maxPower) * 100}%`;
             }
 
             applyKnockback(enemy) {
@@ -796,6 +813,12 @@
             }
 
             shoot(aimVector) {
+                const powerCost = this.maxPower * 0.05;
+                if (this.power < powerCost || this.shootCooldown > 0) return;
+
+                this.power -= powerCost;
+                this.powerBarFill.style.width = `${(this.power / this.maxPower) * 100}%`;
+
                 if (this.shootCooldown > 0) return;
                 vibrateGamepad(50, 0.5, 0.5);
 
@@ -1287,8 +1310,8 @@
                 this.texture = textureLoader.load(assetUrls.enemySprite);
                 this.texture.repeat.x = 1 / totalEnemyFrames;
 
-                const enemyHeight = 2.8;
-                const enemyWidth = 2.8;
+                const enemyHeight = 5.6;
+                const enemyWidth = 5.6;
 
                 const enemyMaterial = new THREE.MeshStandardMaterial({
                     map: this.texture,
@@ -1346,6 +1369,12 @@
                 if (this.hitCount >= 6) { // Derrotado después de 6 golpes
                     this.isAlive = false;
                     this.scene.remove(this.mesh);
+
+                    // 50% de probabilidad de soltar un power-up
+                    if (Math.random() < 0.5) {
+                        const dropPosition = this.mesh.position.clone();
+                        allPowerUps.push(new PowerUp(this.scene, dropPosition));
+                    }
 
                     const index = allSimpleEnemies.indexOf(this);
                     if (index > -1) {
@@ -1529,5 +1558,47 @@
             interact() {
                 // Look up the translation when interacting
                 showDialogue(this.dialogueKey, 4000);
+            }
+        }
+
+        class PowerUp {
+            constructor(scene, position) {
+                this.scene = scene;
+                const geometry = new THREE.SphereGeometry(0.4, 16, 16);
+                // Material que combina azul y verde
+                const material = new THREE.MeshStandardMaterial({
+                    color: 0x00ff00, // Verde
+                    emissive: 0x00ffff, // Azul cian brillante
+                    emissiveIntensity: 2,
+                    roughness: 0.2
+                });
+                this.mesh = new THREE.Mesh(geometry, material);
+                this.mesh.position.copy(position);
+                this.scene.add(this.mesh);
+                this.lifetime = 10; // El power-up desaparece después de 10 segundos
+                this.bobbingAngle = Math.random() * Math.PI * 2;
+            }
+
+            update(deltaTime) {
+                this.lifetime -= deltaTime;
+                if (this.lifetime <= 0) {
+                    this.scene.remove(this.mesh);
+                    // Eliminar de un array global de power-ups si existe
+                    const index = allPowerUps.indexOf(this);
+                    if (index > -1) allPowerUps.splice(index, 1);
+                    return;
+                }
+
+                // Efecto de flotación
+                this.bobbingAngle += 0.05;
+                this.mesh.position.y += Math.sin(this.bobbingAngle) * 0.01;
+
+                // Comprobar colisión con el jugador
+                if (player && this.mesh.position.distanceTo(player.mesh.position) < 1.5) {
+                    player.restorePowerAndHealth();
+                    this.scene.remove(this.mesh);
+                    const index = allPowerUps.indexOf(this);
+                    if (index > -1) allPowerUps.splice(index, 1);
+                }
             }
         }
