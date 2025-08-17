@@ -14,7 +14,7 @@
             menuBackgroundImage: '../assets/images/menu-principal.jpg',
             animatedEnergyBar: '../assets/images/barra-de-energia.png',
             halleyStatueTexture: '../assets/images/Halley-piedra.png',
-            enemySprite: 'assets/sprites/Enemi-1.png'
+            enemySprite: 'assets/sprites/enemigo-1.png'
         };
 
         const totalRunningFrames = 8;
