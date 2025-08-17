@@ -464,8 +464,13 @@
             }
             joystickKnob.style.transform = `translate(-50%, -50%) translate(${deltaX}px, ${deltaY}px)`;
             const deadZone = 10;
-            joyVector.x = Math.abs(deltaX) > deadZone ? deltaX / joystickRadius : 0;
-            joyVector.y = Math.abs(deltaY) > deadZone ? -deltaY / joystickRadius : 0;
+            if (joystickRadius > 0) {
+                joyVector.x = Math.abs(deltaX) > deadZone ? deltaX / joystickRadius : 0;
+                joyVector.y = Math.abs(deltaY) > deadZone ? -deltaY / joystickRadius : 0;
+            } else {
+                joyVector.x = 0;
+                joyVector.y = 0;
+            }
         }
 
         function resetJoystick() {
