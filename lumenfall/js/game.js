@@ -21,7 +21,7 @@
         const totalAttackFrames = 6;
         const totalJumpFrames = 4;
         const totalSpecterFrames = 5;
-        const totalEnemyFrames = 6;
+        const totalEnemyFrames = 4;
         const animationSpeed = 80;
         const specterAnimationSpeed = 120;
         const moveSpeed = 0.2;
@@ -1231,8 +1231,8 @@
                 this.texture = textureLoader.load(assetUrls.enemySprite);
                 this.texture.repeat.x = 1 / totalEnemyFrames;
 
-                const enemyHeight = 8.4; // Double player height + 50%
-                const enemyWidth = 8.4;
+                const enemyHeight = 4.2;
+                const enemyWidth = 4.2;
 
                 const enemyMaterial = new THREE.MeshStandardMaterial({
                     map: this.texture,
