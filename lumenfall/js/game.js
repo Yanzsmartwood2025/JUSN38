@@ -135,8 +135,8 @@
 
                 // Collision detection between player and enemies
                 allSimpleEnemies.forEach(enemy => {
-                    if (player.mesh.position.distanceTo(enemy.mesh.position) < 2) { // Collision distance
-                        player.takeDamage(player.maxHealth * 0.05); // Player takes 5% damage
+                    if (!player.isInvincible && player.mesh.position.distanceTo(enemy.mesh.position) < 2) { // Collision distance
+                        player.takeDamage(player.maxHealth * 0.05, enemy); // Player takes 5% damage
                     }
                 });
 
@@ -758,12 +758,30 @@
                 this.maxHealth = 100;
                 this.health = this.maxHealth;
                 this.energyBarFill = document.getElementById('energy-fill');
+
+                this.isInvincible = false;
+                this.invincibilityDuration = 2.0; // 2 segundos de invencibilidad
+                this.invincibilityTimer = 0;
             }
 
-            takeDamage(amount) {
-                if (this.health <= 0) return;
+            applyKnockback(enemy) {
+                const knockbackForce = 0.4;
+                const direction = this.mesh.position.x > enemy.mesh.position.x ? 1 : -1;
+                this.velocity.x = direction * knockbackForce;
+                // Pequeño impulso vertical para que se sienta más como un impacto
+                if (this.isGrounded) {
+                    this.velocity.y = 0.1;
+                    this.isGrounded = false;
+                }
+            }
+
+            takeDamage(amount, enemy) {
+                if (this.isInvincible) return;
 
                 this.health -= amount;
+                this.isInvincible = true;
+                this.invincibilityTimer = this.invincibilityDuration;
+                this.applyKnockback(enemy);
                 this.energyBarFill.style.width = `${(this.health / this.maxHealth) * 100}%`;
 
                 if (this.health <= 0) {
@@ -826,6 +844,17 @@
             }
 
             update(deltaTime, controls) {
+                if (this.isInvincible) {
+                    this.invincibilityTimer -= deltaTime;
+                    // Efecto de parpadeo para la transparencia
+                    this.mesh.material.opacity = (Math.floor(this.invincibilityTimer * 10) % 2 === 0) ? 0.5 : 1.0;
+
+                    if (this.invincibilityTimer <= 0) {
+                        this.isInvincible = false;
+                        this.mesh.material.opacity = 1.0; // Restaurar opacidad completa
+                    }
+                }
+
                 if (this.shootCooldown > 0) {
                     this.shootCooldown -= deltaTime;
                 }
@@ -840,6 +869,15 @@
                 const joyY = controls.joyVector.y;
                 const isMoving = Math.abs(joyX) > 0.1;
                 const previousState = this.currentState;
+
+                // Lógica de movimiento horizontal
+                if (isMoving) {
+                    this.velocity.x = moveSpeed * joyX;
+                    this.isFacingLeft = joyX < 0;
+                } else {
+                    // Aplicar fricción si no hay entrada
+                    this.velocity.x *= 0.9;
+                }
 
                 if (this.currentState !== 'shooting') {
                     if (controls.attackHeld) {
@@ -859,16 +897,18 @@
 
                         if (isMoving) {
                             this.currentState = 'running';
-                            this.mesh.position.x += moveSpeed * joyX;
-                            this.isFacingLeft = joyX < 0;
                         } else if (!this.isJumping) {
                             this.currentState = 'idle';
                         }
                     }
                 }
 
+                // Aplicar gravedad y velocidad vertical
                 if (!this.isGrounded) this.velocity.y += this.gravity;
                 this.mesh.position.y += this.velocity.y;
+
+                // Aplicar velocidad horizontal
+                this.mesh.position.x += this.velocity.x;
 
                 if (this.mesh.position.y <= this.mesh.geometry.parameters.height / 2) {
                     this.mesh.position.y = this.mesh.geometry.parameters.height / 2;
