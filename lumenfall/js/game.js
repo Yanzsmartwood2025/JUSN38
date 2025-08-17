@@ -133,6 +133,13 @@
                 const attackHeld = isAttackButtonPressed && (Date.now() - attackPressStartTime > 200);
                 player.update(deltaTime, { joyVector, attackHeld });
 
+                // Collision detection between player and enemies
+                allSimpleEnemies.forEach(enemy => {
+                    if (player.mesh.position.distanceTo(enemy.mesh.position) < 2) { // Collision distance
+                        player.takeDamage(10); // Player takes 10 damage
+                    }
+                });
+
                 let isNearInteractable = false;
                 let interactableObject = null;
 
@@ -255,6 +262,9 @@
         const gamepadToggleButton = document.getElementById('gamepad-toggle');
         const vibrationToggleButton = document.getElementById('vibration-toggle');
         const controlsContainer = document.getElementById('controls');
+        const gameOverScreen = document.getElementById('game-over-screen');
+        const continueButton = document.getElementById('continue-button');
+        const quitButton = document.getElementById('quit-button');
 
         let currentLanguage = 'es';
         const translations = {
@@ -422,6 +432,14 @@
         vibrationToggleButton.addEventListener('click', toggleVibration);
         musicVolumeSlider.addEventListener('input', (e) => setAudioVolume('ambiente', e.target.value));
         sfxVolumeSlider.addEventListener('input', (e) => setAudioVolume('pasos', e.target.value));
+
+        continueButton.addEventListener('click', () => {
+            location.reload();
+        });
+
+        quitButton.addEventListener('click', () => {
+            location.reload(); // Simple way to go back to the main menu
+        });
 
         musicToggleButton.addEventListener('click', () => {
             if (audioSources['ambiente']) {
@@ -720,6 +738,27 @@
                 this.shootCooldown = 0;
                 this.shootCooldownDuration = 0.5;
                 this.shootingTimer = 0;
+
+                this.maxHealth = 100;
+                this.health = this.maxHealth;
+                this.energyBarFill = document.getElementById('energy-fill');
+            }
+
+            takeDamage(amount) {
+                if (this.health <= 0) return;
+
+                this.health -= amount;
+                this.energyBarFill.style.width = `${(this.health / this.maxHealth) * 100}%`;
+
+                if (this.health <= 0) {
+                    this.health = 0;
+                    // Game Over
+                    gameOverScreen.style.display = 'flex';
+                    isPaused = true;
+                    stopAudio('ambiente');
+                    stopAudio('pasos');
+                    cancelAnimationFrame(animationFrameId);
+                }
             }
 
             shoot(aimVector) {
@@ -983,7 +1022,7 @@
 
             if (levelId === 'room_3') {
                 if (allSimpleEnemies.length === 0) {
-                    allSimpleEnemies.push(new SimpleEnemy(scene, 0, 2.8));
+                    allSimpleEnemies.push(new SimpleEnemy(scene, 0));
                 }
             }
 
@@ -1187,13 +1226,13 @@
         }
 
         class SimpleEnemy {
-            constructor(scene, initialX, initialY) {
+            constructor(scene, initialX) {
                 this.scene = scene;
                 this.texture = textureLoader.load(assetUrls.enemySprite);
                 this.texture.repeat.x = 1 / totalEnemyFrames;
 
-                const enemyHeight = 5.6; // Double player height
-                const enemyWidth = 5.6;
+                const enemyHeight = 8.4; // Double player height + 50%
+                const enemyWidth = 8.4;
 
                 const enemyMaterial = new THREE.MeshStandardMaterial({
                     map: this.texture,
@@ -1203,7 +1242,7 @@
                 });
                 const enemyGeometry = new THREE.PlaneGeometry(enemyWidth, enemyHeight);
                 this.mesh = new THREE.Mesh(enemyGeometry, enemyMaterial);
-                this.mesh.position.set(initialX, initialY, camera.position.z - roomDepth + 1);
+                this.mesh.position.set(initialX, enemyHeight / 2, camera.position.z - roomDepth + 1);
                 this.mesh.castShadow = true;
                 this.scene.add(this.mesh);
 
@@ -1212,7 +1251,8 @@
 
                 this.currentFrame = 0;
                 this.lastFrameTime = 0;
-                this.isFacingLeft = true; // Always walks left to right, then flips
+                this.direction = -1; // -1 for left, 1 for right
+                this.isFacingLeft = true;
                 this.moveSpeed = 0.03;
                 this.patrolRange = { min: -playableAreaWidth / 2 + 5, max: playableAreaWidth / 2 - 5 };
                 this.mesh.position.x = this.patrolRange.max; // Start at the right edge
@@ -1221,13 +1261,19 @@
             update(deltaTime) {
                 if (!this.isAlive) return;
 
-                // Move from right to left
-                this.mesh.position.x -= this.moveSpeed;
+                // Move the enemy based on its direction
+                this.mesh.position.x += this.moveSpeed * this.direction;
 
-                // If it reaches the left edge, reset to the right edge
-                if (this.mesh.position.x < this.patrolRange.min) {
-                    this.mesh.position.x = this.patrolRange.max;
+                // Check for patrol boundaries and reverse direction
+                if (this.mesh.position.x <= this.patrolRange.min) {
+                    this.direction = 1; // Move right
+                } else if (this.mesh.position.x >= this.patrolRange.max) {
+                    this.direction = -1; // Move left
                 }
+
+                // Flip the sprite based on direction
+                this.isFacingLeft = this.direction === -1;
+                this.mesh.rotation.y = this.isFacingLeft ? Math.PI : 0;
 
                 // Animate the sprite
                 if (Date.now() - this.lastFrameTime > animationSpeed) {
