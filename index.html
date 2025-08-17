@@ -469,7 +469,7 @@
             const isMobile = window.innerWidth < 768;
             const radius = isMobile ? 1000 : 1200;
             const cardScale = isMobile ? 0.8 : 1.0;
-            camera.position.z = isMobile ? 1400 : 1200;
+            camera.position.z = isMobile ? 1400 : 1600;
 
             carouselGroup.children.forEach((object, i) => {
                 const numElements = carouselGroup.children.length;
@@ -790,7 +790,7 @@
             }
             
             if (isDragging) {
-                const rotationFactor = 0.005; 
+                const rotationFactor = 0.002;
                 const newRotation = startRotationY + (deltaX * rotationFactor);
                 velocityY = newRotation - carouselGroup.rotation.y;
                 carouselGroup.rotation.y = newRotation;
