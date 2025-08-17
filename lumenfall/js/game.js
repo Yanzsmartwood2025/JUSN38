@@ -764,6 +764,7 @@
                 this.isInvincible = false;
                 this.invincibilityDuration = 2.0; // 2 segundos de invencibilidad
                 this.invincibilityTimer = 0;
+                this.isAbsorbing = false;
 
                 this.maxPower = 100;
                 this.power = this.maxPower;
@@ -867,6 +868,8 @@
             }
 
             update(deltaTime, controls) {
+                this.isAbsorbing = controls.attackHeld;
+
                 if (this.isInvincible) {
                     this.invincibilityTimer -= deltaTime;
                     // Efecto de parpadeo para la transparencia
@@ -1328,31 +1331,48 @@
                 this.hitCount = 0;
                 this.isAlive = true;
 
+                this.state = 'PATROL'; // 'PATROL' o 'PURSUE'
+                this.detectionRange = 6.0;
+                this.patrolSpeed = 0.03;
+                this.pursueSpeed = 0.045; // 50% más rápido
+
                 this.currentFrame = 0;
                 this.lastFrameTime = 0;
                 this.direction = -1; // -1 for left, 1 for right
-                this.isFacingLeft = true;
-                this.moveSpeed = 0.03;
                 this.patrolRange = { min: -playableAreaWidth / 2 + 5, max: playableAreaWidth / 2 - 5 };
                 this.mesh.position.x = this.patrolRange.max; // Start at the right edge
             }
 
             update(deltaTime) {
-                if (!this.isAlive) return;
+                if (!this.isAlive || !player) return;
 
-                // Move the enemy based on its direction
-                this.mesh.position.x += this.moveSpeed * this.direction;
+                const distanceToPlayer = this.mesh.position.distanceTo(player.mesh.position);
 
-                // Check for patrol boundaries and reverse direction
-                if (this.mesh.position.x <= this.patrolRange.min) {
-                    this.direction = 1; // Move right
-                } else if (this.mesh.position.x >= this.patrolRange.max) {
-                    this.direction = -1; // Move left
+                // Lógica de cambio de estado
+                if (distanceToPlayer < this.detectionRange) {
+                    this.state = 'PURSUE';
+                } else {
+                    this.state = 'PATROL';
                 }
 
-                // Flip the sprite based on direction
-                this.isFacingLeft = this.direction === -1;
-                this.mesh.rotation.y = this.isFacingLeft ? Math.PI : 0;
+                let currentSpeed = this.patrolSpeed;
+
+                if (this.state === 'PURSUE') {
+                    currentSpeed = this.pursueSpeed;
+                    this.direction = (player.mesh.position.x > this.mesh.position.x) ? 1 : -1;
+                } else { // PATROL
+                    if (this.mesh.position.x <= this.patrolRange.min) {
+                        this.direction = 1; // Move right
+                    } else if (this.mesh.position.x >= this.patrolRange.max) {
+                        this.direction = -1; // Move left
+                    }
+                }
+
+                this.mesh.position.x += currentSpeed * this.direction;
+
+                // El enemigo siempre mira al jugador
+                const isFacingLeft = (player.mesh.position.x < this.mesh.position.x);
+                this.mesh.rotation.y = isFacingLeft ? Math.PI : 0;
 
                 // Animate the sprite
                 if (Date.now() - this.lastFrameTime > animationSpeed) {
@@ -1577,16 +1597,28 @@
                 this.scene.add(this.mesh);
                 this.lifetime = 10; // El power-up desaparece después de 10 segundos
                 this.bobbingAngle = Math.random() * Math.PI * 2;
+                this.velocity = new THREE.Vector3((Math.random() - 0.5) * 0.04, 0, 0); // Movimiento lateral lento
             }
 
             update(deltaTime) {
                 this.lifetime -= deltaTime;
                 if (this.lifetime <= 0) {
                     this.scene.remove(this.mesh);
-                    // Eliminar de un array global de power-ups si existe
                     const index = allPowerUps.indexOf(this);
                     if (index > -1) allPowerUps.splice(index, 1);
                     return;
+                }
+
+                if (player && player.isAbsorbing) {
+                    const direction = player.mesh.position.clone().sub(this.mesh.position).normalize();
+                    const absorptionSpeed = 0.1;
+                    this.velocity.lerp(direction.multiplyScalar(absorptionSpeed), 0.1);
+                }
+
+                this.mesh.position.add(this.velocity);
+
+                if (!player.isAbsorbing && (this.mesh.position.x < -playableAreaWidth / 2 + 2 || this.mesh.position.x > playableAreaWidth / 2 - 2)) {
+                    this.velocity.x *= -1; // Rebotar en los bordes solo si no se está absorbiendo
                 }
 
                 // Efecto de flotación
