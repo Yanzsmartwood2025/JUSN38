@@ -13,13 +13,15 @@
             introImage: '../assets/images/Intro.jpg',
             menuBackgroundImage: '../assets/images/menu-principal.jpg',
             animatedEnergyBar: '../assets/images/barra-de-energia.png',
-            halleyStatueTexture: '../assets/images/Halley-piedra.png'
+            halleyStatueTexture: '../assets/images/Halley-piedra.png',
+            enemySprite: 'assets/sprites/Enemi-1.png'
         };
 
         const totalRunningFrames = 8;
         const totalAttackFrames = 6;
         const totalJumpFrames = 4;
         const totalSpecterFrames = 5;
+        const totalEnemyFrames = 6;
         const animationSpeed = 80;
         const specterAnimationSpeed = 120;
         const moveSpeed = 0.2;
@@ -80,6 +82,7 @@
         let player;
         const allFlames = [];
         const allSpecters = [];
+        const allSimpleEnemies = [];
         const allGates = [];
         const allStatues = [];
         const allOrbs = [];
@@ -212,6 +215,7 @@
             interactPressed = false;
             allFlames.forEach(flame => flame.update(deltaTime));
             allSpecters.forEach(specter => specter.update(deltaTime, player));
+            allSimpleEnemies.forEach(enemy => enemy.update(deltaTime));
             allPuzzles.forEach(puzzle => puzzle.update(deltaTime));
 
             for (let i = allProjectiles.length - 1; i >= 0; i--) {
@@ -870,6 +874,8 @@
             }
             allFlames.length = 0;
             allSpecters.length = 0;
+            allSimpleEnemies.forEach(enemy => scene.remove(enemy.mesh));
+            allSimpleEnemies.length = 0;
             allGates.length = 0;
             allStatues.length = 0;
             allOrbs.length = 0;
@@ -974,6 +980,13 @@
             currentLevelId = levelId;
             clearSceneForLevelLoad();
             loadLevel(levelData);
+
+            if (levelId === 'room_3') {
+                if (allSimpleEnemies.length === 0) {
+                    allSimpleEnemies.push(new SimpleEnemy(scene, 0, 2.8));
+                }
+            }
+
             if (player) {
                 player.mesh.position.x = spawnX !== null ? spawnX : 0;
                 player.mesh.position.y = player.mesh.geometry.parameters.height / 2;
@@ -1173,6 +1186,73 @@
             }
         }
 
+        class SimpleEnemy {
+            constructor(scene, initialX, initialY) {
+                this.scene = scene;
+                this.texture = textureLoader.load(assetUrls.enemySprite);
+                this.texture.repeat.x = 1 / totalEnemyFrames;
+
+                const enemyHeight = 5.6; // Double player height
+                const enemyWidth = 5.6;
+
+                const enemyMaterial = new THREE.MeshStandardMaterial({
+                    map: this.texture,
+                    transparent: true,
+                    alphaTest: 0.5,
+                    side: THREE.DoubleSide
+                });
+                const enemyGeometry = new THREE.PlaneGeometry(enemyWidth, enemyHeight);
+                this.mesh = new THREE.Mesh(enemyGeometry, enemyMaterial);
+                this.mesh.position.set(initialX, initialY, camera.position.z - roomDepth + 1);
+                this.mesh.castShadow = true;
+                this.scene.add(this.mesh);
+
+                this.hitCount = 0;
+                this.isAlive = true;
+
+                this.currentFrame = 0;
+                this.lastFrameTime = 0;
+                this.isFacingLeft = true; // Always walks left to right, then flips
+                this.moveSpeed = 0.03;
+                this.patrolRange = { min: -playableAreaWidth / 2 + 5, max: playableAreaWidth / 2 - 5 };
+                this.mesh.position.x = this.patrolRange.max; // Start at the right edge
+            }
+
+            update(deltaTime) {
+                if (!this.isAlive) return;
+
+                // Move from right to left
+                this.mesh.position.x -= this.moveSpeed;
+
+                // If it reaches the left edge, reset to the right edge
+                if (this.mesh.position.x < this.patrolRange.min) {
+                    this.mesh.position.x = this.patrolRange.max;
+                }
+
+                // Animate the sprite
+                if (Date.now() - this.lastFrameTime > animationSpeed) {
+                    this.lastFrameTime = Date.now();
+                    this.currentFrame = (this.currentFrame + 1) % totalEnemyFrames;
+                    this.texture.offset.x = this.currentFrame / totalEnemyFrames;
+                }
+            }
+
+            takeHit() {
+                if (!this.isAlive) return;
+                this.hitCount++;
+
+                if (this.hitCount >= 5) {
+                    this.isAlive = false;
+                    this.scene.remove(this.mesh);
+
+                    const index = allSimpleEnemies.indexOf(this);
+                    if (index > -1) {
+                        allSimpleEnemies.splice(index, 1);
+                    }
+                }
+            }
+        }
+
         class Puzzle {
             constructor(scene, x, roomId) {
                 this.scene = scene;
@@ -1313,6 +1393,16 @@
                 }
                 this.mesh.position.x += this.velocity.x;
                 this.mesh.position.y += this.velocity.y;
+
+                // Collision with simple enemies
+                for (const enemy of allSimpleEnemies) {
+                    if (this.mesh.position.distanceTo(enemy.mesh.position) < (enemy.mesh.geometry.parameters.height / 2)) {
+                        enemy.takeHit();
+                        this.lifetime = 0; // Mark for removal
+                        return false; // Projectile disappears
+                    }
+                }
+
                 return true;
             }
         }
