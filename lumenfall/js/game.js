@@ -13,20 +13,16 @@
             introImage: '../assets/images/Intro.jpg',
             menuBackgroundImage: '../assets/images/menu-principal.jpg',
             animatedEnergyBar: '../assets/images/barra-de-energia.png',
-            halleyStatueTexture: '../assets/images/Halley-piedra.png',
-            enemySprite: 'assets/sprites/Enemi-1.png'
+            halleyStatueTexture: '../assets/images/Halley-piedra.png'
         };
 
         const totalRunningFrames = 8;
         const totalAttackFrames = 6;
         const totalJumpFrames = 4;
         const totalSpecterFrames = 5;
-        const totalEnemyFrames = 6;
         const animationSpeed = 80;
         const specterAnimationSpeed = 120;
         const moveSpeed = 0.2;
-        const PLAYER_HEIGHT = 2.8;
-        const PLAYER_WIDTH = 2.8;
         const playableAreaWidth = 120;
         const roomDepth = 15;
 
@@ -84,8 +80,6 @@
         let player;
         const allFlames = [];
         const allSpecters = [];
-        const allEnemies = [];
-        const allEnergyBalls = [];
         const allGates = [];
         const allStatues = [];
         const allOrbs = [];
@@ -138,14 +132,6 @@
 
                 let isNearInteractable = false;
                 let interactableObject = null;
-
-                allEnergyBalls.forEach((ball) => {
-                    const distance = player.mesh.position.distanceTo(ball.mesh.position);
-                    if (distance < 3) { // Interaction radius for energy ball
-                        isNearInteractable = true;
-                        interactableObject = {type: 'energyBall', object: ball};
-                    }
-                });
 
                 allGates.forEach(gate => {
                     const distanceX = Math.abs(player.mesh.position.x - gate.mesh.position.x);
@@ -209,8 +195,6 @@
                             interactableObject.object.solve();
                         } else if (interactableObject.type === 'statue') {
                             interactableObject.object.interact();
-                        } else if (interactableObject.type === 'energyBall') {
-                            interactableObject.object.absorb();
                         }
                     }
                 } else {
@@ -227,9 +211,7 @@
 
             interactPressed = false;
             allFlames.forEach(flame => flame.update(deltaTime));
-            allEnergyBalls.forEach(ball => ball.update(deltaTime));
             allSpecters.forEach(specter => specter.update(deltaTime, player));
-            allEnemies.forEach(enemy => enemy.update(deltaTime, player));
             allPuzzles.forEach(puzzle => puzzle.update(deltaTime));
 
             for (let i = allProjectiles.length - 1; i >= 0; i--) {
@@ -704,7 +686,10 @@
                 this.attackTexture.repeat.x = 1 / totalAttackFrames;
                 this.jumpTexture.repeat.x = 1 / totalJumpFrames;
 
-                const playerGeometry = new THREE.PlaneGeometry(PLAYER_WIDTH, PLAYER_HEIGHT);
+                const playerHeight = 2.8;
+                const playerWidth = 2.8;
+
+                const playerGeometry = new THREE.PlaneGeometry(playerWidth, playerHeight);
                 const playerMaterial = new THREE.MeshStandardMaterial({ map: this.runningTexture, transparent: true, side: THREE.DoubleSide, alphaTest: 0.5 });
                 this.mesh = new THREE.Mesh(playerGeometry, playerMaterial);
                 this.mesh.position.y = playerHeight / 2;
@@ -863,144 +848,6 @@
             }
         }
 
-        class Enemy {
-            constructor(scene, initialX, initialY) {
-                this.scene = scene;
-                this.texture = textureLoader.load(assetUrls.enemySprite);
-                this.texture.repeat.x = 1 / totalEnemyFrames;
-
-                const enemyHeight = PLAYER_HEIGHT * 2;
-                const enemyWidth = PLAYER_WIDTH * 2;
-
-                const enemyMaterial = new THREE.MeshStandardMaterial({
-                    map: this.texture,
-                    transparent: true,
-                    alphaTest: 0.5,
-                    side: THREE.DoubleSide
-                });
-                const enemyGeometry = new THREE.PlaneGeometry(enemyWidth, enemyHeight);
-                this.mesh = new THREE.Mesh(enemyGeometry, enemyMaterial);
-                this.mesh.position.set(initialX, initialY, camera.position.z - roomDepth + 1);
-                this.mesh.castShadow = true;
-                this.scene.add(this.mesh);
-
-                this.health = 100;
-                this.maxHealth = 100;
-                this.isAlive = true;
-
-                this.createHealthBar();
-
-                this.currentState = 'patrolling';
-                this.currentFrame = 0;
-                this.lastFrameTime = 0;
-                this.isFacingLeft = false;
-                this.moveSpeed = 0.03;
-                this.chaseSpeed = 0.08;
-                this.patrolRange = { min: -playableAreaWidth / 2 + 5, max: playableAreaWidth / 2 - 5 };
-                this.targetX = this.mesh.position.x;
-                this.setNewPatrolTarget();
-            }
-
-            createHealthBar() {
-                this.healthBarContainer = document.createElement('div');
-                this.healthBarContainer.className = 'enemy-health-bar-container';
-                const healthBarFill = document.createElement('div');
-                healthBarFill.className = 'enemy-health-bar-fill';
-                this.healthBarContainer.appendChild(healthBarFill);
-                numeralsContainer.appendChild(this.healthBarContainer);
-                this.healthBarFill = healthBarFill;
-            }
-
-            updateHealthBar() {
-                if (!this.isAlive) {
-                    this.healthBarContainer.style.display = 'none';
-                    return;
-                }
-                this.healthBarContainer.style.display = 'block';
-                const fillPercentage = (this.health / this.maxHealth) * 100;
-                this.healthBarFill.style.width = `${fillPercentage}%`;
-
-                const screenPosition = this.mesh.position.clone();
-                screenPosition.y += (this.mesh.geometry.parameters.height / 2) + 0.5;
-                const vector = screenPosition.project(camera);
-                const x = (vector.x * 0.5 + 0.5) * renderer.domElement.clientWidth;
-                const y = (-vector.y * 0.5 + 0.5) * renderer.domElement.clientHeight;
-                this.healthBarContainer.style.left = `${x}px`;
-                this.healthBarContainer.style.top = `${y}px`;
-            }
-
-            takeDamage(amount) {
-                if (!this.isAlive) return;
-                this.health -= amount;
-                if (this.health <= 0) {
-                    this.health = 0;
-                    this.isAlive = false;
-                    this.die();
-                }
-            }
-
-            die() {
-                this.scene.remove(this.mesh);
-                this.healthBarContainer.remove();
-
-                // Spawn two energy balls
-                const pos = this.mesh.position;
-                allEnergyBalls.push(new EnergyBall(this.scene, pos.x - 1, pos.y, pos.z));
-                allEnergyBalls.push(new EnergyBall(this.scene, pos.x + 1, pos.y, pos.z));
-
-                const index = allEnemies.indexOf(this);
-                if (index > -1) {
-                    allEnemies.splice(index, 1);
-                }
-            }
-
-            setNewPatrolTarget() {
-                this.targetX = Math.random() * (this.patrolRange.max - this.patrolRange.min) + this.patrolRange.min;
-            }
-
-            update(deltaTime, player) {
-                if (!this.isAlive) return;
-
-                this.updateHealthBar();
-
-                const distanceToPlayer = this.mesh.position.distanceTo(player.mesh.position);
-                const detectionRadius = 20;
-
-                if (distanceToPlayer < detectionRadius && this.currentState !== 'chasing') {
-                    this.currentState = 'chasing';
-                } else if (distanceToPlayer >= detectionRadius && this.currentState === 'chasing') {
-                    this.currentState = 'patrolling';
-                    this.setNewPatrolTarget();
-                }
-
-                let currentSpeed = this.moveSpeed;
-                let targetX;
-                if (this.currentState === 'patrolling') {
-                    if (Math.abs(this.mesh.position.x - this.targetX) < 1) {
-                        this.setNewPatrolTarget();
-                    }
-                    targetX = this.targetX;
-                } else { // chasing
-                    targetX = player.mesh.position.x;
-                    currentSpeed = this.chaseSpeed;
-                }
-
-                const direction = Math.sign(targetX - this.mesh.position.x);
-                if (direction !== 0) {
-                    this.mesh.position.x += direction * currentSpeed;
-                    this.isFacingLeft = direction < 0;
-                    this.mesh.rotation.y = this.isFacingLeft ? Math.PI : 0;
-                }
-
-
-                if (Date.now() - this.lastFrameTime > animationSpeed) {
-                    this.lastFrameTime = Date.now();
-                    this.currentFrame = (this.currentFrame + 1) % totalEnemyFrames;
-                    this.texture.offset.x = this.currentFrame / totalEnemyFrames;
-                }
-            }
-        }
-
         const wallTexture = textureLoader.load(assetUrls.wallTexture);
         wallTexture.wrapS = wallTexture.wrapT = THREE.RepeatWrapping;
         const wallMaterial = new THREE.MeshStandardMaterial({ map: wallTexture, color: 0x454555 });
@@ -1023,17 +870,6 @@
             }
             allFlames.length = 0;
             allSpecters.length = 0;
-            allEnemies.forEach(enemy => {
-                if (enemy.healthBarContainer) enemy.healthBarContainer.remove();
-                scene.remove(enemy.mesh);
-            });
-            allEnemies.length = 0;
-            allEnergyBalls.forEach(ball => {
-                scene.remove(ball.mesh);
-                scene.remove(ball.flameEffect.particles);
-                scene.remove(ball.flameEffect.light);
-            });
-            allEnergyBalls.length = 0;
             allGates.length = 0;
             allStatues.length = 0;
             allOrbs.length = 0;
@@ -1138,11 +974,6 @@
             currentLevelId = levelId;
             clearSceneForLevelLoad();
             loadLevel(levelData);
-            if (levelId === 'room_3') {
-                if (allEnemies.length === 0) {
-                     allEnemies.push(new Enemy(scene, 10, 2.8));
-                }
-            }
             if (player) {
                 player.mesh.position.x = spawnX !== null ? spawnX : 0;
                 player.mesh.position.y = player.mesh.geometry.parameters.height / 2;
@@ -1465,7 +1296,6 @@
                     color: 0xaaddff,
                     transparent: true,
                     blending: THREE.AdditiveBlending,
-                    side: THREE.DoubleSide
                 });
                 const geometry = new THREE.PlaneGeometry(0.5, 0.5);
                 this.mesh = new THREE.Mesh(geometry, material);
@@ -1479,22 +1309,11 @@
             update(deltaTime) {
                 this.lifetime -= deltaTime;
                 if (this.lifetime <= 0) {
-                    return false; // Inactive
+                    return false;
                 }
-
                 this.mesh.position.x += this.velocity.x;
                 this.mesh.position.y += this.velocity.y;
-
-                // Collision with enemies
-                for (const enemy of allEnemies) {
-                    if (this.mesh.position.distanceTo(enemy.mesh.position) < (enemy.mesh.geometry.parameters.height / 2)) {
-                        enemy.takeDamage(20);
-                        this.lifetime = 0; // Mark for removal
-                        return false;
-                    }
-                }
-
-                return true; // Active
+                return true;
             }
         }
 
@@ -1518,50 +1337,5 @@
             interact() {
                 // Look up the translation when interacting
                 showDialogue(this.dialogueKey, 4000);
-            }
-        }
-
-        class EnergyBall {
-            constructor(scene, x, y, z) {
-                this.scene = scene;
-                this.baseY = y;
-
-                const material = new THREE.MeshBasicMaterial({
-                    map: textureLoader.load(assetUrls.flameParticle), // fuego.png
-                    color: 0xaaddff,
-                    transparent: true,
-                    blending: THREE.AdditiveBlending,
-                });
-                const geometry = new THREE.PlaneGeometry(1.5, 1.5);
-                this.mesh = new THREE.Mesh(geometry, material);
-                this.mesh.position.set(x, y, z);
-                this.scene.add(this.mesh);
-
-                // Trailing effect
-                this.flameEffect = new RealisticFlame(this.scene, this.mesh.position);
-                this.flameEffect.particleCount = 10;
-                this.flameEffect.velocities.forEach(v => {
-                    v.y = Math.random() * 0.05;
-                });
-            }
-
-            update(deltaTime) {
-                // Bobbing motion
-                this.mesh.position.y = this.baseY + Math.sin(Date.now() * 0.005) * 0.25;
-                this.flameEffect.position.copy(this.mesh.position);
-                this.flameEffect.update(deltaTime);
-            }
-
-            absorb() {
-                // Remove from scene and arrays
-                this.scene.remove(this.mesh);
-                this.scene.remove(this.flameEffect.particles);
-                this.scene.remove(this.flameEffect.light);
-
-                const index = allEnergyBalls.indexOf(this);
-                if (index > -1) {
-                    allEnergyBalls.splice(index, 1);
-                }
-                // Optional: give player power, etc.
             }
         }
