@@ -136,7 +136,7 @@
                 // Collision detection between player and enemies
                 allSimpleEnemies.forEach(enemy => {
                     if (player.mesh.position.distanceTo(enemy.mesh.position) < 2) { // Collision distance
-                        player.takeDamage(10); // Player takes 10 damage
+                        player.takeDamage(player.maxHealth * 0.05); // Player takes 5% damage
                     }
                 });
 
@@ -433,9 +433,7 @@
         musicVolumeSlider.addEventListener('input', (e) => setAudioVolume('ambiente', e.target.value));
         sfxVolumeSlider.addEventListener('input', (e) => setAudioVolume('pasos', e.target.value));
 
-        continueButton.addEventListener('click', () => {
-            location.reload();
-        });
+        continueButton.addEventListener('click', restartLevel);
 
         quitButton.addEventListener('click', () => {
             location.reload(); // Simple way to go back to the main menu
@@ -658,6 +656,24 @@
                     strongMagnitude: strong,
                 });
             }
+        }
+
+        function restartLevel() {
+            if (!player) return;
+
+            // Reset player state
+            player.health = player.maxHealth;
+            player.energyBarFill.style.width = '100%';
+            player.mesh.position.set(0, player.mesh.geometry.parameters.height / 2, 0); // Reset position
+
+            // Hide Game Over screen
+            gameOverScreen.style.display = 'none';
+
+            // Resume game logic
+            isPaused = false;
+            playAudio('ambiente', true);
+            loadLevelById(currentLevelId); // Reload the current level
+            animate();
         }
 
         function handleGamepadInput() {
@@ -1287,7 +1303,7 @@
                 if (!this.isAlive) return;
                 this.hitCount++;
 
-                if (this.hitCount >= 5) {
+                if (this.hitCount >= 6) { // Derrotado después de 6 golpes
                     this.isAlive = false;
                     this.scene.remove(this.mesh);
 
