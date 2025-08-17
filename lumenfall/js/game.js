@@ -1242,7 +1242,7 @@
                 });
                 const enemyGeometry = new THREE.PlaneGeometry(enemyWidth, enemyHeight);
                 this.mesh = new THREE.Mesh(enemyGeometry, enemyMaterial);
-                this.mesh.position.set(initialX, enemyHeight / 2, camera.position.z - roomDepth + 1);
+                this.mesh.position.set(initialX, enemyHeight / 2, 0); // Z=0 para alinear con el jugador
                 this.mesh.castShadow = true;
                 this.scene.add(this.mesh);
 
