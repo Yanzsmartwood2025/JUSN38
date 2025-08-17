@@ -1231,8 +1231,8 @@
                 this.texture = textureLoader.load(assetUrls.enemySprite);
                 this.texture.repeat.x = 1 / totalEnemyFrames;
 
-                const enemyHeight = 8.4; // Double player height + 50%
-                const enemyWidth = 8.4;
+                const enemyHeight = 2.8;
+                const enemyWidth = 2.8;
 
                 const enemyMaterial = new THREE.MeshStandardMaterial({
                     map: this.texture,
