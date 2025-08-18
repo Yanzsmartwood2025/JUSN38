@@ -1,7 +1,12 @@
 import * as THREE from 'three';
 import { AudioManager } from './audio.js';
 
-const audioManager = new AudioManager((file) => {
+const settings = {
+    sfx: true,
+    vibration: true
+};
+
+const audioManager = new AudioManager(settings, (file) => {
     const loadingText = document.querySelector("#loading-overlay p");
     if (loadingText) loadingText.textContent = `Cargando Sonido: ${file}...`;
 });
@@ -256,6 +261,10 @@ function getEngineTorque(rpm) {
     }
 }
 let gameState = 'COUNTDOWN'; // COUNTDOWN, RACE, SPECTATOR, FINISHED
+const settings = {
+    sfx: true,
+    vibration: true
+};
 const aiCars = [];
 const raceData = {
     laps: 1,
@@ -582,8 +591,12 @@ function animate() {
 
             if (currentGear !== lastGear) {
                 audioManager.playSound(currentGear > lastGear ? 'shiftUp' : 'shiftDown');
+                triggerVibration(20);
                 if (engineRPM > 4000) {
-                    setTimeout(() => audioManager.playSound('exhaustPop', false, 0.5), 50);
+                    setTimeout(() => {
+                        audioManager.playSound('exhaustPop', false, 0.5);
+                        triggerVibration(10);
+                    }, 50);
                 }
             }
 
@@ -665,6 +678,8 @@ function animate() {
     car.position.y = 0.4;
     car.lookAt(carPosition.clone().add(carTangent));
 
+    updateMinimap();
+
     carCabin.visible = (cameraMode !== 2);
     const currentSettings = cameraSettings[cameraMode];
     const targetCameraPosition = car.position.clone().add(currentSettings.offset.clone().applyQuaternion(car.quaternion));
@@ -698,6 +713,7 @@ startGameButton.addEventListener('click', async () => {
     populateMixedForest();
     createAICars();
     createFinishLine();
+    drawMinimapTrack(); // Draw the static track map once
     startCountdown();
 
     // Iniciar la carga de texturas en segundo plano
@@ -717,3 +733,102 @@ window.addEventListener('resize', () => {
     camera.updateProjectionMatrix();
     renderer.setSize(window.innerWidth, window.innerHeight);
 });
+
+// --- Settings Menu Logic ---
+const settingsButton = document.getElementById('settings-button');
+const closeSettingsButton = document.getElementById('close-settings-button');
+const settingsModal = document.getElementById('settings-modal');
+const sfxToggle = document.getElementById('sfx-toggle');
+const vibrationToggle = document.getElementById('vibration-toggle');
+
+settingsButton.addEventListener('click', () => {
+    settingsModal.style.display = 'flex';
+});
+
+closeSettingsButton.addEventListener('click', () => {
+    settingsModal.style.display = 'none';
+});
+
+sfxToggle.addEventListener('change', (e) => {
+    settings.sfx = e.target.checked;
+});
+
+vibrationToggle.addEventListener('change', (e) => {
+    settings.vibration = e.target.checked;
+});
+
+function triggerVibration(duration) {
+    if (settings.vibration && navigator.vibrate) {
+        navigator.vibrate(duration);
+    }
+}
+
+// --- Minimap Logic ---
+const minimapCanvas = document.getElementById('minimap');
+const minimapCtx = minimapCanvas.getContext('2d');
+const offscreenMinimap = document.createElement('canvas');
+offscreenMinimap.width = minimapCanvas.width;
+offscreenMinimap.height = minimapCanvas.height;
+const offscreenCtx = offscreenMinimap.getContext('2d');
+let minimapScale, minimapOffsetX, minimapOffsetZ, trackMinX, trackMinZ;
+
+function drawMinimapTrack() {
+    const points = trackCurve.getSpacedPoints(400);
+    let minX = Infinity, maxX = -Infinity, minZ = Infinity, maxZ = -Infinity;
+    points.forEach(p => {
+        minX = Math.min(minX, p.x);
+        maxX = Math.max(maxX, p.x);
+        minZ = Math.min(minZ, p.z);
+        maxZ = Math.max(maxZ, p.z);
+    });
+    trackMinX = minX;
+    trackMinZ = minZ;
+
+    const trackWidth = maxX - minX;
+    const trackHeight = maxZ - minZ;
+    minimapScale = Math.min(minimapCanvas.width / trackWidth, minimapCanvas.height / trackHeight) * 0.9;
+    minimapOffsetX = (minimapCanvas.width - (trackWidth * minimapScale)) / 2;
+    minimapOffsetZ = (minimapCanvas.height - (trackHeight * minimapScale)) / 2;
+
+    offscreenCtx.strokeStyle = 'rgba(255, 255, 255, 0.7)';
+    offscreenCtx.lineWidth = 3;
+    offscreenCtx.beginPath();
+    points.forEach((p, i) => {
+        const x = (p.x - trackMinX) * minimapScale + minimapOffsetX;
+        const z = (p.z - trackMinZ) * minimapScale + minimapOffsetZ;
+        if (i === 0) offscreenCtx.moveTo(x, z);
+        else offscreenCtx.lineTo(x, z);
+    });
+    offscreenCtx.closePath();
+    offscreenCtx.stroke();
+}
+
+function updateMinimap() {
+    minimapCtx.clearRect(0, 0, minimapCanvas.width, minimapCanvas.height);
+    minimapCtx.drawImage(offscreenMinimap, 0, 0);
+
+    // Draw player car
+    const playerX = (car.position.x - trackMinX) * minimapScale + minimapOffsetX;
+    const playerZ = (car.position.z - trackMinZ) * minimapScale + minimapOffsetZ;
+    minimapCtx.fillStyle = 'blue';
+    minimapCtx.beginPath();
+    minimapCtx.arc(playerX, playerZ, 4, 0, 2 * Math.PI);
+    minimapCtx.fill();
+
+    // Draw AI cars
+    minimapCtx.fillStyle = 'red';
+    aiCars.forEach(aiCar => {
+        const aiX = (aiCar.position.x - trackMinX) * minimapScale + minimapOffsetX;
+        const aiZ = (aiCar.position.z - trackMinZ) * minimapScale + minimapOffsetZ;
+        minimapCtx.beginPath();
+        minimapCtx.arc(aiX, aiZ, 3, 0, 2 * Math.PI);
+        minimapCtx.fill();
+    });
+
+    // Draw distance to finish
+    const distance = trackLength * (raceData.laps - raceData.player.lap - trackProgress);
+    minimapCtx.fillStyle = 'white';
+    minimapCtx.font = '14px Rajdhani';
+    minimapCtx.textAlign = 'right';
+    minimapCtx.fillText(`${Math.round(distance)}m`, minimapCanvas.width - 10, 20);
+}
