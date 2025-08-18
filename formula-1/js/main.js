@@ -302,45 +302,18 @@ const clock = new THREE.Clock();
 
 function animate() {
     requestAnimationFrame(animate);
-    const delta = clock.getDelta();
 
-    if (isEngineOn) {
-        if (controls.accelerate) carSpeed += ACCELERATION * delta;
-        if (controls.brake) carSpeed -= BRAKING_FORCE * delta;
-        carSpeed -= carSpeed * DRAG_COEFFICIENT * delta;
-        carSpeed = Math.max(0, Math.min(carSpeed, MAX_SPEED));
-        const speedRatio = carSpeed / MAX_SPEED;
-        audioManager.updateEngineSound(speedRatio);
-    } else {
-        carSpeed -= carSpeed * DRAG_COEFFICIENT * 2 * delta;
-        if (carSpeed < 0.1) carSpeed = 0;
-        audioManager.updateEngineSound(0);
-    }
+    // --- CÓDIGO DE DIAGNÓSTICO DE ESCENA CONGELADA ---
+    // Posicionar el coche en un punto fijo de la pista
+    const carPosition = trackCurve.getPointAt(0.01);
+    car.position.copy(carPosition);
+    car.lookAt(trackCurve.getPointAt(0.02));
 
-    let steerDirection = 0;
-    if (controls.steerLeft) steerDirection = 1;
-    if (controls.steerRight) steerDirection = -1;
-
-    trackProgress = (trackProgress + (carSpeed / trackLength) * delta) % 1;
-
-    const carPosition = trackCurve.getPointAt(trackProgress);
-    const carTangent = trackCurve.getTangentAt(trackProgress);
-    const steerEffect = steerDirection * STEER_SPEED * delta;
-    lateralOffset += steerEffect * (carSpeed / MAX_SPEED) * 5;
-    lateralOffset *= 0.95;
-    lateralOffset = Math.max(-ASPHALT_WIDTH / 2.5, Math.min(ASPHALT_WIDTH / 2.5, lateralOffset));
-    const normal = new THREE.Vector3(-carTangent.z, 0, carTangent.x);
-    car.position.copy(carPosition).add(normal.multiplyScalar(lateralOffset));
-
-    const lookAtPosition = carPosition.clone().add(carTangent);
-    car.lookAt(lookAtPosition);
-    car.rotation.y += steerDirection * (carSpeed / MAX_SPEED) * 0.3;
-
-    const cameraOffset = new THREE.Vector3(0, 5, 12);
-    const targetCameraPosition = car.position.clone().add(cameraOffset.clone().applyQuaternion(car.quaternion));
-    camera.position.lerp(targetCameraPosition, delta * 4.0);
+    // Posicionar la cámara en un punto fijo detrás del coche
+    camera.position.set(car.position.x, car.position.y + 5, car.position.z + 15);
     camera.lookAt(car.position);
 
+    // Renderizar la escena
     renderer.render(scene, camera);
 }
 
