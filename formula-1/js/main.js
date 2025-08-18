@@ -182,9 +182,9 @@ scene.add(car);
 let engineOn = false; // Estado del motor
 const carVelocity = new THREE.Vector3();
 const TURN_SPEED = 3.0; // Radianes por segundo a velocidad cero
-const ACCELERATION = 40.0;
+const ACCELERATION = 120.0; // Aumentado para más velocidad
 const BRAKE_FORCE = 80.0;
-const DRAG_COEFFICIENT = 1.5;
+const DRAG_COEFFICIENT = 1.2; // Reducido para mayor velocidad máxima
 const ROLLING_FRICTION = 0.5;
 const MAX_SPEED_FOR_TURN_CALC = 40.0; // Velocidad de referencia para el cálculo del giro
 
@@ -243,7 +243,6 @@ const joystick = nipplejs.create({
 const accelButton = document.getElementById('touch-accelerate');
 const brakeButton = document.getElementById('touch-brake');
 const engineButton = document.getElementById('engine-button');
-const accelButtonC = document.getElementById('touch-accelerate-c'); // Botón de prueba C
 let engineToggleTimeout;
 
 const setAccelerate = (state) => {
@@ -262,9 +261,6 @@ brakeButton.addEventListener('touchstart', (e) => { e.preventDefault(); setBrake
 brakeButton.addEventListener('touchend', (e) => { e.preventDefault(); setBrake(false); brakeButton.classList.remove('active'); });
 brakeButton.addEventListener('touchcancel', (e) => { e.preventDefault(); setBrake(false); brakeButton.classList.remove('active'); });
 
-accelButtonC.addEventListener('touchstart', (e) => { e.preventDefault(); setAccelerate(true); accelButtonC.classList.add('active'); }, { passive: false });
-accelButtonC.addEventListener('touchend', (e) => { e.preventDefault(); setAccelerate(false); accelButtonC.classList.remove('active'); });
-accelButtonC.addEventListener('touchcancel', (e) => { e.preventDefault(); setAccelerate(false); accelButtonC.classList.remove('active'); });
 
 // --- Engine Button with Hold ---
 engineButton.addEventListener('touchstart', (e) => {
@@ -297,6 +293,7 @@ const cameraSettings = [
     { offset: new THREE.Vector3(0, 1.4, 0.2), lookAt: new THREE.Vector3(0, 1.2, -10) }
 ];
 const clock = new THREE.Clock();
+const speedometer = document.getElementById('speedometer');
 
 // --- BUCLE DE ANIMACIÓN ---
 function animate() {
@@ -345,6 +342,10 @@ function animate() {
     // 4. Actualizar velocidad y posición
     carVelocity.add(force.clone().multiplyScalar(delta));
     car.position.add(carVelocity.clone().multiplyScalar(delta));
+
+    // --- UI UPDATES ---
+    const displaySpeed = Math.round(speed * 10); // Factor de conversión para que parezca real
+    speedometer.textContent = `${displaySpeed} KM/H`;
 
     // --- CÁMARA ---
     carCabin.visible = (cameraMode !== 2);
