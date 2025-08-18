@@ -172,11 +172,79 @@ scene.add(groundPlane);
 createScenery();
 
 // --- LÓGICA DEL COCHE Y CONTROLES ---
-const car = new THREE.Group();
-const carBody = new THREE.Mesh( new THREE.BoxGeometry(2, 0.8, 4.5), new THREE.MeshStandardMaterial({ color: 0xff0000, roughness: 0.3, metalness: 0.2 }) );
-carBody.castShadow = true; car.add(carBody);
-const carCabin = new THREE.Mesh( new THREE.BoxGeometry(1.4, 0.7, 2), new THREE.MeshStandardMaterial({ color: 0x111111, roughness: 0.1, transparent: true, opacity: 0.8 }) );
-carCabin.position.set(0, 0.75, -0.2); car.add(carCabin);
+function createCar() {
+    const car = new THREE.Group();
+
+    const mainColor = 0xff0000;
+    const darkColor = 0x111111;
+
+    // Chasis principal
+    const chassisGeo = new THREE.BoxGeometry(2.2, 0.6, 5);
+    const chassisMat = new THREE.MeshStandardMaterial({ color: mainColor, roughness: 0.4, metalness: 0.1 });
+    const chassis = new THREE.Mesh(chassisGeo, chassisMat);
+    chassis.castShadow = true;
+    chassis.receiveShadow = true;
+    car.add(chassis);
+
+    // Cabina
+    const cabinGeo = new THREE.BoxGeometry(1.6, 0.8, 2);
+    const cabinMat = new THREE.MeshStandardMaterial({ color: darkColor, roughness: 0.2 });
+    const cabin = new THREE.Mesh(cabinGeo, cabinMat);
+    cabin.position.set(0, 0.7, -0.5);
+    cabin.castShadow = true;
+    car.add(cabin);
+
+    // Alerón delantero
+    const frontWingGeo = new THREE.BoxGeometry(2.5, 0.1, 1);
+    const frontWingMat = new THREE.MeshStandardMaterial({ color: darkColor });
+    const frontWing = new THREE.Mesh(frontWingGeo, frontWingMat);
+    frontWing.position.set(0, 0.3, -2.2);
+    frontWing.castShadow = true;
+    car.add(frontWing);
+
+    // Alerón trasero
+    const rearWingGeo = new THREE.BoxGeometry(2.5, 0.2, 0.8);
+    const rearWing = new THREE.Mesh(rearWingGeo, frontWingMat);
+    rearWing.position.set(0, 1, 2.2);
+    rearWing.castShadow = true;
+    car.add(rearWing);
+
+    // Ruedas
+    const wheelGeo = new THREE.CylinderGeometry(0.4, 0.4, 0.5, 32);
+    wheelGeo.rotateZ(Math.PI / 2);
+    const wheelMat = new THREE.MeshStandardMaterial({ color: 0x050505, roughness: 0.8 });
+
+    const wheelPositions = [
+        { x: -1.3, y: 0.2, z: 1.5, isFront: false },  // trasera izq
+        { x: 1.3, y: 0.2, z: 1.5, isFront: false },   // trasera der
+        { x: -1.3, y: 0.2, z: -1.8, isFront: true }, // delantera izq
+        { x: 1.3, y: 0.2, z: -1.8, isFront: true }   // delantera der
+    ];
+
+    car.wheels = [];
+
+    wheelPositions.forEach(pos => {
+        const wheel = new THREE.Mesh(wheelGeo, wheelMat);
+        wheel.position.set(pos.x, pos.y, pos.z);
+        wheel.castShadow = true;
+
+        if (pos.isFront) {
+            const pivot = new THREE.Group();
+            pivot.position.set(pos.x, pos.y, pos.z);
+            wheel.position.set(0, 0, 0); // La rueda está en el origen del pivote
+            pivot.add(wheel);
+            car.add(pivot);
+            car.wheels.push(pivot);
+        } else {
+            car.add(wheel);
+            car.wheels.push(wheel);
+        }
+    });
+
+    return car;
+}
+
+const car = createCar();
 scene.add(car);
 
 let engineOn = false; // Estado del motor
@@ -288,9 +356,9 @@ let cameraMode = 0;
 const cameraButton = document.getElementById('camera-button');
 cameraButton.addEventListener('click', () => { cameraMode = (cameraMode + 1) % 3; });
 const cameraSettings = [
-    { offset: new THREE.Vector3(0, 8, 15), lookAt: new THREE.Vector3(0, 2, 0) },
-    { offset: new THREE.Vector3(0, 4, 8), lookAt: new THREE.Vector3(0, 1.5, 0) },
-    { offset: new THREE.Vector3(0, 1.4, 0.2), lookAt: new THREE.Vector3(0, 1.2, -10) }
+    { offset: new THREE.Vector3(0, 5, 12), lookAt: new THREE.Vector3(0, 1, 0) }, // Lejana
+    { offset: new THREE.Vector3(0, 3, 9), lookAt: new THREE.Vector3(0, 0.5, 0) }, // Cercana
+    { offset: new THREE.Vector3(0, 1.5, -1), lookAt: new THREE.Vector3(0, 1, -10) } // Primera persona
 ];
 const clock = new THREE.Clock();
 const speedometer = document.getElementById('speedometer');
@@ -314,11 +382,19 @@ function animate() {
 
     const speed = carVelocity.length();
 
-    // 1. Aplicar rotación (dependiente de la velocidad)
-    const turnFactor = 1.0 - Math.min(1, speed / MAX_SPEED_FOR_TURN_CALC); // 1 a vel 0, 0 a vel max
+    // 1. Aplicar rotación al cuerpo del carro (física)
+    const turnFactor = 1.0 - Math.min(1, speed / MAX_SPEED_FOR_TURN_CALC);
     const effectiveTurnSpeed = TURN_SPEED * turnFactor;
     const turnAmount = turnInput * effectiveTurnSpeed * delta;
     car.rotateOnWorldAxis(new THREE.Vector3(0, 1, 0), turnAmount);
+
+    // 2. Animar las ruedas delanteras (visual)
+    const maxWheelTurn = Math.PI / 6; // 30 grados
+    const wheelTurnAngle = turnInput * maxWheelTurn * turnFactor;
+
+    // Las ruedas delanteras son los dos últimos elementos en el array `car.wheels`
+    car.wheels[2].rotation.y = wheelTurnAngle; // delantera izq
+    car.wheels[3].rotation.y = wheelTurnAngle; // delantera der
 
     // 2. Calcular fuerzas
     const force = new THREE.Vector3();
@@ -380,7 +456,6 @@ function animate() {
     camera.fov = baseFov + fovBoost;
     camera.updateProjectionMatrix();
 
-    carCabin.visible = (cameraMode !== 2);
     const currentSettings = cameraSettings[cameraMode];
     const targetCameraPosition = car.position.clone().add(currentSettings.offset.clone().applyQuaternion(car.quaternion));
     camera.position.lerp(targetCameraPosition, delta * 5.0);
