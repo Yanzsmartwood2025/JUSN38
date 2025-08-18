@@ -344,23 +344,27 @@ function animate() {
     car.position.add(carVelocity.clone().multiplyScalar(delta));
 
     // --- UI UPDATES ---
-    const displaySpeed = Math.round(speed * 10); // Factor de conversión para que parezca real
+    const displaySpeed = Math.round(speed * 2.8); // Factor de conversión para que parezca real (370 km/h)
     speedometer.textContent = `${displaySpeed} KM/H`;
 
     // --- AUDIO ---
-    if (engineSounds.engine_idle_garage && !engineSounds.engine_idle_garage.isPlaying && engineOn) {
-        Object.values(engineSounds).forEach(s => s.play());
-    }
+    if (engineOn && Object.keys(engineSounds).length > 0) {
+        const baseVolume = 0.5;
+        // Silencio por defecto
+        Object.values(engineSounds).forEach(s => s.setVolume(0));
 
-    if (engineOn) {
-        const highRpmVolume = Math.min(1, speed / MAX_SPEED_FOR_TURN_CALC);
-        const lowRpmVolume = 1 - highRpmVolume;
-
-        if (engineSounds.engine_low_rpm_loop) engineSounds.engine_low_rpm_loop.setVolume(lowRpmVolume * 0.5);
-        if (engineSounds.engine_high_rpm_loop) engineSounds.engine_high_rpm_loop.setVolume(highRpmVolume * 0.5);
-        if (engineSounds.engine_idle_garage) engineSounds.engine_idle_garage.setVolume(speed < 1 ? 0.3 : 0);
-
-    } else {
+        if (accelerationInput > 0) {
+            // Acelerando
+            const highRpmVolume = Math.min(1, speed / MAX_SPEED_FOR_TURN_CALC);
+            const lowRpmVolume = 1 - highRpmVolume;
+            engineSounds.engine_low_rpm_loop.setVolume(lowRpmVolume * baseVolume);
+            engineSounds.engine_high_rpm_loop.setVolume(highRpmVolume * baseVolume);
+        } else if (accelerationInput < 0) {
+            // Frenando o en reversa
+            engineSounds.engine_low_rpm_loop.setVolume(baseVolume * 0.5);
+        }
+    } else if (Object.keys(engineSounds).length > 0) {
+        // Apagar todos los sonidos si el motor está apagado
         Object.values(engineSounds).forEach(s => s.setVolume(0));
     }
 
@@ -404,8 +408,9 @@ startButton.addEventListener('click', () => {
         navigator.vibrate(100);
     }
 
-    // Cargar sonidos
+    // Cargar y preparar sonidos
     const soundsToLoad = ['engine_idle_garage.mp3', 'engine_low_rpm_loop.mp3', 'engine_mid_rpm_loop.mp3', 'engine_high_rpm_loop.mp3'];
+    let soundsLoaded = 0;
     soundsToLoad.forEach(soundFile => {
         audioLoader.load(`assets/audios/${soundFile}`, (buffer) => {
             const sound = new THREE.Audio(audioListener);
@@ -413,6 +418,11 @@ startButton.addEventListener('click', () => {
             sound.setLoop(true);
             sound.setVolume(0);
             engineSounds[soundFile.split('.')[0]] = sound;
+            soundsLoaded++;
+            // Una vez que todos los sonidos están cargados, los reproducimos en bucle (silenciosamente)
+            if (soundsLoaded === soundsToLoad.length) {
+                Object.values(engineSounds).forEach(s => s.play());
+            }
         });
     });
 
