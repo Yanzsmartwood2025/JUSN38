@@ -245,6 +245,7 @@ function createCar() {
 }
 
 const car = createCar();
+car.rotation.y = Math.PI; // Corregir la orientación inicial del modelo
 scene.add(car);
 
 let engineOn = false; // Estado del motor
@@ -382,19 +383,19 @@ function animate() {
 
     const speed = carVelocity.length();
 
-    // 1. Aplicar rotación al cuerpo del carro (física)
-    const turnFactor = 1.0 - Math.min(1, speed / MAX_SPEED_FOR_TURN_CALC);
-    const effectiveTurnSpeed = TURN_SPEED * turnFactor;
-    const turnAmount = turnInput * effectiveTurnSpeed * delta;
-    car.rotateOnWorldAxis(new THREE.Vector3(0, 1, 0), turnAmount);
-
-    // 2. Animar las ruedas delanteras (visual)
+    // 1. Animar las ruedas delanteras (siempre es visual)
     const maxWheelTurn = Math.PI / 6; // 30 grados
-    const wheelTurnAngle = turnInput * maxWheelTurn * turnFactor;
+    const wheelTurnAngle = turnInput * maxWheelTurn;
+    car.wheels[2].rotation.y = wheelTurnAngle;
+    car.wheels[3].rotation.y = wheelTurnAngle;
 
-    // Las ruedas delanteras son los dos últimos elementos en el array `car.wheels`
-    car.wheels[2].rotation.y = wheelTurnAngle; // delantera izq
-    car.wheels[3].rotation.y = wheelTurnAngle; // delantera der
+    // 2. Aplicar rotación al cuerpo del carro (física, solo si se mueve)
+    if (speed > 0.1) {
+        const turnFactor = 1.0 - Math.min(1, speed / MAX_SPEED_FOR_TURN_CALC);
+        const effectiveTurnSpeed = TURN_SPEED * turnFactor;
+        const turnAmount = turnInput * effectiveTurnSpeed * delta;
+        car.rotateOnWorldAxis(new THREE.Vector3(0, 1, 0), turnAmount);
+    }
 
     // 2. Calcular fuerzas
     const force = new THREE.Vector3();
