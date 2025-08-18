@@ -227,8 +227,8 @@ scene.add(car);
 
 // --- FÍSICA DEL VEHÍCULO ---
 let carSpeed = 0; // en m/s
-let engineRPM = 0;
-let currentGear = 2; // Empezar en Primera Marcha
+let engineRPM = 800; // Empezar con el motor en ralentí (IDLE_RPM)
+let currentGear = 1; // Empezar en Neutral
 let trackProgress = 0.001;
 let lateralOffset = 0;
 
