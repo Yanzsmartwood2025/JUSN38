@@ -243,19 +243,45 @@ const joystick = nipplejs.create({
 const accelButton = document.getElementById('touch-accelerate');
 const brakeButton = document.getElementById('touch-brake');
 const engineButton = document.getElementById('engine-button');
+let engineToggleTimeout;
 
-accelButton.addEventListener('touchstart', (e) => { e.preventDefault(); touchState.accelerate = true; accelButton.classList.add('active'); }, { passive: false });
-accelButton.addEventListener('touchend', (e) => { e.preventDefault(); touchState.accelerate = false; accelButton.classList.remove('active'); });
-accelButton.addEventListener('touchcancel', (e) => { e.preventDefault(); touchState.accelerate = false; accelButton.classList.remove('active'); });
+const setAccelerate = (state) => {
+    touchState.accelerate = state;
+    accelButton.classList.toggle('active', state);
+};
 
-brakeButton.addEventListener('touchstart', (e) => { e.preventDefault(); touchState.brake = true; brakeButton.classList.add('active'); }, { passive: false });
-brakeButton.addEventListener('touchend', (e) => { e.preventDefault(); touchState.brake = false; brakeButton.classList.remove('active'); });
-brakeButton.addEventListener('touchcancel', (e) => { e.preventDefault(); touchState.brake = false; brakeButton.classList.remove('active'); });
+const setBrake = (state) => {
+    touchState.brake = state;
+    brakeButton.classList.toggle('active', state);
+};
 
-engineButton.addEventListener('click', (e) => {
+accelButton.addEventListener('touchstart', (e) => { e.preventDefault(); setAccelerate(true); }, { passive: false });
+accelButton.addEventListener('touchend', (e) => { e.preventDefault(); setAccelerate(false); });
+accelButton.addEventListener('touchcancel', (e) => { e.preventDefault(); setAccelerate(false); });
+
+brakeButton.addEventListener('touchstart', (e) => { e.preventDefault(); setBrake(true); }, { passive: false });
+brakeButton.addEventListener('touchend', (e) => { e.preventDefault(); setBrake(false); });
+brakeButton.addEventListener('touchcancel', (e) => { e.preventDefault(); setBrake(false); });
+
+// --- Engine Button with Hold ---
+engineButton.addEventListener('touchstart', (e) => {
     e.preventDefault();
-    engineOn = !engineOn;
-    engineButton.classList.toggle('active', engineOn);
+    engineButton.classList.add('active');
+    engineToggleTimeout = setTimeout(() => {
+        engineOn = !engineOn;
+        engineButton.style.backgroundColor = engineOn ? 'rgba(74, 222, 128, 0.5)' : 'rgba(26, 32, 44, 0.6)';
+    }, 500);
+}, { passive: false });
+
+engineButton.addEventListener('touchend', (e) => {
+    e.preventDefault();
+    engineButton.classList.remove('active');
+    clearTimeout(engineToggleTimeout);
+});
+engineButton.addEventListener('touchcancel', (e) => {
+    e.preventDefault();
+    engineButton.classList.remove('active');
+    clearTimeout(engineToggleTimeout);
 });
 
 
