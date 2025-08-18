@@ -182,9 +182,9 @@ scene.add(car);
 let engineOn = false; // Estado del motor
 const carVelocity = new THREE.Vector3();
 const TURN_SPEED = 3.0; // Radianes por segundo a velocidad cero
-const ACCELERATION = 120.0; // Aumentado para más velocidad
+const ACCELERATION = 200.0; // Aceleración brutal
 const BRAKE_FORCE = 80.0;
-const DRAG_COEFFICIENT = 1.2; // Reducido para mayor velocidad máxima
+const DRAG_COEFFICIENT = 1.5; // Aumentado para compensar la aceleración
 const ROLLING_FRICTION = 0.5;
 const MAX_SPEED_FOR_TURN_CALC = 40.0; // Velocidad de referencia para el cálculo del giro
 
@@ -347,7 +347,30 @@ function animate() {
     const displaySpeed = Math.round(speed * 10); // Factor de conversión para que parezca real
     speedometer.textContent = `${displaySpeed} KM/H`;
 
+    // --- AUDIO ---
+    if (engineSounds.engine_idle_garage && !engineSounds.engine_idle_garage.isPlaying && engineOn) {
+        Object.values(engineSounds).forEach(s => s.play());
+    }
+
+    if (engineOn) {
+        const highRpmVolume = Math.min(1, speed / MAX_SPEED_FOR_TURN_CALC);
+        const lowRpmVolume = 1 - highRpmVolume;
+
+        if (engineSounds.engine_low_rpm_loop) engineSounds.engine_low_rpm_loop.setVolume(lowRpmVolume * 0.5);
+        if (engineSounds.engine_high_rpm_loop) engineSounds.engine_high_rpm_loop.setVolume(highRpmVolume * 0.5);
+        if (engineSounds.engine_idle_garage) engineSounds.engine_idle_garage.setVolume(speed < 1 ? 0.3 : 0);
+
+    } else {
+        Object.values(engineSounds).forEach(s => s.setVolume(0));
+    }
+
     // --- CÁMARA ---
+    // Efecto FOV dinámico
+    const baseFov = 75;
+    const fovBoost = Math.min(1, speed / MAX_SPEED_FOR_TURN_CALC) * 15; // Aumenta hasta 15 grados
+    camera.fov = baseFov + fovBoost;
+    camera.updateProjectionMatrix();
+
     carCabin.visible = (cameraMode !== 2);
     const currentSettings = cameraSettings[cameraMode];
     const targetCameraPosition = car.position.clone().add(currentSettings.offset.clone().applyQuaternion(car.quaternion));
@@ -360,12 +383,42 @@ function animate() {
 
 // --- INICIO ---
 const loadingOverlay = document.getElementById('loading-overlay');
+const startOverlay = document.getElementById('start-overlay');
+const startButton = document.getElementById('start-button');
+const audioListener = new THREE.AudioListener();
+camera.add(audioListener);
+const audioLoader = new THREE.AudioLoader();
+const engineSounds = {};
+
 loadingManager.onLoad = () => {
     populateMixedForest();
     loadingOverlay.style.opacity = '0';
-    loadingOverlay.addEventListener('transitionend', () => loadingOverlay.style.display = 'none');
-    animate();
+    loadingOverlay.addEventListener('transitionend', () => {
+        loadingOverlay.style.display = 'none';
+    });
 };
+
+startButton.addEventListener('click', () => {
+    // --- INICIALIZAR AUDIO Y VIBRACIÓN ---
+    if (navigator.vibrate) {
+        navigator.vibrate(100);
+    }
+
+    // Cargar sonidos
+    const soundsToLoad = ['engine_idle_garage.mp3', 'engine_low_rpm_loop.mp3', 'engine_mid_rpm_loop.mp3', 'engine_high_rpm_loop.mp3'];
+    soundsToLoad.forEach(soundFile => {
+        audioLoader.load(`assets/audios/${soundFile}`, (buffer) => {
+            const sound = new THREE.Audio(audioListener);
+            sound.setBuffer(buffer);
+            sound.setLoop(true);
+            sound.setVolume(0);
+            engineSounds[soundFile.split('.')[0]] = sound;
+        });
+    });
+
+    startOverlay.style.display = 'none';
+    animate();
+});
 
 // Cargar todas las texturas
 treeTypes.forEach(type => {
