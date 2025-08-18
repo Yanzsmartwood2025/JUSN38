@@ -593,9 +593,32 @@ function animate() {
             const currentGearRatio = gearRatios[currentGear];
 
             if (currentGearRatio !== 0) {
-                 engineRPM = Math.max(IDLE_RPM, wheelRotationSpeed * currentGearRatio * finalDriveRatio * 60 / (2 * Math.PI));
+                let wheelRPM = wheelRotationSpeed * 60 / (2 * Math.PI);
+                let targetRPM = wheelRPM * currentGearRatio * finalDriveRatio;
+
+                if (controls.throttle > 0) {
+                    // Allow engine to rev up when throttle is applied, even at low speed
+                    engineRPM += controls.throttle * 2500 * delta;
+                } else {
+                    // Smoothly decrease RPM to match wheel speed or idle
+                    engineRPM = Math.max(targetRPM, engineRPM - 4000 * delta);
+                }
+
+                // Ensure RPM is always at least idle and doesn't exceed max
+                engineRPM = Math.max(IDLE_RPM, Math.min(MAX_RPM, engineRPM));
+
+                // If car is moving, RPM should be at least proportional to wheel speed
+                if (carSpeed > 1) {
+                    engineRPM = Math.max(engineRPM, targetRPM);
+                }
+
             } else {
-                 engineRPM = Math.max(IDLE_RPM, engineRPM * 0.95); // RPM decae en neutro
+                 // In neutral, let player rev the engine freely
+                 if (controls.throttle > 0) {
+                     engineRPM = Math.min(MAX_RPM, engineRPM + controls.throttle * 3000 * delta);
+                 } else {
+                     engineRPM = Math.max(IDLE_RPM, engineRPM - 4000 * delta); // Decay to idle
+                 }
             }
 
             const engineTorque = getEngineTorque(engineRPM);
