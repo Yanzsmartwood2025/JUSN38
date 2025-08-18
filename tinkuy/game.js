@@ -331,10 +331,16 @@ function updateIdleAnimation(player) {
         if (frontKnee) frontKnee.rotation.x = 0.6;
         if (backKnee) backKnee.rotation.x = 0.6;
 
-        if (frontShoulder) frontShoulder.rotation.set(0, 0, 0.9 * dir);
-        if (frontElbow) frontElbow.rotation.set(1.8, 0.5 * dir, 0);
-        if (backShoulder) backShoulder.rotation.set(0, 0, -0.7 * dir);
-        if (backElbow) backElbow.rotation.set(1.2, -0.3 * dir, 0);
+        // Postura de Boxeo Clásica
+        if (frontHip) frontHip.rotation.x = -0.1;
+        if (backHip) backHip.rotation.x = 0.1;
+        if (frontKnee) frontKnee.rotation.x = 0.2;
+        if (backKnee) backKnee.rotation.x = 0.2;
+
+        if (frontShoulder) frontShoulder.rotation.set(1.2, 0.5 * dir, 0.5 * dir);
+        if (frontElbow) frontElbow.rotation.set(1.5, 0, 0);
+        if (backShoulder) backShoulder.rotation.set(1.0, -0.5 * dir, -0.5 * dir);
+        if (backElbow) backElbow.rotation.set(1.0, 0, 0);
     }
 }
 
