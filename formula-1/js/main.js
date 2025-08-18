@@ -6,10 +6,7 @@ const settings = {
     vibration: true
 };
 
-const audioManager = new AudioManager(settings, (file) => {
-    const loadingText = document.querySelector("#loading-overlay p");
-    if (loadingText) loadingText.textContent = `Cargando Sonido: ${file}...`;
-});
+const audioManager = new AudioManager();
 
 // --- CONFIGURACIÓN BÁSICA DE LA ESCENA ---
 const scene = new THREE.Scene();
@@ -538,8 +535,6 @@ function startCountdown() {
 
     countdownOverlay.style.display = 'flex';
 
-    audioManager.startEngine();
-
     const interval = setInterval(() => {
         if (currentStep < countdownSteps.length) {
             countdownOverlay.textContent = countdownSteps[currentStep];
@@ -581,9 +576,15 @@ function handleGamepad() {
     }
 }
 
+const debugOverlay = document.getElementById('debug-overlay');
+
 function animate() {
     requestAnimationFrame(animate);
     const delta = clock.getDelta();
+
+    if (debugOverlay) {
+        debugOverlay.innerText = `Throttle: ${controls.throttle.toFixed(2)}\nSpeed: ${(carSpeed * 3.6).toFixed(1)} km/h\nGear: ${currentGear}\nRPM: ${Math.round(engineRPM)}`;
+    }
 
     handleGamepad();
 
@@ -610,11 +611,9 @@ function animate() {
             }
 
             if (currentGear !== lastGear) {
-                audioManager.playSound(currentGear > lastGear ? 'shiftUp' : 'shiftDown');
                 triggerVibration(20);
                 if (engineRPM > 4000) {
                     setTimeout(() => {
-                        audioManager.playSound('exhaustPop', false, 0.5);
                         triggerVibration(10);
                     }, 50);
                 }
@@ -662,7 +661,7 @@ function animate() {
             let throttleInput = controls.throttle;
             // Play backfire sound on deceleration
             if (throttleInput === 0 && engineRPM > 3500 && carSpeed > 50) {
-                 audioManager.playSound('backfire', false, 0.4);
+                 // audioManager.playSound('backfire', false, 0.4);
             }
 
             const totalForce = (driveForce * throttleInput) - (BRAKE_FORCE * controls.brake) - dragForce - ROLLING_RESISTANCE;
@@ -676,7 +675,7 @@ function animate() {
             lateralOffset += controls.steer * STEER_SENSITIVITY * delta * steerEffectiveness;
 
             if (Math.abs(controls.steer) > 0.9 && Math.abs(carSpeed) > 40) {
-                 audioManager.playSound('skid', false, 0.3);
+                 // audioManager.playSound('skid', false, 0.3);
             }
 
             lateralOffset *= 0.95; // Fricción lateral
@@ -684,8 +683,6 @@ function animate() {
             trackProgress = (trackProgress + (carSpeed / trackLength) * delta + 1) % 1;
             lateralOffset = Math.max(-MAX_LATERAL_OFFSET, Math.min(MAX_LATERAL_OFFSET, lateralOffset));
         }
-
-        audioManager.updateEngineSound(engineRPM, IDLE_RPM, MAX_RPM);
 
         checkLapCompletion(car, raceData.player, oldProgress);
         updateAICars(delta);
@@ -726,7 +723,7 @@ startGameButton.addEventListener('click', async () => {
     }
 
     // Iniciar la carga de audio en segundo plano
-    audioManager.init();
+    audioManager.playEngineSound();
 
     // Iniciar el juego inmediatamente
     animate();
