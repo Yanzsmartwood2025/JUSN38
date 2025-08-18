@@ -28,9 +28,17 @@ export class AudioManager {
 
     async init() {
         if (this.isInitialized) return;
-        this.audioContext = new (window.AudioContext || window.webkitAudioContext)();
-        this.masterGain = this.audioContext.createGain();
-        this.masterGain.connect(this.audioContext.destination);
+        if (!this.audioContext) {
+            this.audioContext = new (window.AudioContext || window.webkitAudioContext)();
+            this.masterGain = this.audioContext.createGain();
+            this.masterGain.connect(this.audioContext.destination);
+        }
+
+        // Reanudar el contexto de audio si está suspendido (requerido por los navegadores modernos)
+        if (this.audioContext.state === 'suspended') {
+            await this.audioContext.resume();
+        }
+
         await this._loadAllSounds();
         this.isInitialized = true;
     }

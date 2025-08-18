@@ -261,10 +261,6 @@ function getEngineTorque(rpm) {
     }
 }
 let gameState = 'COUNTDOWN'; // COUNTDOWN, RACE, SPECTATOR, FINISHED
-const settings = {
-    sfx: true,
-    vibration: true
-};
 const aiCars = [];
 const raceData = {
     laps: 1,
