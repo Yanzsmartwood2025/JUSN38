@@ -255,13 +255,14 @@ const setBrake = (state) => {
     brakeButton.classList.toggle('active', state);
 };
 
-accelButton.addEventListener('touchstart', (e) => { e.preventDefault(); setAccelerate(true); }, { passive: false });
-accelButton.addEventListener('touchend', (e) => { e.preventDefault(); setAccelerate(false); });
-accelButton.addEventListener('touchcancel', (e) => { e.preventDefault(); setAccelerate(false); });
+// PRUEBA: Intercambiar botones
+accelButton.addEventListener('touchstart', (e) => { e.preventDefault(); setBrake(true); }, { passive: false });
+accelButton.addEventListener('touchend', (e) => { e.preventDefault(); setBrake(false); });
+accelButton.addEventListener('touchcancel', (e) => { e.preventDefault(); setBrake(false); });
 
-brakeButton.addEventListener('touchstart', (e) => { e.preventDefault(); setBrake(true); }, { passive: false });
-brakeButton.addEventListener('touchend', (e) => { e.preventDefault(); setBrake(false); });
-brakeButton.addEventListener('touchcancel', (e) => { e.preventDefault(); setBrake(false); });
+brakeButton.addEventListener('touchstart', (e) => { e.preventDefault(); setAccelerate(true); }, { passive: false });
+brakeButton.addEventListener('touchend', (e) => { e.preventDefault(); setAccelerate(false); });
+brakeButton.addEventListener('touchcancel', (e) => { e.preventDefault(); setAccelerate(false); });
 
 // --- Engine Button with Hold ---
 engineButton.addEventListener('touchstart', (e) => {
