@@ -329,7 +329,7 @@
             const finishPoint = trackCurve.getPointAt(0.0001); // Ligeramente después del inicio
             const tangent = trackCurve.getTangentAt(0.0001);
             finishLine.position.copy(finishPoint);
-            finishLine.position.y += 0.05; // Ligeramente sobre el asfalto
+            finishLine.position.y += 0.02; // Reducido para que esté más pegado
             finishLine.lookAt(finishPoint.clone().add(tangent));
             finishLine.rotation.x = -Math.PI / 2;
             scene.add(finishLine);
@@ -439,11 +439,29 @@
                 aiCar.userData.trackProgress = (oldProgress + (aiCar.userData.speed / trackLength) * delta + 1) % 1;
                 checkLapCompletion(aiCar, raceData.ai[i], oldProgress);
 
-                // Lógica simple para que se muevan lateralmente
+                // Lógica simple para que se muevan lateralmente y eviten colisiones
                 if (Math.random() < 0.01) {
                     aiCar.userData.lateralOffset += (Math.random() - 0.5) * 0.5;
-                    aiCar.userData.lateralOffset = Math.max(-MAX_LATERAL_OFFSET, Math.min(MAX_LATERAL_OFFSET, aiCar.userData.lateralOffset));
                 }
+
+                // Lógica de evasión de colisiones
+                aiCars.forEach(otherCar => {
+                    if (aiCar === otherCar) return;
+
+                    const progressDiff = Math.abs(aiCar.userData.trackProgress - otherCar.userData.trackProgress);
+                    const lateralDiff = Math.abs(aiCar.userData.lateralOffset - otherCar.userData.lateralOffset);
+
+                    if (progressDiff < 0.01 && lateralDiff < 2.5) { // Si están cerca
+                        const avoidanceForce = 0.05;
+                        if (aiCar.userData.lateralOffset > otherCar.userData.lateralOffset) {
+                            aiCar.userData.lateralOffset += avoidanceForce;
+                        } else {
+                            aiCar.userData.lateralOffset -= avoidanceForce;
+                        }
+                    }
+                });
+
+                aiCar.userData.lateralOffset = Math.max(-MAX_LATERAL_OFFSET, Math.min(MAX_LATERAL_OFFSET, aiCar.userData.lateralOffset));
 
                 const pos = trackCurve.getPointAt(aiCar.userData.trackProgress);
                 const tangent = trackCurve.getTangentAt(aiCar.userData.trackProgress);
