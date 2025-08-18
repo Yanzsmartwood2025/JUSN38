@@ -1,5 +1,6 @@
 export class AudioManager {
-    constructor(loadingCallback) {
+    constructor(settings, loadingCallback) {
+        this.settings = settings;
         this.audioContext = null;
         this.sounds = {};
         this.engineSources = {};
@@ -56,6 +57,7 @@ export class AudioManager {
     }
 
     playSound(name, loop = false, gain = 1.0) {
+        if (!this.settings.sfx && name !== 'low' && name !== 'mid' && name !== 'high') return null;
         if (!this.sounds[name] || !this.isInitialized) return null;
 
         const source = this.audioContext.createBufferSource();
