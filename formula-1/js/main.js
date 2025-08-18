@@ -600,7 +600,8 @@ startGameButton.addEventListener('click', async () => {
     startOverlay.style.display = 'none';
     loadingOverlay.style.display = 'flex';
 
-    await audioManager.init();
+    // Iniciar la carga de audio en segundo plano sin bloquear el inicio
+    audioManager.init();
 
     animate(); // Iniciar el bucle de renderizado inmediatamente
 
