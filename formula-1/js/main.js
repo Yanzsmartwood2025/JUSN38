@@ -228,7 +228,7 @@ scene.add(car);
 // --- FÍSICA DEL VEHÍCULO ---
 let carSpeed = 0; // en m/s
 let engineRPM = 800; // Empezar con el motor en ralentí (IDLE_RPM)
-let currentGear = 1; // Empezar en Neutral
+let currentGear = 2; // Empezar en Primera Marcha para asegurar el movimiento
 let trackProgress = 0.001;
 let lateralOffset = 0;
 
@@ -591,15 +591,9 @@ function handleGamepad() {
     }
 }
 
-const debugOverlay = document.getElementById('debug-overlay');
-
 function animate() {
     requestAnimationFrame(animate);
     const delta = clock.getDelta();
-
-    if (debugOverlay) {
-        debugOverlay.innerText = `Throttle: ${controls.throttle.toFixed(2)}\nSpeed: ${(carSpeed * 3.6).toFixed(1)} km/h\nGear: ${currentGear}\nRPM: ${Math.round(engineRPM)}`;
-    }
 
     handleGamepad();
 
