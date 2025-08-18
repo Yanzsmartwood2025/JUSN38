@@ -248,25 +248,23 @@ let engineToggleTimeout;
 
 const setAccelerate = (state) => {
     touchState.accelerate = state;
-    accelButton.classList.toggle('active', state);
 };
 
 const setBrake = (state) => {
     touchState.brake = state;
-    brakeButton.classList.toggle('active', state);
 };
 
-accelButton.addEventListener('touchstart', (e) => { e.preventDefault(); setAccelerate(true); }, { passive: false });
-accelButton.addEventListener('touchend', (e) => { e.preventDefault(); setAccelerate(false); });
-accelButton.addEventListener('touchcancel', (e) => { e.preventDefault(); setAccelerate(false); });
+accelButton.addEventListener('touchstart', (e) => { e.preventDefault(); setAccelerate(true); accelButton.classList.add('active'); }, { passive: false });
+accelButton.addEventListener('touchend', (e) => { e.preventDefault(); setAccelerate(false); accelButton.classList.remove('active'); });
+accelButton.addEventListener('touchcancel', (e) => { e.preventDefault(); setAccelerate(false); accelButton.classList.remove('active'); });
 
-brakeButton.addEventListener('touchstart', (e) => { e.preventDefault(); setBrake(true); }, { passive: false });
-brakeButton.addEventListener('touchend', (e) => { e.preventDefault(); setBrake(false); });
-brakeButton.addEventListener('touchcancel', (e) => { e.preventDefault(); setBrake(false); });
+brakeButton.addEventListener('touchstart', (e) => { e.preventDefault(); setBrake(true); brakeButton.classList.add('active'); }, { passive: false });
+brakeButton.addEventListener('touchend', (e) => { e.preventDefault(); setBrake(false); brakeButton.classList.remove('active'); });
+brakeButton.addEventListener('touchcancel', (e) => { e.preventDefault(); setBrake(false); brakeButton.classList.remove('active'); });
 
-accelButtonC.addEventListener('touchstart', (e) => { e.preventDefault(); setAccelerate(true); }, { passive: false });
-accelButtonC.addEventListener('touchend', (e) => { e.preventDefault(); setAccelerate(false); });
-accelButtonC.addEventListener('touchcancel', (e) => { e.preventDefault(); setAccelerate(false); });
+accelButtonC.addEventListener('touchstart', (e) => { e.preventDefault(); setAccelerate(true); accelButtonC.classList.add('active'); }, { passive: false });
+accelButtonC.addEventListener('touchend', (e) => { e.preventDefault(); setAccelerate(false); accelButtonC.classList.remove('active'); });
+accelButtonC.addEventListener('touchcancel', (e) => { e.preventDefault(); setAccelerate(false); accelButtonC.classList.remove('active'); });
 
 // --- Engine Button with Hold ---
 engineButton.addEventListener('touchstart', (e) => {
@@ -331,9 +329,8 @@ function animate() {
         if (accelerationInput > 0) {
             force.add(forward.clone().multiplyScalar(ACCELERATION * accelerationInput));
         } else if (accelerationInput < 0) {
-            // Frenado es más fuerte si vamos hacia adelante
-            const brakeDirection = carVelocity.length() > 0.1 ? carVelocity.clone().normalize() : forward.clone();
-            force.add(brakeDirection.multiplyScalar(BRAKE_FORCE * accelerationInput));
+            // Frenado y reversa siempre van en la dirección opuesta a la que mira el carro.
+            force.add(forward.clone().multiplyScalar(BRAKE_FORCE * accelerationInput));
         }
     }
 
