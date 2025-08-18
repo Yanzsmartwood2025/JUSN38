@@ -639,7 +639,7 @@ function animate() {
             let throttleInput = controls.throttle;
             // Play backfire sound on deceleration
             if (throttleInput === 0 && engineRPM > 3500 && carSpeed > 50) {
-                 if(Math.random() < 0.05) audioManager.playSound('backfire', false, 0.4);
+                 audioManager.playSound('backfire', false, 0.4);
             }
 
             const totalForce = (driveForce * throttleInput) - (BRAKE_FORCE * controls.brake) - dragForce - ROLLING_RESISTANCE;
@@ -653,7 +653,7 @@ function animate() {
             lateralOffset += controls.steer * STEER_SENSITIVITY * delta * steerEffectiveness;
 
             if (Math.abs(controls.steer) > 0.9 && Math.abs(carSpeed) > 40) {
-                 if(Math.random() < 0.1) audioManager.playSound('skid', false, 0.3);
+                 audioManager.playSound('skid', false, 0.3);
             }
 
             lateralOffset *= 0.95; // Fricción lateral
