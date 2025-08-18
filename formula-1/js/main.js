@@ -302,6 +302,7 @@ const touchButtonIds = {
 
 for (const id in touchButtonIds) {
     const element = document.getElementById(id);
+    if (!element) continue;
     const controlKey = touchButtonIds[id];
     element.addEventListener('touchstart', (e) => {
         e.preventDefault();
@@ -316,6 +317,42 @@ for (const id in touchButtonIds) {
         controls[controlKey] = (controlKey === 'throttle' || controlKey === 'brake') ? 0 : false;
     });
 }
+
+// Joystick Logic
+const joystickContainer = document.getElementById('joystick-container');
+const joystickStick = document.getElementById('joystick-stick');
+const joystickRadius = 75; // Half of the container's width (150px)
+let joystickActive = false;
+
+joystickContainer.addEventListener('touchstart', (e) => {
+    joystickActive = true;
+}, { passive: false });
+
+joystickContainer.addEventListener('touchmove', (e) => {
+    if (!joystickActive) return;
+    e.preventDefault();
+    const touch = e.targetTouches[0];
+    const rect = joystickContainer.getBoundingClientRect();
+    const x = touch.clientX - rect.left - joystickRadius;
+    const y = touch.clientY - rect.top - joystickRadius;
+
+    const distance = Math.min(joystickRadius, Math.hypot(x, y));
+    const angle = Math.atan2(y, x);
+
+    const stickX = distance * Math.cos(angle);
+    const stickY = distance * Math.sin(angle);
+
+    joystickStick.style.transform = `translate(${stickX}px, ${stickY}px)`;
+
+    controls.steer = stickX / joystickRadius;
+
+}, { passive: false });
+
+joystickContainer.addEventListener('touchend', (e) => {
+    joystickActive = false;
+    joystickStick.style.transform = `translate(0px, 0px)`;
+    controls.steer = 0;
+});
 
 let cameraMode = 0;
 const cameraButton = document.getElementById('camera-button');
