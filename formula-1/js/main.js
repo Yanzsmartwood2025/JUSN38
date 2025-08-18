@@ -218,7 +218,8 @@ const joystick = nipplejs.create({
     mode: 'static',
     position: { left: '50%', top: '50%' },
     color: 'white',
-    size: 120
+    size: 120,
+    multitouch: true
 }).on('move', (evt, data) => {
     if (data.angle && data.force > 0.3) {
         if (data.angle.degree > 45 && data.angle.degree < 135) {
