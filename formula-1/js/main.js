@@ -253,7 +253,7 @@ const carVelocity = new THREE.Vector3();
 const TURN_SPEED = 3.0; // Radianes por segundo a velocidad cero
 const ACCELERATION = 450.0; // Aceleración de F1
 const BRAKE_FORCE = 150.0;
-const DRAG_COEFFICIENT = 2.0;
+const DRAG_COEFFICIENT = 3.0;
 const ROLLING_FRICTION = 1.0;
 const MAX_SPEED_FOR_TURN_CALC = 150.0; // Velocidad de referencia para el cálculo del giro
 
@@ -409,7 +409,7 @@ function animate() {
     }
 
     // 3. Aplicar fricción y resistencia del aire
-    const dragForce = carVelocity.clone().multiplyScalar(-DRAG_COEFFICIENT * speed);
+    const dragForce = carVelocity.clone().multiplyScalar(-DRAG_COEFFICIENT); // Modelo de drag lineal
     const rollingFrictionForce = carVelocity.clone().normalize().multiplyScalar(-ROLLING_FRICTION);
     force.add(dragForce);
     if (speed > 0.1) {
@@ -421,7 +421,7 @@ function animate() {
     car.position.add(carVelocity.clone().multiplyScalar(delta));
 
     // --- UI UPDATES ---
-    const displaySpeed = Math.round(speed * 1.7); // Factor de conversión para 370km/h
+    const displaySpeed = Math.round(speed * 2.5); // Factor de conversión para 370km/h
     speedometer.textContent = `${displaySpeed} KM/H`;
 
     // --- AUDIO ---
