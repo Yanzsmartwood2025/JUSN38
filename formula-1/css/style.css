@@ -37,32 +37,103 @@ canvas {
     0% { transform: rotate(0deg); }
     100% { transform: rotate(360deg); }
 }
-.touch-controls {
+/* --- Estilos de Controles Táctiles --- */
+.touch-controls-container {
     position: absolute;
-    bottom: 20px;
-    left: 50%;
-    transform: translateX(-50%);
+    bottom: 0;
+    left: 0;
+    width: 100%;
+    height: 30%;
     display: flex;
     justify-content: space-between;
-    width: 220px;
+    align-items: flex-end;
+    padding: 20px;
+    box-sizing: border-box;
     pointer-events: none;
     z-index: 10;
+    display: none; /* Hidden by default, shown by JS */
 }
-.d-pad {
-    display: grid;
+
+/* Joystick a la izquierda */
+.joystick {
+    width: 150px;
+    height: 150px;
+    position: relative;
+    pointer-events: auto;
+}
+.joystick-base {
+    width: 100%;
+    height: 100%;
+    background-color: rgba(255, 255, 255, 0.2);
+    border-radius: 50%;
+}
+.joystick-stick {
+    position: absolute;
+    top: 37.5px;
+    left: 37.5px;
+    width: 75px;
+    height: 75px;
+    background-color: rgba(255, 255, 255, 0.5);
+    border-radius: 50%;
+    transition: transform 0.1s ease-out;
+}
+
+/* Cluster de botones a la derecha */
+.actions-cluster {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
     gap: 10px;
     pointer-events: auto;
-    grid-template-areas:
-        ". up ."
-        "left . right"
-        ". down .";
-    grid-template-columns: 60px 60px 60px;
-    grid-template-rows: 60px 60px;
 }
-#touch-up { grid-area: up; }
-#touch-down { grid-area: down; }
-#touch-left { grid-area: left; }
-#touch-right { grid-area: right; }
+.gear-buttons {
+    display: flex;
+    gap: 10px;
+}
+.main-pedals {
+    display: flex;
+    gap: 10px;
+    align-items: flex-end;
+}
+.touch-button {
+    font-size: 18px;
+    font-weight: bold;
+    color: white;
+    background-color: rgba(0,0,0,0.4);
+    border: 2px solid rgba(255,255,255,0.2);
+    border-radius: 15px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    user-select: none;
+}
+.touch-button:active {
+    background-color: rgba(74, 222, 128, 0.5);
+}
+.gear-button {
+    width: 60px;
+    height: 60px;
+    border-radius: 50%;
+}
+.brake-button {
+    width: 100px;
+    height: 70px;
+}
+.accelerate-button {
+    width: 120px;
+    height: 90px;
+}
+
+/* Indicador de Gamepad */
+.gamepad-indicator {
+    position: absolute;
+    top: 20px;
+    left: 20px;
+    font-size: 32px;
+    opacity: 0.3;
+    transition: opacity 0.5s ease;
+    z-index: 11;
+}
 .ui-button {
     background: rgba(26, 32, 44, 0.6);
     backdrop-filter: blur(10px);
