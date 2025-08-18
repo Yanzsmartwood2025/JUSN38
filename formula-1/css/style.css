@@ -102,3 +102,30 @@ canvas {
     height: 60px;
     border-radius: 50%;
 }
+
+#start-game-button {
+    padding: 15px 40px;
+    font-size: 2.5vw; /* Responsive font size */
+    font-weight: 700;
+    border-radius: 50px;
+    margin-top: 40px; /* Space from the title */
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+    animation: pulse 2s infinite;
+}
+
+#start-game-button:hover {
+    transform: scale(1.05);
+    box-shadow: 0 15px 40px rgba(0, 0, 0, 0.7);
+}
+
+@keyframes pulse {
+    0% {
+        transform: scale(1);
+    }
+    50% {
+        transform: scale(1.03);
+    }
+    100% {
+        transform: scale(1);
+    }
+}
