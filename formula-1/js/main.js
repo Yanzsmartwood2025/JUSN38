@@ -231,7 +231,7 @@ scene.add(car);
 // --- FÍSICA DEL VEHÍCULO ---
 let carSpeed = 0; // en m/s
 let engineRPM = 0;
-let currentGear = 1; // Empezar en Neutral en lugar de Reversa
+let currentGear = 2; // Empezar en Primera Marcha
 let trackProgress = 0.001;
 let lateralOffset = 0;
 
