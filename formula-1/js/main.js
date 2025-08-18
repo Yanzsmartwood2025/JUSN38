@@ -202,32 +202,58 @@ document.addEventListener('keyup', (e) => {
 });
 
 // --- CONTROLES TÁCTILES ---
-const touchMappings = {
-    'touch-up': 'arrowup',
-    'touch-down': 'arrowdown',
-    'touch-left': 'arrowleft',
-    'touch-right': 'arrowright'
+const touchState = {
+    accelerate: false,
+    brake: false,
+    turn: 0 // -1 for left, 1 for right, 0 for straight
 };
-Object.keys(touchMappings).forEach(id => {
-    const element = document.getElementById(id);
-    const key = touchMappings[id];
 
-    const press = (e) => {
-        e.preventDefault();
-        keys[key] = true;
-        element.classList.add('active');
-    };
-    const release = (e) => {
-        e.preventDefault();
-        keys[key] = false;
-        element.classList.remove('active');
-    };
-
-    element.addEventListener('touchstart', press, { passive: false });
-    element.addEventListener('touchend', release);
-    element.addEventListener('touchcancel', release);
-    element.addEventListener('touchleave', release);
+// Joystick
+const joystickZone = document.getElementById('joystick-zone');
+const joystick = nipplejs.create({
+    zone: joystickZone,
+    mode: 'static',
+    position: { left: '50%', top: '50%' },
+    color: 'white',
+    size: 120
+}).on('move', (evt, data) => {
+    if (data.angle && data.force > 0.3) {
+        if (data.angle.degree > 45 && data.angle.degree < 135) {
+            // Ignore up
+            touchState.turn = 0;
+        } else if (data.angle.degree > 225 && data.angle.degree < 315) {
+            // Ignore down
+            touchState.turn = 0;
+        } else if (data.angle.degree >= 135 && data.angle.degree <= 225) {
+            touchState.turn = -1; // Left
+        } else {
+            touchState.turn = 1; // Right
+        }
+    }
+}).on('end', () => {
+    touchState.turn = 0;
 });
+
+
+// Botones
+const accelButton = document.getElementById('touch-accelerate');
+const brakeButton = document.getElementById('touch-brake');
+const engineButton = document.getElementById('engine-button');
+
+accelButton.addEventListener('touchstart', (e) => { e.preventDefault(); touchState.accelerate = true; accelButton.classList.add('active'); }, { passive: false });
+accelButton.addEventListener('touchend', (e) => { e.preventDefault(); touchState.accelerate = false; accelButton.classList.remove('active'); });
+accelButton.addEventListener('touchcancel', (e) => { e.preventDefault(); touchState.accelerate = false; accelButton.classList.remove('active'); });
+
+brakeButton.addEventListener('touchstart', (e) => { e.preventDefault(); touchState.brake = true; brakeButton.classList.add('active'); }, { passive: false });
+brakeButton.addEventListener('touchend', (e) => { e.preventDefault(); touchState.brake = false; brakeButton.classList.remove('active'); });
+brakeButton.addEventListener('touchcancel', (e) => { e.preventDefault(); touchState.brake = false; brakeButton.classList.remove('active'); });
+
+engineButton.addEventListener('click', (e) => {
+    e.preventDefault();
+    engineOn = !engineOn;
+    engineButton.classList.toggle('active', engineOn);
+});
+
 
 let cameraMode = 0;
 const cameraButton = document.getElementById('camera-button');
@@ -244,8 +270,17 @@ function animate() {
     requestAnimationFrame(animate);
     const delta = clock.getDelta();
 
-    let accelerationInput = (keys['arrowup']) ? 1 : (keys['arrowdown']) ? -0.5 : 0;
-    let turnInput = (keys['arrowleft']) ? 1 : (keys['arrowright']) ? -1 : 0;
+    // Keyboard input
+    const keyboardAccel = (keys['arrowup']) ? 1.0 : (keys['arrowdown']) ? -0.5 : 0;
+    const keyboardTurn = (keys['arrowleft']) ? 1.0 : (keys['arrowright']) ? -1.0 : 0;
+
+    // Touch input
+    const touchAccel = (touchState.accelerate) ? 1.0 : (touchState.brake) ? -0.5 : 0;
+    const touchTurn = -touchState.turn; // Invert joystick axis if necessary
+
+    // Combine inputs (prioritize touch if available)
+    const accelerationInput = touchAccel !== 0 ? touchAccel : keyboardAccel;
+    const turnInput = touchTurn !== 0 ? touchTurn : keyboardTurn;
 
     if (engineOn) {
         carSpeed += accelerationInput * ACCELERATION * delta;
