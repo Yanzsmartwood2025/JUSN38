@@ -93,18 +93,15 @@ document.addEventListener('keydown', (e) => {
             break;
         case 'arrowdown':
             controls.brake = true;
-            // SFX de frenado brusco (ejemplo)
-            if (carSpeed > 30) {
-                audioManager.playSfx('skid');
-            }
+            if (carSpeed > 30) audioManager.playSfx('skid');
             break;
         case 'arrowleft':
             controls.steerLeft = true;
-            audioManager.playSfx('shiftDown'); // SFX de bajar marcha (ejemplo)
+            audioManager.playSfx('shiftDown');
             break;
         case 'arrowright':
             controls.steerRight = true;
-            audioManager.playSfx('shiftUp'); // SFX de subir marcha (ejemplo)
+            audioManager.playSfx('shiftUp');
             break;
     }
 });
@@ -113,10 +110,7 @@ document.addEventListener('keyup', (e) => {
     switch(e.key.toLowerCase()) {
         case 'arrowup':
             controls.accelerate = false;
-            // SFX de desaceleración (ejemplo)
-            if (carSpeed > 40) {
-                audioManager.playSfx('backfire');
-            }
+            if (carSpeed > 40) audioManager.playSfx('backfire');
             break;
         case 'arrowdown':
             controls.brake = false;
@@ -130,6 +124,54 @@ document.addEventListener('keyup', (e) => {
     }
 });
 
+// --- LÓGICA DE CONTROLES TÁCTILES ---
+const joystickContainer = document.getElementById('joystick-container');
+const joystickStick = document.getElementById('joystick-stick');
+const joystickRadius = 75;
+let joystickActive = false;
+
+const handleJoystickMove = (clientX, clientY) => {
+    const rect = joystickContainer.getBoundingClientRect();
+    const x = clientX - rect.left - joystickRadius;
+    const y = clientY - rect.top - joystickRadius;
+    const distance = Math.min(joystickRadius, Math.hypot(x, y));
+    const angle = Math.atan2(y, x);
+    const stickX = distance * Math.cos(angle);
+    const stickY = distance * Math.sin(angle);
+    joystickStick.style.transform = `translate(${stickX}px, ${stickY}px)`;
+
+    const xValue = stickX / joystickRadius;
+    const yValue = -stickY / joystickRadius;
+
+    controls.accelerate = yValue > 0.15;
+    controls.brake = yValue < -0.15;
+    controls.steerLeft = xValue < -0.15;
+    controls.steerRight = xValue > 0.15;
+};
+
+const stopJoystick = () => {
+    joystickActive = false;
+    joystickStick.style.transform = 'translate(0px, 0px)';
+    controls.accelerate = false;
+    controls.brake = false;
+    controls.steerLeft = false;
+    controls.steerRight = false;
+};
+
+joystickContainer.addEventListener('touchstart', (e) => { joystickActive = true; handleJoystickMove(e.targetTouches[0].clientX, e.targetTouches[0].clientY); e.preventDefault(); }, { passive: false });
+joystickContainer.addEventListener('touchmove', (e) => { if (!joystickActive) return; handleJoystickMove(e.targetTouches[0].clientX, e.targetTouches[0].clientY); e.preventDefault(); }, { passive: false });
+joystickContainer.addEventListener('touchend', stopJoystick);
+joystickContainer.addEventListener('touchcancel', stopJoystick);
+
+document.getElementById('touch-engine').addEventListener('click', () => {
+    isEngineOn = !isEngineOn;
+    if (isEngineOn) {
+        audioManager.startEngine();
+    } else {
+        audioManager.stopEngine();
+    }
+});
+
 // --- BUCLE DE ANIMACIÓN ---
 const clock = new THREE.Clock();
 
@@ -138,56 +180,37 @@ function animate() {
     const delta = clock.getDelta();
 
     if (isEngineOn) {
-        // Aceleración y freno
-        if (controls.accelerate) {
-            carSpeed += ACCELERATION * delta;
-        }
-        if (controls.brake) {
-            carSpeed -= BRAKING_FORCE * delta;
-        }
-
-        // Aplicar fricción/resistencia del aire
+        if (controls.accelerate) carSpeed += ACCELERATION * delta;
+        if (controls.brake) carSpeed -= BRAKING_FORCE * delta;
         carSpeed -= carSpeed * DRAG_COEFFICIENT * delta;
-
-        // Limitar velocidad
         carSpeed = Math.max(0, Math.min(carSpeed, MAX_SPEED));
-
-        // Actualizar sonido del motor basado en la velocidad
         const speedRatio = carSpeed / MAX_SPEED;
         audioManager.updateEngineSound(speedRatio);
-
     } else {
-        // Si el motor está apagado, el coche se detiene gradualmente
         carSpeed -= carSpeed * DRAG_COEFFICIENT * 2 * delta;
         if (carSpeed < 0.1) carSpeed = 0;
+        audioManager.updateEngineSound(0);
     }
 
-    // Dirección
     let steerDirection = 0;
     if (controls.steerLeft) steerDirection = 1;
     if (controls.steerRight) steerDirection = -1;
 
-    // Actualizar la posición y rotación del coche en la pista
     trackProgress = (trackProgress + (carSpeed / trackLength) * delta) % 1;
 
     const carPosition = trackCurve.getPointAt(trackProgress);
     const carTangent = trackCurve.getTangentAt(trackProgress);
-
-    // La dirección afecta el desplazamiento lateral
     const steerEffect = steerDirection * STEER_SPEED * delta;
-    lateralOffset += steerEffect * (carSpeed / MAX_SPEED) * 5; // El giro es más pronunciado a mayor velocidad
-    lateralOffset *= 0.95; // Vuelve al centro lentamente
+    lateralOffset += steerEffect * (carSpeed / MAX_SPEED) * 5;
+    lateralOffset *= 0.95;
     lateralOffset = Math.max(-ASPHALT_WIDTH / 2.5, Math.min(ASPHALT_WIDTH / 2.5, lateralOffset));
-
     const normal = new THREE.Vector3(-carTangent.z, 0, carTangent.x);
     car.position.copy(carPosition).add(normal.multiplyScalar(lateralOffset));
 
-    // La rotación del coche debe seguir la tangente de la curva, más un pequeño ángulo de giro
     const lookAtPosition = carPosition.clone().add(carTangent);
     car.lookAt(lookAtPosition);
-    car.rotation.y += steerDirection * (carSpeed / MAX_SPEED) * 0.3; // Pequeño giro visual
+    car.rotation.y += steerDirection * (carSpeed / MAX_SPEED) * 0.3;
 
-    // Actualizar cámara
     const cameraOffset = new THREE.Vector3(0, 5, 12);
     const targetCameraPosition = car.position.clone().add(cameraOffset.clone().applyQuaternion(car.quaternion));
     camera.position.lerp(targetCameraPosition, delta * 4.0);
@@ -203,12 +226,9 @@ const startGameButton = document.getElementById('start-game-button');
 startGameButton.addEventListener('click', async () => {
     startOverlay.style.display = 'none';
 
-    // Inicializar el gestor de audio
     await audioManager.init();
 
-    // Ocultar elementos de la interfaz no necesarios
-    document.getElementById('joystick-container').style.display = 'none';
-    document.querySelector('.actions-cluster').style.display = 'none';
+    document.getElementById('touch-controls-container').style.display = 'flex';
 
     animate();
 }, { once: true });
