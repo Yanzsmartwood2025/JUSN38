@@ -605,19 +605,17 @@
                 startCountdown();
             };
 
-            // Iniciar la carga de texturas que ahora está vacía, pero mantenemos la estructura
-        }, { once: true });
-
-        // Cargar todas las texturas
-        treeTypes.forEach(type => {
-            const url = `https://raw.githubusercontent.com/Yanzsmartwood2025/JUSN38/main/assets/images/formula-1/arbol_${type}.png`;
-            textureLoader.load(url, (texture) => {
-                texture.colorSpace = THREE.SRGBColorSpace;
-                texture.anisotropy = renderer.capabilities.getMaxAnisotropy();
-                treeMaterials[type].map = texture;
-                treeMaterials[type].needsUpdate = true;
+            // Iniciar la carga de texturas
+            treeTypes.forEach(type => {
+                const url = `https://raw.githubusercontent.com/Yanzsmartwood2025/JUSN38/main/assets/images/formula-1/arbol_${type}.png`;
+                textureLoader.load(url, (texture) => {
+                    texture.colorSpace = THREE.SRGBColorSpace;
+                    texture.anisotropy = renderer.capabilities.getMaxAnisotropy();
+                    treeMaterials[type].map = texture;
+                    treeMaterials[type].needsUpdate = true;
+                });
             });
-        });
+        }, { once: true });
 
         window.addEventListener('resize', () => {
             camera.aspect = window.innerWidth / window.innerHeight;
