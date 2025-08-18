@@ -10,12 +10,17 @@
     <link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@500;700&display=swap" rel="stylesheet">
 </head>
 <body>
-    <div id="loading-overlay">
+    <div id="start-overlay" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; background-color: #111; display: flex; flex-direction: column; justify-content: center; align-items: center; z-index: 101; color: white; font-size: 24px; cursor: pointer;">
+        <h1>Fórmula 1</h1>
+        <p style="font-size: 18px;">Haz clic para iniciar</p>
+    </div>
+
+    <div id="loading-overlay" style="display: none;">
         <div class="spinner"></div>
         <p>Generando Bosque Mixto...</p>
     </div>
 
-    <div class="touch-controls">
+    <div class="touch-controls" style="display: none;">
         <div class="d-pad">
             <div id="touch-up" class="ui-button touch-button">▲</div>
             <div id="touch-left" class="ui-button touch-button">◀</div>
@@ -25,6 +30,14 @@
     </div>
     <div id="camera-button" class="ui-button">📷</div>
 
+    <div id="countdown-overlay" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; display: none; justify-content: center; align-items: center; z-index: 99; font-size: 15vw; color: white; font-weight: bold; text-shadow: 0 0 20px black;"></div>
+
+    <div id="results-overlay" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; display: none; flex-direction: column; justify-content: center; align-items: center; z-index: 102; background-color: rgba(0,0,0,0.8); color: white;">
+        <h1 style="font-size: 5vw;">Resultados</h1>
+        <div id="results-table" style="font-size: 2vw; margin-bottom: 30px;"></div>
+        <button id="new-race-button" class="ui-button" style="padding: 15px 30px; font-size: 2vw;">Iniciar Otra Carrera</button>
+    </div>
+
     <script type="importmap">
         {
             "imports": {
@@ -33,3 +46,5 @@
         }
     </script>
     <script type="module" src="js/main.js"></script>
+</body>
+</html>

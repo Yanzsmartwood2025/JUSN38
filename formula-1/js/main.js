@@ -26,15 +26,18 @@ directionalLight.shadow.camera.bottom = -1000;
 scene.add(directionalLight);
 
 // --- CONSTANTES Y VARIABLES DEL JUEGO ---
-const ASPHALT_WIDTH = 14;
+const ASPHALT_WIDTH = 19.6; // 14 * 1.4
 const CURB_WIDTH = 1;
-// *** CAMBIO CLAVE: Reducido el espacio entre la valla y la pista ***
 const FENCE_BUFFER = 1;
 const GRASS_SIZE = 2500;
 const trackPoints = [
-    new THREE.Vector3(0, 0, -500), new THREE.Vector3(0, 0, 0),
-    new THREE.Vector3(200, 0, 200), new THREE.Vector3(400, 0, 0),
-    new THREE.Vector3(400, 0, -500), new THREE.Vector3(200, 0, -700),
+    new THREE.Vector3(0, 0, -500), new THREE.Vector3(0, 0, 0), // Recta de inicio
+    new THREE.Vector3(200, 0, 200), new THREE.Vector3(400, 0, 0), // Curva 1
+    new THREE.Vector3(600, 0, -200), // Extensión 1
+    new THREE.Vector3(800, 0, 0), // Nueva curva amplia
+    new THREE.Vector3(800, 0, -500), // Recta larga
+    new THREE.Vector3(600, 0, -700), // Extensión 2
+    new THREE.Vector3(400, 0, -500), new THREE.Vector3(200, 0, -700), // Curva 2
     new THREE.Vector3(-200, 0, -700),
 ];
 const trackCurve = new THREE.CatmullRomCurve3(trackPoints, true, 'catmullrom', 0.5);
@@ -74,7 +77,6 @@ treeTypes.forEach(type => {
 function populateMixedForest() {
     const curvePoints = trackCurve.getSpacedPoints(200);
     const fenceOffset = ASPHALT_WIDTH / 2 + CURB_WIDTH + FENCE_BUFFER;
-    // *** CAMBIO CLAVE: Los árboles ahora empiezan justo después de la valla ***
     const minSafeDistance = fenceOffset + 1;
     const dummy = new THREE.Object3D();
 
@@ -128,7 +130,6 @@ function createScenery() {
         const tangent = trackCurve.getTangentAt(p.progress);
         const normal = new THREE.Vector3(-tangent.z, 0, tangent.x);
         const sideMultiplier = p.side === 'outer' ? 1 : -1;
-        // *** CAMBIO CLAVE: Distancia de las gradas a la pista muy reducida ***
         const offset = ASPHALT_WIDTH / 2 + 8;
         const planeGeo = new THREE.PlaneGeometry(p.size.x, p.size.y);
         const plane = new THREE.Mesh(planeGeo, p.material);
@@ -140,7 +141,7 @@ function createScenery() {
 
     const fenceHeight = 3;
     const fenceOffset = ASPHALT_WIDTH / 2 + CURB_WIDTH + FENCE_BUFFER;
-    const fenceSegments = 200;
+    const fenceSegments = 400; // Aumentado para la pista más larga
     const fenceGeo = new THREE.PlaneGeometry(trackLength / fenceSegments, fenceHeight);
     for (let i = 0; i < fenceSegments; i++) {
         const progress = i / fenceSegments;
@@ -158,6 +159,43 @@ function createScenery() {
         fence_inner.lookAt(point.clone().add(normal.clone().multiplyScalar(-100)));
         scene.add(fence_inner);
     }
+}
+
+// --- LÍNEA DE META ---
+function createFinishLine() {
+    const finishLineTexture = new THREE.CanvasTexture(createCheckerboardCanvas(10, 10));
+    finishLineTexture.wrapS = THREE.RepeatWrapping;
+    finishLineTexture.wrapT = THREE.RepeatWrapping;
+    finishLineTexture.repeat.set(10, 1);
+    const finishLineMaterial = new THREE.MeshBasicMaterial({ map: finishLineTexture, side: THREE.DoubleSide });
+    const finishLineGeo = new THREE.PlaneGeometry(ASPHALT_WIDTH, 5);
+    const finishLine = new THREE.Mesh(finishLineGeo, finishLineMaterial);
+
+    const finishPoint = trackCurve.getPointAt(0.0001); // Ligeramente después del inicio
+    const tangent = trackCurve.getTangentAt(0.0001);
+    finishLine.position.copy(finishPoint);
+    finishLine.position.y += 0.02; // Reducido para que esté más pegado
+    finishLine.lookAt(finishPoint.clone().add(tangent));
+    finishLine.rotation.x = -Math.PI / 2;
+    scene.add(finishLine);
+}
+
+function createCheckerboardCanvas(width, height) {
+    const canvas = document.createElement('canvas');
+    canvas.width = width;
+    canvas.height = height;
+    const context = canvas.getContext('2d');
+    context.fillStyle = 'white';
+    context.fillRect(0, 0, width, height);
+    context.fillStyle = 'black';
+    for (let i = 0; i < height; i++) {
+        for (let j = 0; j < width; j++) {
+            if ((i + j) % 2 == 0) {
+                context.fillRect(j, i, 1, 1);
+            }
+        }
+    }
+    return canvas;
 }
 
 // --- INICIALIZACIÓN DE LA ESCENA ---
@@ -183,12 +221,18 @@ scene.add(car);
 let carSpeed = 0, trackProgress = 0.001, lateralOffset = 0;
 const ACCELERATION = 80.0, MAX_SPEED = 200.0, FRICTION = 0.985;
 const LATERAL_SPEED = 1.5, LATERAL_FRICTION = 0.9, MAX_LATERAL_OFFSET = ASPHALT_WIDTH / 2 - 1.2;
+let gameState = 'COUNTDOWN'; // COUNTDOWN, RACE, SPECTATOR, FINISHED
+const aiCars = [];
+const raceData = {
+    laps: 1,
+    player: { lap: 0, finished: false, finishTime: 0 },
+    ai: []
+};
 
 const keys = {};
 document.addEventListener('keydown', (e) => { keys[e.key.toLowerCase()] = true; });
 document.addEventListener('keyup', (e) => { keys[e.key.toLowerCase()] = false; });
 
-// *** CAMBIO CLAVE: Lógica de controles táctiles más robusta ***
 const touchMappings = { 'touch-up': 'w', 'touch-down': 's', 'touch-left': 'a', 'touch-right': 'd' };
 Object.keys(touchMappings).forEach(id => {
     const element = document.getElementById(id);
@@ -199,8 +243,8 @@ Object.keys(touchMappings).forEach(id => {
 
     element.addEventListener('touchstart', press, { passive: false });
     element.addEventListener('touchend', release);
-    element.addEventListener('touchcancel', release); // Si el sistema cancela el toque
-    element.addEventListener('touchleave', release); // Si el dedo se desliza fuera
+    element.addEventListener('touchcancel', release);
+    element.addEventListener('touchleave', release);
 });
 
 let cameraMode = 0;
@@ -213,21 +257,170 @@ const cameraSettings = [
 ];
 const clock = new THREE.Clock();
 
+// --- LÓGICA DE IA Y COCHES ADICIONALES ---
+function createAICars() {
+    const carColors = [0x0000ff, 0x00ff00, 0xffff00, 0xffa500, 0x800080, 0x00ffff, 0xffffff];
+    for (let i = 0; i < 7; i++) {
+        const aiCarBody = new THREE.Mesh(new THREE.BoxGeometry(2, 0.8, 4.5), new THREE.MeshStandardMaterial({ color: carColors[i], roughness: 0.4 }));
+        const aiCar = new THREE.Group();
+        aiCar.add(aiCarBody);
+        aiCar.userData = {
+            trackProgress: -0.005 * (i + 1),
+            lateralOffset: (Math.random() - 0.5) * MAX_LATERAL_OFFSET * 0.8,
+            speed: MAX_SPEED * (0.85 + Math.random() * 0.1)
+        };
+        aiCars.push(aiCar);
+        scene.add(aiCar);
+        raceData.ai.push({ lap: 0, finished: false, finishTime: 0 });
+    }
+}
+
+function updateAICars(delta) {
+    aiCars.forEach((aiCar, i) => {
+        if (raceData.ai[i].finished) return;
+
+        const oldProgress = aiCar.userData.trackProgress;
+        aiCar.userData.trackProgress = (oldProgress + (aiCar.userData.speed / trackLength) * delta + 1) % 1;
+        checkLapCompletion(aiCar, raceData.ai[i], oldProgress);
+
+        if (Math.random() < 0.01) {
+            aiCar.userData.lateralOffset += (Math.random() - 0.5) * 0.5;
+        }
+
+        aiCars.forEach(otherCar => {
+            if (aiCar === otherCar) return;
+
+            const progressDiff = Math.abs(aiCar.userData.trackProgress - otherCar.userData.trackProgress);
+            const lateralDiff = Math.abs(aiCar.userData.lateralOffset - otherCar.userData.lateralOffset);
+
+            if (progressDiff < 0.01 && lateralDiff < 2.5) {
+                const avoidanceForce = 0.05;
+                if (aiCar.userData.lateralOffset > otherCar.userData.lateralOffset) {
+                    aiCar.userData.lateralOffset += avoidanceForce;
+                } else {
+                    aiCar.userData.lateralOffset -= avoidanceForce;
+                }
+            }
+        });
+
+        aiCar.userData.lateralOffset = Math.max(-MAX_LATERAL_OFFSET, Math.min(MAX_LATERAL_OFFSET, aiCar.userData.lateralOffset));
+
+        const pos = trackCurve.getPointAt(aiCar.userData.trackProgress);
+        const tangent = trackCurve.getTangentAt(aiCar.userData.trackProgress);
+        const normal = new THREE.Vector3(-tangent.z, 0, tangent.x);
+        aiCar.position.copy(pos).add(normal.multiplyScalar(aiCar.userData.lateralOffset));
+        aiCar.position.y = 0.4;
+        aiCar.lookAt(pos.clone().add(tangent));
+    });
+}
+
+function checkLapCompletion(carObject, carRaceData, oldProgress) {
+    const newProgress = carObject.userData ? carObject.userData.trackProgress : carObject.trackProgress;
+    if (oldProgress > 0.9 && newProgress < 0.1) {
+        carRaceData.lap++;
+        if (carRaceData.lap >= raceData.laps) {
+            carRaceData.finished = true;
+            carRaceData.finishTime = clock.getElapsedTime();
+            if (carObject === car) { // Es el jugador
+                gameState = 'SPECTATOR';
+            }
+        }
+    }
+}
+
+// --- LÓGICA DE RESULTADOS Y REINICIO ---
+function showResults() {
+    gameState = 'FINISHED';
+    const resultsTable = document.getElementById('results-table');
+    resultsTable.innerHTML = '';
+
+    const allRacers = [
+        { name: 'Jugador', ...raceData.player },
+        ...raceData.ai.map((ai, i) => ({ name: `IA ${i + 1}`, ...ai }))
+    ];
+
+    allRacers.sort((a, b) => {
+        if (a.finished && !b.finished) return -1;
+        if (!a.finished && b.finished) return 1;
+        if (a.finished && b.finished) return a.finishTime - b.finishTime;
+        return 0;
+    });
+
+    allRacers.forEach((racer, index) => {
+        const time = racer.finished ? racer.finishTime.toFixed(2) + 's' : 'DNF';
+        resultsTable.innerHTML += `<p>${index + 1}. ${racer.name} - ${time}</p>`;
+    });
+
+    document.getElementById('results-overlay').style.display = 'flex';
+}
+
+function resetRace() {
+    document.getElementById('results-overlay').style.display = 'none';
+
+    raceData.player = { lap: 0, finished: false, finishTime: 0 };
+    raceData.ai = [];
+    aiCars.forEach(car => scene.remove(car));
+    aiCars.length = 0;
+
+    trackProgress = 0.001;
+    lateralOffset = 0;
+    carSpeed = 0;
+
+    createAICars();
+    startCountdown();
+}
+
+document.getElementById('new-race-button').addEventListener('click', resetRace);
+
 // --- BUCLE DE ANIMACIÓN ---
+function startCountdown() {
+    const countdownOverlay = document.getElementById('countdown-overlay');
+    const countdownSteps = [ "3", "2", "1", "GO!" ];
+    let currentStep = 0;
+
+    countdownOverlay.style.display = 'flex';
+
+    const interval = setInterval(() => {
+        if (currentStep < countdownSteps.length) {
+            countdownOverlay.textContent = countdownSteps[currentStep];
+            currentStep++;
+        } else {
+            clearInterval(interval);
+            countdownOverlay.style.display = 'none';
+            gameState = 'RACE';
+        }
+    }, 1000);
+}
+
 function animate() {
     requestAnimationFrame(animate);
     const delta = clock.getDelta();
 
-    let accelerationInput = (keys['arrowup'] || keys['w']) ? 1 : (keys['arrowdown'] || keys['s']) ? -0.5 : 0;
-    let turnInput = (keys['arrowleft'] || keys['a']) ? 1 : (keys['arrowright'] || keys['d']) ? -1 : 0;
+    if (gameState === 'RACE' || gameState === 'SPECTATOR') {
+        if (gameState === 'SPECTATOR') {
+            const allFinished = raceData.ai.every(car => car.finished);
+            if (allFinished) {
+                showResults();
+                gameState = 'FINISHED';
+            }
+        }
 
-    carSpeed += accelerationInput * ACCELERATION * delta;
-    carSpeed *= FRICTION;
-    carSpeed = Math.max(-MAX_SPEED / 3, Math.min(MAX_SPEED, carSpeed));
-    trackProgress = (trackProgress + (carSpeed / trackLength) * delta + 1) % 1;
-    lateralOffset += turnInput * LATERAL_SPEED * delta * (Math.abs(carSpeed) / MAX_SPEED + 0.2);
-    lateralOffset *= LATERAL_FRICTION;
-    lateralOffset = Math.max(-MAX_LATERAL_OFFSET, Math.min(MAX_LATERAL_OFFSET, lateralOffset));
+        const oldProgress = trackProgress;
+        if (gameState === 'RACE') {
+            let accelerationInput = (keys['arrowup'] || keys['w']) ? 1 : (keys['arrowdown'] || keys['s']) ? -0.5 : 0;
+            let turnInput = (keys['arrowleft'] || keys['a']) ? 1 : (keys['arrowright'] || keys['d']) ? -1 : 0;
+
+            carSpeed += accelerationInput * ACCELERATION * delta;
+            carSpeed *= FRICTION;
+            carSpeed = Math.max(-MAX_SPEED / 3, Math.min(MAX_SPEED, carSpeed));
+            trackProgress = (trackProgress + (carSpeed / trackLength) * delta + 1) % 1;
+            lateralOffset += turnInput * LATERAL_SPEED * delta * (Math.abs(carSpeed) / MAX_SPEED + 0.2);
+            lateralOffset *= LATERAL_FRICTION;
+            lateralOffset = Math.max(-MAX_LATERAL_OFFSET, Math.min(MAX_LATERAL_OFFSET, lateralOffset));
+        }
+        checkLapCompletion(car, raceData.player, oldProgress);
+        updateAICars(delta);
+    }
 
     const carPosition = trackCurve.getPointAt(trackProgress);
     const carTangent = trackCurve.getTangentAt(trackProgress);
@@ -247,24 +440,36 @@ function animate() {
 }
 
 // --- INICIO ---
+const startOverlay = document.getElementById('start-overlay');
 const loadingOverlay = document.getElementById('loading-overlay');
-loadingManager.onLoad = () => {
-    populateMixedForest();
-    loadingOverlay.style.opacity = '0';
-    loadingOverlay.addEventListener('transitionend', () => loadingOverlay.style.display = 'none');
-    animate();
-};
+const touchControls = document.querySelector('.touch-controls');
 
-// Cargar todas las texturas
-treeTypes.forEach(type => {
-            const url = `assets/images/arbol_${type}.png`;
-    textureLoader.load(url, (texture) => {
-        texture.colorSpace = THREE.SRGBColorSpace;
-        texture.anisotropy = renderer.capabilities.getMaxAnisotropy();
-        treeMaterials[type].map = texture;
-        treeMaterials[type].needsUpdate = true;
+startOverlay.addEventListener('click', () => {
+    startOverlay.style.display = 'none';
+    loadingOverlay.style.display = 'flex';
+
+    animate(); // Iniciar el bucle de renderizado inmediatamente
+
+    loadingManager.onLoad = () => {
+        populateMixedForest();
+        createAICars();
+        createFinishLine();
+        loadingOverlay.style.display = 'none';
+        touchControls.style.display = 'flex';
+        startCountdown();
+    };
+
+    // Iniciar la carga de texturas
+    treeTypes.forEach(type => {
+        const url = `assets/images/arbol_${type}.png`;
+        textureLoader.load(url, (texture) => {
+            texture.colorSpace = THREE.SRGBColorSpace;
+            texture.anisotropy = renderer.capabilities.getMaxAnisotropy();
+            treeMaterials[type].map = texture;
+            treeMaterials[type].needsUpdate = true;
+        });
     });
-});
+}, { once: true });
 
 window.addEventListener('resize', () => {
     camera.aspect = window.innerWidth / window.innerHeight;
