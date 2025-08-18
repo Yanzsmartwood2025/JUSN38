@@ -504,8 +504,12 @@ function startCountdown() {
 }
 
 function handleGamepad() {
+    const gamepadStatus = document.getElementById('gamepad-status');
     const gamepads = navigator.getGamepads();
+
     if (gamepads[0]) {
+        if (gamepadStatus) gamepadStatus.style.opacity = '1';
+
         const gamepad = gamepads[0];
         controls.throttle = gamepad.buttons[7].value;
         controls.brake = gamepad.buttons[6].value;
@@ -523,6 +527,8 @@ function handleGamepad() {
         } else {
             controls.gearDown = false;
         }
+    } else {
+        if (gamepadStatus) gamepadStatus.style.opacity = '0.3';
     }
 }
 
@@ -630,12 +636,16 @@ function animate() {
 const startOverlay = document.getElementById('start-overlay');
 const startGameButton = document.getElementById('start-game-button');
 const loadingOverlay = document.getElementById('loading-overlay');
-const touchControls = document.querySelector('.touch-controls');
+const touchControls = document.querySelector('.touch-controls-container');
 
 startGameButton.addEventListener('click', async () => {
     startOverlay.style.display = 'none';
     loadingOverlay.style.display = 'none'; // Ocultar inmediatamente
-    touchControls.style.display = 'flex';
+
+    // Show touch controls only on touch devices
+    if ('ontouchstart' in window || navigator.maxTouchPoints > 0) {
+        touchControls.style.display = 'flex';
+    }
 
     // Iniciar la carga de audio en segundo plano
     audioManager.init();

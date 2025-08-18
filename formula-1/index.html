@@ -20,19 +20,26 @@
         <p>Generando Bosque Mixto...</p>
     </div>
 
-    <div class="touch-controls" style="display: none;">
+    <div class="touch-controls-container">
         <!-- Joystick a la izquierda -->
-        <div id="joystick-container" style="position: absolute; bottom: 40px; left: 40px; width: 150px; height: 150px;">
-            <div id="joystick-base" style="position: absolute; width: 100%; height: 100%; background-color: rgba(255,255,255,0.2); border-radius: 50%;"></div>
-            <div id="joystick-stick" style="position: absolute; top: 37.5px; left: 37.5px; width: 75px; height: 75px; background-color: rgba(255,255,255,0.5); border-radius: 50%;"></div>
+        <div id="joystick-container" class="joystick">
+            <div id="joystick-base" class="joystick-base"></div>
+            <div id="joystick-stick" class="joystick-stick"></div>
         </div>
 
         <!-- Controles a la derecha -->
-        <div id="touch-brake" class="touch-button" style="position: absolute; bottom: 20px; right: 180px; width: 120px; height: 80px; background-color: rgba(255,0,0,0.5); border-radius: 10px; display: flex; justify-content: center; align-items: center;">FRENO</div>
-        <div id="touch-accelerate" class="touch-button" style="position: absolute; bottom: 20px; right: 20px; width: 150px; height: 100px; background-color: rgba(0,255,0,0.5); border-radius: 10px; display: flex; justify-content: center; align-items: center;">ACELERAR</div>
-        <div id="touch-gear-up" class="touch-button" style="position: absolute; bottom: 130px; right: 20px; width: 60px; height: 60px; background-color: rgba(255,255,255,0.5); border-radius: 50%; display: flex; justify-content: center; align-items: center;">▲</div>
-        <div id="touch-gear-down" class="touch-button" style="position: absolute; bottom: 130px; right: 90px; width: 60px; height: 60px; background-color: rgba(255,255,255,0.5); border-radius: 50%; display: flex; justify-content: center; align-items: center;">▼</div>
+        <div class="actions-cluster">
+            <div class="gear-buttons">
+                <div id="touch-gear-up" class="touch-button gear-button">▲</div>
+                <div id="touch-gear-down" class="touch-button gear-button">▼</div>
+            </div>
+            <div class="main-pedals">
+                <div id="touch-brake" class="touch-button brake-button">FRENO</div>
+                <div id="touch-accelerate" class="touch-button accelerate-button">ACELERAR</div>
+            </div>
+        </div>
     </div>
+    <div id="gamepad-status" class="gamepad-indicator">🎮</div>
     <div id="camera-button" class="ui-button">📷</div>
 
     <div id="countdown-overlay" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; display: none; justify-content: center; align-items: center; z-index: 99; font-size: 15vw; color: white; font-weight: bold; text-shadow: 0 0 20px black;"></div>
