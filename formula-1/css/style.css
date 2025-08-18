@@ -1,0 +1,104 @@
+body {
+    margin: 0;
+    overflow: hidden;
+    font-family: 'Rajdhani', sans-serif;
+    background-color: #111;
+    color: white;
+}
+canvas {
+    display: block;
+}
+#loading-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: #111;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    z-index: 100;
+    color: white;
+    font-size: 24px;
+    transition: opacity 0.5s ease;
+}
+.spinner {
+    border: 8px solid rgba(255, 255, 255, 0.3);
+    border-top: 8px solid white;
+    border-radius: 50%;
+    width: 60px;
+    height: 60px;
+    animation: spin 1s linear infinite;
+    margin-bottom: 20px;
+}
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+.touch-controls {
+    position: absolute;
+    bottom: 20px;
+    left: 50%;
+    transform: translateX(-50%);
+    display: flex;
+    justify-content: space-between;
+    width: 220px;
+    pointer-events: none;
+    z-index: 10;
+}
+.d-pad {
+    display: grid;
+    gap: 10px;
+    pointer-events: auto;
+    grid-template-areas:
+        ". up ."
+        "left . right"
+        ". down .";
+    grid-template-columns: 60px 60px 60px;
+    grid-template-rows: 60px 60px;
+}
+#touch-up { grid-area: up; }
+#touch-down { grid-area: down; }
+#touch-left { grid-area: left; }
+#touch-right { grid-area: right; }
+.ui-button {
+    background: rgba(26, 32, 44, 0.6);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    color: white;
+    user-select: none;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+.ui-button:hover {
+    background: rgba(45, 55, 72, 0.8);
+    border-color: rgba(74, 222, 128, 0.5);
+}
+.touch-button {
+    width: 60px;
+    height: 60px;
+    border-radius: 50%;
+    font-size: 24px;
+    font-weight: bold;
+}
+.touch-button.active {
+    background: rgba(74, 222, 128, 0.5);
+    transform: scale(0.95);
+}
+#camera-button {
+    position: absolute;
+    top: 20px;
+    right: 20px;
+    font-size: 24px;
+    z-index: 11;
+    pointer-events: auto;
+    width: 60px;
+    height: 60px;
+    border-radius: 50%;
+}

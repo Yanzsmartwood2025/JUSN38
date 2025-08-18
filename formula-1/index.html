@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>Fórmula 1 - Simulador 3D (Controles Mejorados)</title>
+    <link rel="stylesheet" href="css/style.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@500;700&display=swap" rel="stylesheet">
+</head>
+<body>
+    <div id="loading-overlay">
+        <div class="spinner"></div>
+        <p>Generando Bosque Mixto...</p>
+    </div>
+
+    <div class="touch-controls">
+        <div class="d-pad">
+            <div id="touch-up" class="ui-button touch-button">▲</div>
+            <div id="touch-left" class="ui-button touch-button">◀</div>
+            <div id="touch-right" class="ui-button touch-button">▶</div>
+            <div id="touch-down" class="ui-button touch-button">▼</div>
+        </div>
+    </div>
+    <div id="camera-button" class="ui-button">📷</div>
+
+    <script type="importmap">
+        {
+            "imports": {
+                "three": "https://cdn.jsdelivr.net/npm/three@0.164.1/build/three.module.js"
+            }
+        }
+    </script>
+    <script type="module" src="js/main.js"></script>
