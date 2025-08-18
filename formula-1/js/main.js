@@ -67,8 +67,7 @@ const treeTypes = ['frondoso', 'conifera', 'alamo'];
 const treeMeshes = {};
 const treeMaterials = {};
 
-const loadingManager = new THREE.LoadingManager();
-const textureLoader = new THREE.TextureLoader(loadingManager);
+const textureLoader = new THREE.TextureLoader();
 
 treeTypes.forEach(type => {
     treeMaterials[type] = new THREE.MeshStandardMaterial({ transparent: true, alphaTest: 0.5, side: THREE.DoubleSide });
@@ -598,27 +597,22 @@ const touchControls = document.querySelector('.touch-controls');
 
 startGameButton.addEventListener('click', async () => {
     startOverlay.style.display = 'none';
-    loadingOverlay.style.display = 'flex';
+    loadingOverlay.style.display = 'none'; // Ocultar inmediatamente
+    touchControls.style.display = 'flex';
 
-    // Iniciar la carga de audio en segundo plano sin bloquear el inicio
+    // Iniciar la carga de audio en segundo plano
     audioManager.init();
 
-    animate(); // Iniciar el bucle de renderizado inmediatamente
+    // Iniciar el juego inmediatamente
+    animate();
+    populateMixedForest();
+    createAICars();
+    createFinishLine();
+    startCountdown();
 
-    loadingManager.onLoad = () => {
-        populateMixedForest();
-        createAICars();
-        createFinishLine();
-        loadingOverlay.style.display = 'none';
-        touchControls.style.display = 'flex';
-        startCountdown();
-    };
-
-    // Iniciar la carga de texturas
+    // Iniciar la carga de texturas en segundo plano
     treeTypes.forEach(type => {
         const url = `https://raw.githubusercontent.com/Yanzsmartwood2025/JUSN38/main/assets/images/formula-1/arbol_${type}.png`;
-        const loadingText = document.querySelector("#loading-overlay p");
-        if (loadingText) loadingText.textContent = `Cargando Textura: arbol_${type}.png...`;
         textureLoader.load(url, (texture) => {
             texture.colorSpace = THREE.SRGBColorSpace;
             texture.anisotropy = renderer.capabilities.getMaxAnisotropy();
