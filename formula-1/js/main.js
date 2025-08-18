@@ -247,7 +247,7 @@ const gearRatios = [-2.90, 0, 2.66, 1.78, 1.30, 1.0, 0.74]; // R, N, 1, 2, 3, 4,
 const finalDriveRatio = 3.42;
 const IDLE_RPM = 800;
 const MAX_RPM = 6500;
-const ENGINE_POWER = 450; // Caballos de fuerza
+const ENGINE_POWER = 950; // Caballos de fuerza
 const MAX_TORQUE = (ENGINE_POWER * 745.7) / (5252 * Math.PI / 30); // Convertir HP a torque en N·m
 
 function getEngineTorque(rpm) {
@@ -397,10 +397,15 @@ function createAICars() {
         const aiCarBody = new THREE.Mesh(new THREE.BoxGeometry(2, 0.8, 4.5), new THREE.MeshStandardMaterial({ color: carColors[i], roughness: 0.4 }));
         const aiCar = new THREE.Group();
         aiCar.add(aiCarBody);
+
+        const row = Math.floor(i / 2);
+        const side = (i % 2 === 0) ? -1 : 1; // -1 para la izquierda, 1 para la derecha
+
         aiCar.userData = {
-            trackProgress: -0.005 * (i + 1),
-            lateralOffset: (Math.random() - 0.5) * MAX_LATERAL_OFFSET * 0.8,
-            speed: MAX_SPEED * (0.85 + Math.random() * 0.1)
+            trackProgress: -0.012 * (row + 1),
+            lateralOffset: side * (ASPHALT_WIDTH / 4.5),
+            speed: MAX_SPEED * 0.8, // Empezar a 80% de la velocidad máxima
+            skill: 0.85 + Math.random() * 0.15 // Nivel de habilidad de 85% a 100%
         };
         aiCars.push(aiCar);
         scene.add(aiCar);
@@ -412,10 +417,28 @@ function updateAICars(delta) {
     aiCars.forEach((aiCar, i) => {
         if (raceData.ai[i].finished) return;
 
-        const oldProgress = aiCar.userData.trackProgress;
+        // --- Ajuste de velocidad basado en la curvatura ---
+        const currentProgress = aiCar.userData.trackProgress;
+        const aheadProgress = (currentProgress + 0.005) % 1; // Mirar un poco hacia adelante
+
+        const currentTangent = trackCurve.getTangentAt(currentProgress);
+        const aheadTangent = trackCurve.getTangentAt(aheadProgress);
+        const curvature = Math.abs(currentTangent.angleTo(aheadTangent));
+
+        // La velocidad máxima está determinada por la habilidad, reducida por la curvatura
+        const maxSkillSpeed = MAX_SPEED * aiCar.userData.skill;
+        const speedReduction = Math.min(curvature * 10, 0.4); // Reducir la velocidad hasta un 40% en las curvas más cerradas
+        const targetSpeed = maxSkillSpeed * (1 - speedReduction);
+
+        // Ajustar suavemente la velocidad actual hacia la velocidad objetivo
+        aiCar.userData.speed = THREE.MathUtils.lerp(aiCar.userData.speed, targetSpeed, 0.08);
+
+        // --- Actualizar posición ---
+        const oldProgress = currentProgress;
         aiCar.userData.trackProgress = (oldProgress + (aiCar.userData.speed / trackLength) * delta + 1) % 1;
         checkLapCompletion(aiCar, raceData.ai[i], oldProgress);
 
+        // --- Movimiento lateral y evasión de colisiones ---
         if (Math.random() < 0.01) {
             aiCar.userData.lateralOffset += (Math.random() - 0.5) * 0.5;
         }
