@@ -182,11 +182,11 @@ scene.add(car);
 let engineOn = false; // Estado del motor
 const carVelocity = new THREE.Vector3();
 const TURN_SPEED = 3.0; // Radianes por segundo a velocidad cero
-const ACCELERATION = 200.0; // Aceleración brutal
-const BRAKE_FORCE = 80.0;
-const DRAG_COEFFICIENT = 1.5; // Aumentado para compensar la aceleración
-const ROLLING_FRICTION = 0.5;
-const MAX_SPEED_FOR_TURN_CALC = 40.0; // Velocidad de referencia para el cálculo del giro
+const ACCELERATION = 450.0; // Aceleración de F1
+const BRAKE_FORCE = 150.0;
+const DRAG_COEFFICIENT = 2.0;
+const ROLLING_FRICTION = 1.0;
+const MAX_SPEED_FOR_TURN_CALC = 150.0; // Velocidad de referencia para el cálculo del giro
 
 const keys = {};
 document.addEventListener('keydown', (e) => {
@@ -344,25 +344,30 @@ function animate() {
     car.position.add(carVelocity.clone().multiplyScalar(delta));
 
     // --- UI UPDATES ---
-    const displaySpeed = Math.round(speed * 2.8); // Factor de conversión para que parezca real (370 km/h)
+    const displaySpeed = Math.round(speed * 1.7); // Factor de conversión para 370km/h
     speedometer.textContent = `${displaySpeed} KM/H`;
 
     // --- AUDIO ---
     if (engineOn && Object.keys(engineSounds).length > 0) {
-        const baseVolume = 0.5;
-        // Silencio por defecto
-        Object.values(engineSounds).forEach(s => s.setVolume(0));
+        const baseVolume = 0.4;
+        const speedRatio = Math.min(1, speed / MAX_SPEED_FOR_TURN_CALC);
 
-        if (accelerationInput > 0) {
-            // Acelerando
-            const highRpmVolume = Math.min(1, speed / MAX_SPEED_FOR_TURN_CALC);
-            const lowRpmVolume = 1 - highRpmVolume;
-            engineSounds.engine_low_rpm_loop.setVolume(lowRpmVolume * baseVolume);
-            engineSounds.engine_high_rpm_loop.setVolume(highRpmVolume * baseVolume);
-        } else if (accelerationInput < 0) {
-            // Frenando o en reversa
-            engineSounds.engine_low_rpm_loop.setVolume(baseVolume * 0.5);
-        }
+        // Volumen general basado en la velocidad, para que no sea abrupto
+        const overallVolume = baseVolume * Math.min(1, speed / 5.0);
+
+        // Mezcla de RPM basado en la velocidad
+        const highRpmVolume = speedRatio;
+        const lowRpmVolume = 1 - highRpmVolume;
+
+        // Si estamos acelerando, damos un empujón extra al sonido
+        const accelerationBoost = (accelerationInput > 0) ? 1.5 : 1.0;
+
+        engineSounds.engine_low_rpm_loop.setVolume(lowRpmVolume * overallVolume * accelerationBoost);
+        engineSounds.engine_high_rpm_loop.setVolume(highRpmVolume * overallVolume * accelerationBoost);
+
+        // El sonido de ralentí solo suena si el motor está encendido pero casi no nos movemos
+        engineSounds.engine_idle_garage.setVolume(speed < 1 && engineOn ? 0.2 : 0);
+
     } else if (Object.keys(engineSounds).length > 0) {
         // Apagar todos los sonidos si el motor está apagado
         Object.values(engineSounds).forEach(s => s.setVolume(0));
