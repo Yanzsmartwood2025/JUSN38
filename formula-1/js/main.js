@@ -231,12 +231,13 @@ scene.add(car);
 // --- FÍSICA DEL VEHÍCULO ---
 let carSpeed = 0; // en m/s
 let engineRPM = 0;
-let currentGear = 0;
+let currentGear = 1; // Empezar en Neutral en lugar de Reversa
 let trackProgress = 0.001;
 let lateralOffset = 0;
 
 const MAX_LATERAL_OFFSET = ASPHALT_WIDTH / 2 - 1.2;
 const STEER_SENSITIVITY = 2.5; // A mayor valor, más sensible
+const MAX_SPEED = 90; // m/s, approx 324 km/h
 const DRAG_COEFFICIENT = 0.4257;
 const ROLLING_RESISTANCE = 30.0;
 const BRAKE_FORCE = 8000.0;
