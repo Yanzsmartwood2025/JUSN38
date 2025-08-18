@@ -243,6 +243,7 @@ const joystick = nipplejs.create({
 const accelButton = document.getElementById('touch-accelerate');
 const brakeButton = document.getElementById('touch-brake');
 const engineButton = document.getElementById('engine-button');
+const accelButtonC = document.getElementById('touch-accelerate-c'); // Botón de prueba C
 let engineToggleTimeout;
 
 const setAccelerate = (state) => {
@@ -255,14 +256,17 @@ const setBrake = (state) => {
     brakeButton.classList.toggle('active', state);
 };
 
-// PRUEBA: Intercambiar botones
-accelButton.addEventListener('touchstart', (e) => { e.preventDefault(); setBrake(true); }, { passive: false });
-accelButton.addEventListener('touchend', (e) => { e.preventDefault(); setBrake(false); });
-accelButton.addEventListener('touchcancel', (e) => { e.preventDefault(); setBrake(false); });
+accelButton.addEventListener('touchstart', (e) => { e.preventDefault(); setAccelerate(true); }, { passive: false });
+accelButton.addEventListener('touchend', (e) => { e.preventDefault(); setAccelerate(false); });
+accelButton.addEventListener('touchcancel', (e) => { e.preventDefault(); setAccelerate(false); });
 
-brakeButton.addEventListener('touchstart', (e) => { e.preventDefault(); setAccelerate(true); }, { passive: false });
-brakeButton.addEventListener('touchend', (e) => { e.preventDefault(); setAccelerate(false); });
-brakeButton.addEventListener('touchcancel', (e) => { e.preventDefault(); setAccelerate(false); });
+brakeButton.addEventListener('touchstart', (e) => { e.preventDefault(); setBrake(true); }, { passive: false });
+brakeButton.addEventListener('touchend', (e) => { e.preventDefault(); setBrake(false); });
+brakeButton.addEventListener('touchcancel', (e) => { e.preventDefault(); setBrake(false); });
+
+accelButtonC.addEventListener('touchstart', (e) => { e.preventDefault(); setAccelerate(true); }, { passive: false });
+accelButtonC.addEventListener('touchend', (e) => { e.preventDefault(); setAccelerate(false); });
+accelButtonC.addEventListener('touchcancel', (e) => { e.preventDefault(); setAccelerate(false); });
 
 // --- Engine Button with Hold ---
 engineButton.addEventListener('touchstart', (e) => {
