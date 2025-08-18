@@ -26,18 +26,17 @@ directionalLight.shadow.camera.bottom = -1000;
 scene.add(directionalLight);
 
 // --- CONSTANTES Y VARIABLES DEL JUEGO ---
-const ASPHALT_WIDTH = 14;
+const ASPHALT_WIDTH = 28; // Doble de ancho
 const CURB_WIDTH = 1;
-// *** CAMBIO CLAVE: Reducido el espacio entre la valla y la pista ***
 const FENCE_BUFFER = 1;
-const GRASS_SIZE = 2500;
+const GRASS_SIZE = 5000; // Más grande para acomodar la pista
 const trackPoints = [
-    new THREE.Vector3(0, 0, -500), new THREE.Vector3(0, 0, 0),
-    new THREE.Vector3(200, 0, 200), new THREE.Vector3(400, 0, 0),
-    new THREE.Vector3(400, 0, -500), new THREE.Vector3(200, 0, -700),
-    new THREE.Vector3(-200, 0, -700),
+    new THREE.Vector3(0, 0, -1000), new THREE.Vector3(0, 0, 0),
+    new THREE.Vector3(400, 0, 400), new THREE.Vector3(800, 0, 0),
+    new THREE.Vector3(800, 0, -1000), new THREE.Vector3(400, 0, -1400),
+    new THREE.Vector3(-400, 0, -1400),
 ];
-const trackCurve = new THREE.CatmullRomCurve3(trackPoints, true, 'catmullrom', 0.5);
+const trackCurve = new THREE.CatmullRomCurve3(trackPoints, true, 'centripetal');
 const trackLength = trackCurve.getLength();
 
 // --- GENERADORES DE TEXTURAS Y MATERIALES (Sin cambios) ---
@@ -180,10 +179,14 @@ const carCabin = new THREE.Mesh( new THREE.BoxGeometry(1.4, 0.7, 2), new THREE.M
 carCabin.position.set(0, 0.75, -0.2); car.add(carCabin);
 scene.add(car);
 
-let carSpeed = 0, trackProgress = 0.001, lateralOffset = 0;
 let engineOn = false; // Estado del motor
-const ACCELERATION = 80.0, MAX_SPEED = 200.0, FRICTION = 0.985;
-const LATERAL_SPEED = 1.5, LATERAL_FRICTION = 0.9, MAX_LATERAL_OFFSET = ASPHALT_WIDTH / 2 - 1.2;
+const carVelocity = new THREE.Vector3();
+const TURN_SPEED = 3.0; // Radianes por segundo a velocidad cero
+const ACCELERATION = 40.0;
+const BRAKE_FORCE = 80.0;
+const DRAG_COEFFICIENT = 1.5;
+const ROLLING_FRICTION = 0.5;
+const MAX_SPEED_FOR_TURN_CALC = 40.0; // Velocidad de referencia para el cálculo del giro
 
 const keys = {};
 document.addEventListener('keydown', (e) => {
@@ -270,37 +273,51 @@ function animate() {
     requestAnimationFrame(animate);
     const delta = clock.getDelta();
 
-    // Keyboard input
-    const keyboardAccel = (keys['arrowup']) ? 1.0 : (keys['arrowdown']) ? -0.5 : 0;
+    // --- INPUT HANDLING ---
+    const keyboardAccel = (keys['arrowup']) ? 1.0 : (keys['arrowdown']) ? -1.0 : 0;
     const keyboardTurn = (keys['arrowleft']) ? 1.0 : (keys['arrowright']) ? -1.0 : 0;
-
-    // Touch input
-    const touchAccel = (touchState.accelerate) ? 1.0 : (touchState.brake) ? -0.5 : 0;
-    const touchTurn = -touchState.turn; // Invert joystick axis if necessary
-
-    // Combine inputs (prioritize touch if available)
+    const touchAccel = (touchState.accelerate) ? 1.0 : (touchState.brake) ? -1.0 : 0;
+    const touchTurn = -touchState.turn;
     const accelerationInput = touchAccel !== 0 ? touchAccel : keyboardAccel;
     const turnInput = touchTurn !== 0 ? touchTurn : keyboardTurn;
 
+    // --- PHYSICS ---
+    const forward = new THREE.Vector3();
+    car.getWorldDirection(forward);
+
+    const speed = carVelocity.length();
+
+    // 1. Aplicar rotación (dependiente de la velocidad)
+    const turnFactor = 1.0 - Math.min(1, speed / MAX_SPEED_FOR_TURN_CALC); // 1 a vel 0, 0 a vel max
+    const effectiveTurnSpeed = TURN_SPEED * turnFactor;
+    const turnAmount = turnInput * effectiveTurnSpeed * delta;
+    car.rotateOnWorldAxis(new THREE.Vector3(0, 1, 0), turnAmount);
+
+    // 2. Calcular fuerzas
+    const force = new THREE.Vector3();
     if (engineOn) {
-        carSpeed += accelerationInput * ACCELERATION * delta;
+        if (accelerationInput > 0) {
+            force.add(forward.clone().multiplyScalar(ACCELERATION * accelerationInput));
+        } else if (accelerationInput < 0) {
+            // Frenado es más fuerte si vamos hacia adelante
+            const brakeDirection = carVelocity.length() > 0.1 ? carVelocity.clone().normalize() : forward.clone();
+            force.add(brakeDirection.multiplyScalar(BRAKE_FORCE * accelerationInput));
+        }
     }
-    carSpeed *= FRICTION;
-    carSpeed = Math.max(-MAX_SPEED / 3, Math.min(MAX_SPEED, carSpeed));
-    trackProgress = (trackProgress + (carSpeed / trackLength) * delta + 1) % 1;
 
-    const turnFactor = 0.4 + 0.6 * (1.0 - Math.min(1, Math.abs(carSpeed) / MAX_SPEED));
-    lateralOffset += turnInput * LATERAL_SPEED * delta * turnFactor;
-    lateralOffset *= LATERAL_FRICTION;
-    lateralOffset = Math.max(-MAX_LATERAL_OFFSET, Math.min(MAX_LATERAL_OFFSET, lateralOffset));
+    // 3. Aplicar fricción y resistencia del aire
+    const dragForce = carVelocity.clone().multiplyScalar(-DRAG_COEFFICIENT * speed);
+    const rollingFrictionForce = carVelocity.clone().normalize().multiplyScalar(-ROLLING_FRICTION);
+    force.add(dragForce);
+    if (speed > 0.1) {
+       force.add(rollingFrictionForce);
+    }
 
-    const carPosition = trackCurve.getPointAt(trackProgress);
-    const carTangent = trackCurve.getTangentAt(trackProgress);
-    const carNormal = new THREE.Vector3(-carTangent.z, 0, carTangent.x);
-    car.position.copy(carPosition).add(carNormal.multiplyScalar(lateralOffset));
-    car.position.y = 0.4;
-    car.lookAt(carPosition.clone().add(carTangent));
+    // 4. Actualizar velocidad y posición
+    carVelocity.add(force.clone().multiplyScalar(delta));
+    car.position.add(carVelocity.clone().multiplyScalar(delta));
 
+    // --- CÁMARA ---
     carCabin.visible = (cameraMode !== 2);
     const currentSettings = cameraSettings[cameraMode];
     const targetCameraPosition = car.position.clone().add(currentSettings.offset.clone().applyQuaternion(car.quaternion));
