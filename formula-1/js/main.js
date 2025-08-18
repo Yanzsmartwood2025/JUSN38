@@ -297,8 +297,8 @@ document.addEventListener('keyup', (e) => {
 });
 
 const touchButtonIds = {
-    'touch-accelerate': 'throttle',
-    'touch-brake': 'brake',
+    // 'touch-accelerate': 'throttle', // Desactivado para usar solo el joystick
+    // 'touch-brake': 'brake',       // Desactivado para usar solo el joystick
     'touch-gear-up': 'gearUp',
     'touch-gear-down': 'gearDown'
 };
@@ -344,13 +344,28 @@ const handleJoystickMove = (clientX, clientY) => {
     const stickY = distance * Math.sin(angle);
 
     joystickStick.style.transform = `translate(${stickX}px, ${stickY}px)`;
+
+    // Eje X para la dirección
     controls.steer = stickX / joystickRadius;
+
+    // Eje Y para acelerar/frenar
+    const yValue = -stickY / joystickRadius; // Invertir el eje Y para que arriba sea positivo
+
+    if (yValue > 0) {
+        controls.throttle = yValue;
+        controls.brake = 0;
+    } else {
+        controls.throttle = 0;
+        controls.brake = -yValue;
+    }
 };
 
 const stopJoystick = () => {
     joystickActive = false;
     joystickStick.style.transform = 'translate(0px, 0px)';
     controls.steer = 0;
+    controls.throttle = 0;
+    controls.brake = 0;
 };
 
 // Touch Events
