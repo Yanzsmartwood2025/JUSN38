@@ -304,18 +304,23 @@ for (const id in touchButtonIds) {
     const element = document.getElementById(id);
     if (!element) continue;
     const controlKey = touchButtonIds[id];
-    element.addEventListener('touchstart', (e) => {
+
+    const press = (e) => {
         e.preventDefault();
         controls[controlKey] = (controlKey === 'throttle' || controlKey === 'brake') ? 1 : true;
-    }, { passive: false });
-    element.addEventListener('touchend', (e) => {
+    };
+    const release = (e) => {
         e.preventDefault();
         controls[controlKey] = (controlKey === 'throttle' || controlKey === 'brake') ? 0 : false;
-    });
-     element.addEventListener('touchcancel', (e) => {
-        e.preventDefault();
-        controls[controlKey] = (controlKey === 'throttle' || controlKey === 'brake') ? 0 : false;
-    });
+    };
+
+    element.addEventListener('touchstart', press, { passive: false });
+    element.addEventListener('touchend', release);
+    element.addEventListener('touchcancel', release);
+
+    element.addEventListener('mousedown', press);
+    element.addEventListener('mouseup', release);
+    element.addEventListener('mouseleave', release);
 }
 
 // Joystick Logic
@@ -324,17 +329,10 @@ const joystickStick = document.getElementById('joystick-stick');
 const joystickRadius = 75; // Half of the container's width (150px)
 let joystickActive = false;
 
-joystickContainer.addEventListener('touchstart', (e) => {
-    joystickActive = true;
-}, { passive: false });
-
-joystickContainer.addEventListener('touchmove', (e) => {
-    if (!joystickActive) return;
-    e.preventDefault();
-    const touch = e.targetTouches[0];
+const handleJoystickMove = (clientX, clientY) => {
     const rect = joystickContainer.getBoundingClientRect();
-    const x = touch.clientX - rect.left - joystickRadius;
-    const y = touch.clientY - rect.top - joystickRadius;
+    const x = clientX - rect.left - joystickRadius;
+    const y = clientY - rect.top - joystickRadius;
 
     const distance = Math.min(joystickRadius, Math.hypot(x, y));
     const angle = Math.atan2(y, x);
@@ -343,16 +341,38 @@ joystickContainer.addEventListener('touchmove', (e) => {
     const stickY = distance * Math.sin(angle);
 
     joystickStick.style.transform = `translate(${stickX}px, ${stickY}px)`;
-
     controls.steer = stickX / joystickRadius;
+};
 
-}, { passive: false });
-
-joystickContainer.addEventListener('touchend', (e) => {
+const stopJoystick = () => {
     joystickActive = false;
-    joystickStick.style.transform = `translate(0px, 0px)`;
+    joystickStick.style.transform = 'translate(0px, 0px)';
     controls.steer = 0;
+};
+
+// Touch Events
+joystickContainer.addEventListener('touchstart', (e) => {
+    joystickActive = true;
+}, { passive: false });
+joystickContainer.addEventListener('touchmove', (e) => {
+    if (!joystickActive) return;
+    e.preventDefault();
+    handleJoystickMove(e.targetTouches[0].clientX, e.targetTouches[0].clientY);
+}, { passive: false });
+joystickContainer.addEventListener('touchend', stopJoystick);
+joystickContainer.addEventListener('touchcancel', stopJoystick);
+
+// Mouse Events
+joystickContainer.addEventListener('mousedown', (e) => {
+    joystickActive = true;
 });
+joystickContainer.addEventListener('mousemove', (e) => {
+    if (!joystickActive) return;
+    e.preventDefault();
+    handleJoystickMove(e.clientX, e.clientY);
+});
+joystickContainer.addEventListener('mouseup', stopJoystick);
+joystickContainer.addEventListener('mouseleave', stopJoystick);
 
 let cameraMode = 0;
 const cameraButton = document.getElementById('camera-button');
