@@ -38,6 +38,7 @@ const trackPoints = [
 ];
 const trackCurve = new THREE.CatmullRomCurve3(trackPoints, true, 'centripetal');
 const trackLength = trackCurve.getLength();
+const screenColliders = [];
 
 // --- GENERADORES DE TEXTURAS Y MATERIALES (Sin cambios) ---
 function createAsphaltMaterial() { const size = 512; const colorCanvas = document.createElement('canvas'); colorCanvas.width = size; colorCanvas.height = size; const ctx = colorCanvas.getContext('2d'); ctx.fillStyle = '#303030'; ctx.fillRect(0, 0, size, size); for (let i = 0; i < 20000; i++) { const x = Math.random() * size; const y = Math.random() * size; const c = 40 + Math.random() * 30; ctx.fillStyle = `rgb(${c},${c},${c})`; ctx.beginPath(); ctx.arc(x, y, Math.random() * 1.5, 0, Math.PI * 2); ctx.fill(); } const colorMap = new THREE.CanvasTexture(colorCanvas); colorMap.wrapS = THREE.RepeatWrapping; colorMap.wrapT = THREE.RepeatWrapping; return new THREE.MeshStandardMaterial({ map: colorMap, roughness: 0.9, metalness: 0.1 }); }
@@ -48,15 +49,13 @@ function createFenceTexture() { const canvas = document.createElement('canvas');
 
 // --- LÓGICA DE LA VALLA ANIMADA ---
 let fenceCanvas, fenceContext, fenceTexture;
-const fenceText = " --- Feliz Cumpleaños Yajaira 34 --- ";
+const fenceText = " --- Feliz Cumpleaños Yajaira 23 --- ".repeat(5);
 let textXPosition;
 
 function createAnimatedFence(curve, offset, yPos, height) {
     const segments = Math.floor(curve.getLength() / 2);
     const geometry = new THREE.BufferGeometry();
-    const positions = [];
-    const uvs = [];
-    const indices = [];
+    const positions = [], uvs = [], indices = [];
 
     for (let i = 0; i <= segments; i++) {
         const p = i / segments;
@@ -82,12 +81,12 @@ function createAnimatedFence(curve, offset, yPos, height) {
     geometry.setAttribute('uv', new THREE.Float32BufferAttribute(uvs, 2));
     geometry.computeVertexNormals();
 
-    if (!fenceCanvas) { // Initialize canvas only once
+    if (!fenceCanvas) {
         fenceCanvas = document.createElement('canvas');
-        fenceCanvas.width = 2048;
+        fenceCanvas.width = 4096; // Wider canvas for repeated text
         fenceCanvas.height = 128;
         fenceContext = fenceCanvas.getContext('2d');
-        textXPosition = fenceCanvas.width;
+        textXPosition = 0;
         fenceTexture = new THREE.CanvasTexture(fenceCanvas);
     }
 
@@ -181,8 +180,9 @@ function createScenery() {
     const birthdayAdMaterial = new THREE.MeshBasicMaterial({ map: birthdayAdTexture, side: THREE.DoubleSide });
 
     const sceneryPlanes = [
-        // Se eliminan las gradas con crowdMaterial para despejar la vista.
+        { progress: 0.95, side: 'outer', size: new THREE.Vector2(150, 30), material: crowdMaterial },
         { progress: 0.2, side: 'outer', size: new THREE.Vector2(100, 25), material: birthdayAdMaterial }, // <-- Changed material
+        { progress: 0.6, side: 'outer', size: new THREE.Vector2(120, 28), material: crowdMaterial },
     ];
 
     sceneryPlanes.forEach(p => {
@@ -200,37 +200,29 @@ function createScenery() {
         scene.add(plane);
     });
 
-    // --- PANTALLAS DE CUMPLEAÑOS ---
+    // --- PANTALLAS DE CUMPLEAÑOS (COLISIONABLES) ---
     const birthdayTextureLoader = new THREE.TextureLoader();
-
-    // Pantalla "Feliz Cumpleaños"
     const felizCumpleTexture = birthdayTextureLoader.load('assets/images/Feliz-cumpleaños.jpg');
-    const felizCumpleMat = new THREE.MeshBasicMaterial({ map: felizCumpleTexture, side: THREE.DoubleSide });
-    const felizCumpleGeo = new THREE.PlaneGeometry(80, 40);
-    const felizCumpleScreen = new THREE.Mesh(felizCumpleGeo, felizCumpleMat);
+    const felizCumpleMat = new THREE.MeshStandardMaterial({ map: felizCumpleTexture, side: THREE.DoubleSide, roughness: 0.8, metalness: 0.1 });
+    const felizCumpleGeo = new THREE.BoxGeometry(80, 40, 2); // Use BoxGeometry for solid look
 
-    let point = trackCurve.getPointAt(0.1);
-    let tangent = trackCurve.getTangentAt(0.1);
-    let normal = new THREE.Vector3(-tangent.z, 0, tangent.x);
-    let offset = ASPHALT_WIDTH / 2 + 20;
-    felizCumpleScreen.position.copy(point).add(normal.clone().multiplyScalar(offset));
-    felizCumpleScreen.position.y = 20;
-    felizCumpleScreen.lookAt(point);
-    scene.add(felizCumpleScreen);
+    for (let i = 0; i < 10; i++) {
+        const screen = new THREE.Mesh(felizCumpleGeo, felizCumpleMat);
+        const progress = i / 10;
+        const point = trackCurve.getPointAt(progress);
+        const tangent = trackCurve.getTangentAt(progress);
+        const normal = new THREE.Vector3(-tangent.z, 0, tangent.x);
+        const offset = ASPHALT_WIDTH / 2 + 25;
+        const sideMultiplier = (i % 2 === 0) ? 1 : -1;
 
-    // Pantalla "Yajaira"
-    const yajairaTexture = birthdayTextureLoader.load('assets/images/Yajaira-transparente.png');
-    const yajairaMat = new THREE.MeshBasicMaterial({ map: yajairaTexture, transparent: true, side: THREE.DoubleSide });
-    const yajairaGeo = new THREE.PlaneGeometry(40, 40);
-    const yajairaScreen = new THREE.Mesh(yajairaGeo, yajairaMat);
+        screen.position.copy(point).add(normal.clone().multiplyScalar(offset * sideMultiplier));
+        screen.position.y = 20;
+        screen.lookAt(point);
+        screen.castShadow = true;
+        scene.add(screen);
 
-    point = trackCurve.getPointAt(0.5);
-    tangent = trackCurve.getTangentAt(0.5);
-    normal = new THREE.Vector3(-tangent.z, 0, tangent.x);
-    yajairaScreen.position.copy(point).add(normal.clone().multiplyScalar(offset));
-    yajairaScreen.position.y = 20;
-    yajairaScreen.lookAt(point);
-    scene.add(yajairaScreen);
+        screenColliders.push(screen);
+    }
 
     // --- VALLA ANIMADA ---
     const fenceHeight = 4; // A bit taller for better visibility
@@ -251,14 +243,13 @@ function createBalloons() {
     const numTextures = 6;
     let loadedCount = 0;
 
-    // Pre-load all balloon textures
     for (let i = 1; i <= numTextures; i++) {
         balloonTextureLoader.load(`assets/images/Globo${i}.png`, (texture) => {
             balloonMaterials.push(new THREE.MeshBasicMaterial({
                 map: texture,
                 transparent: true,
                 side: THREE.DoubleSide,
-                alphaTest: 0.5, // Use alphaTest for clean edges
+                alphaTest: 0.5,
                 depthWrite: false
             }));
             loadedCount++;
@@ -270,22 +261,16 @@ function createBalloons() {
 
     function populateBalloons() {
         const planeGeo = new THREE.PlaneGeometry(15, 15);
-
-        for (let i = 0; i < 200; i++) { // Increased balloon count
+        for (let i = 0; i < 500; i++) { // Increased balloon count to 500
             const material = balloonMaterials[Math.floor(Math.random() * numTextures)];
-
             const balloon3D = new THREE.Group();
             const balloon_plane1 = new THREE.Mesh(planeGeo, material);
             const balloon_plane2 = new THREE.Mesh(planeGeo, material);
             balloon_plane2.rotation.y = Math.PI / 2;
-
-            balloon3D.add(balloon_plane1);
-            balloon3D.add(balloon_plane2);
-
-            const x = (Math.random() - 0.5) * 1500; // Wider spread
-            const y = 20 + Math.random() * 40;     // Lower altitude
-            const z = (Math.random() - 0.5) * 1500; // Wider spread
-
+            balloon3D.add(balloon_plane1, balloon_plane2);
+            const x = (Math.random() - 0.5) * 2500;
+            const y = 20 + Math.random() * 60;
+            const z = (Math.random() - 0.5) * 2500;
             balloon3D.position.set(x, y, z);
             balloon3D.userData.originalY = y;
             balloons.push(balloon3D);
@@ -294,44 +279,38 @@ function createBalloons() {
     }
 }
 
-// --- LÓGICA DE ROSAS CAYENDO ---
-const fallingRoses = [];
-const numFallingRoses = 500; // Total number of roses in the system
+// --- LÓGICA DE ROSAS CAYENDO (OPTIMIZADA) ---
+let roseInstancedMeshes;
+const numRoses = 5000;
+const roseInstances = [];
 
 function createFallingRoses() {
     const roseTextureLoader = new THREE.TextureLoader();
     roseTextureLoader.load('assets/images/Rosa.png', (texture) => {
         const material = new THREE.MeshBasicMaterial({
-            map: texture,
-            transparent: true,
-            side: THREE.DoubleSide,
-            alphaTest: 0.5,
-            depthWrite: false
+            map: texture, transparent: true, side: THREE.DoubleSide, alphaTest: 0.5
         });
+        const geometry = new THREE.PlaneGeometry(1.5, 1.5);
 
-        const planeGeo = new THREE.PlaneGeometry(2, 2); // Roses are smaller than balloons
+        roseInstancedMeshes = {
+            mesh1: new THREE.InstancedMesh(geometry, material, numRoses),
+            mesh2: new THREE.InstancedMesh(geometry, material, numRoses)
+        };
+        scene.add(roseInstancedMeshes.mesh1);
+        scene.add(roseInstancedMeshes.mesh2);
 
-        for (let i = 0; i < numFallingRoses; i++) {
-            const rose3D = new THREE.Group();
-            const rose_plane1 = new THREE.Mesh(planeGeo, material);
-            const rose_plane2 = new THREE.Mesh(planeGeo, material);
-            rose_plane2.rotation.y = Math.PI / 2;
-            rose3D.add(rose_plane1, rose_plane2);
-
-            rose3D.position.set(
-                (Math.random() - 0.5) * 1000,
-                150 + Math.random() * 100,
-                (Math.random() - 0.5) * 1000
-            );
-
-            rose3D.userData = {
-                velocity: 5 + Math.random() * 5,
+        for (let i = 0; i < numRoses; i++) {
+            roseInstances.push({
+                position: new THREE.Vector3(
+                    (Math.random() - 0.5) * 2000,
+                    150 + Math.random() * 150,
+                    (Math.random() - 0.5) * 2000
+                ),
+                velocity: 4 + Math.random() * 4,
                 landed: false,
-                timeLanded: 0
-            };
-
-            fallingRoses.push(rose3D);
-            scene.add(rose3D);
+                timeLanded: 0,
+                rotation: Math.random() * Math.PI * 2
+            });
         }
     });
 }
@@ -655,6 +634,22 @@ function animate() {
     carVelocity.copy(carForward).multiplyScalar(carSpeed);
     car.position.addScaledVector(carVelocity, deltaTime);
 
+    // --- LÓGICA DE COLISIÓN DE PANTALLAS ---
+    const carBox = new THREE.Box3().setFromObject(car);
+    let collisionDetected = false;
+    screenColliders.forEach(screen => {
+        if (collisionDetected) return; // Process only the first collision in a frame
+
+        const screenBox = new THREE.Box3().setFromObject(screen);
+        if (carBox.intersectsBox(screenBox)) {
+            collisionDetected = true;
+
+            // Reverse velocity and apply a small bounce
+            carSpeed *= -0.5; // Reverse speed and lose some energy
+            car.position.addScaledVector(carVelocity, -deltaTime * 2); // Move back a bit
+        }
+    });
+
     // --- LÓGICA DE GIRO (visual) ---
     const speed = carSpeed; // Usar la nueva variable de velocidad
     const velocityIsForward = speed >= 0;
@@ -705,55 +700,64 @@ function animate() {
 
     // --- ANIMACIÓN DE VALLA ---
     if (fenceContext) {
-        // Clear canvas
         fenceContext.fillStyle = 'rgba(20, 20, 40, 0.7)';
         fenceContext.fillRect(0, 0, fenceCanvas.width, fenceCanvas.height);
-
-        // Style and draw text
         fenceContext.font = 'bold 80px Rajdhani, sans-serif';
         fenceContext.fillStyle = '#4299E1';
         fenceContext.textAlign = 'left';
         fenceContext.textBaseline = 'middle';
         fenceContext.fillText(fenceText, textXPosition, fenceCanvas.height / 2);
 
-        // Move text
-        textXPosition -= 5;
+        textXPosition -= 2; // Slower speed
 
-        // Reset text position
         const textWidth = fenceContext.measureText(fenceText).width;
         if (textXPosition < -textWidth) {
-            textXPosition = fenceCanvas.width;
+            textXPosition = 0; // Reset to beginning for continuous loop
         }
 
-        // Update texture
         fenceTexture.needsUpdate = true;
     }
 
     // --- ANIMACIÓN DE ROSAS CAYENDO ---
-    if (fallingRoses.length > 0) {
-        fallingRoses.forEach(rose => {
-            if (!rose.userData.landed) {
-                rose.position.y -= rose.userData.velocity * deltaTime;
-                rose.rotation.y += deltaTime * 0.5;
-                rose.rotation.z += Math.sin(now + rose.position.x) * deltaTime * 0.2;
+    if (roseInstancedMeshes) {
+        const now = performance.now() / 1000;
+        const dummy = new THREE.Object3D();
 
-                if (rose.position.y <= 0.1) {
-                    rose.position.y = 0.1;
-                    rose.userData.landed = true;
-                    rose.userData.timeLanded = now;
+        for (let i = 0; i < numRoses; i++) {
+            const instance = roseInstances[i];
+
+            if (!instance.landed) {
+                instance.position.y -= instance.velocity * deltaTime;
+                instance.rotation += deltaTime * 0.5;
+
+                if (instance.position.y <= 0.1) {
+                    instance.position.y = 0.1;
+                    instance.landed = true;
+                    instance.timeLanded = now;
                 }
             } else {
-                const timeOnGround = now - rose.userData.timeLanded;
-                if (timeOnGround > 10) {
-                    rose.position.set(
-                        (Math.random() - 0.5) * 1000,
-                        150 + Math.random() * 100,
-                        (Math.random() - 0.5) * 1000
+                const timeOnGround = now - instance.timeLanded;
+                if (timeOnGround > 20) { // Stay for 20 seconds
+                    instance.position.set(
+                        (Math.random() - 0.5) * 2000,
+                        150 + Math.random() * 150,
+                        (Math.random() - 0.5) * 2000
                     );
-                    rose.userData.landed = false;
+                    instance.landed = false;
                 }
             }
-        });
+
+            dummy.position.copy(instance.position);
+            dummy.rotation.y = instance.rotation;
+            dummy.updateMatrix();
+            roseInstancedMeshes.mesh1.setMatrixAt(i, dummy.matrix);
+
+            dummy.rotation.y += Math.PI / 2;
+            dummy.updateMatrix();
+            roseInstancedMeshes.mesh2.setMatrixAt(i, dummy.matrix);
+        }
+        roseInstancedMeshes.mesh1.instanceMatrix.needsUpdate = true;
+        roseInstancedMeshes.mesh2.instanceMatrix.needsUpdate = true;
     }
 
     // --- CÁMARA (sin cambios) ---
