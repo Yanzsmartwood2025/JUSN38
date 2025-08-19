@@ -409,10 +409,10 @@ function animate() {
     }
 
     // 3. Aplicar fricción y resistencia del aire
-    const dragForce = carVelocity.clone().multiplyScalar(-DRAG_COEFFICIENT); // Modelo de drag lineal
-    const rollingFrictionForce = carVelocity.clone().normalize().multiplyScalar(-ROLLING_FRICTION);
+    const dragForce = carVelocity.clone().multiplyScalar(-DRAG_COEFFICIENT);
     force.add(dragForce);
     if (speed > 0.1) {
+       const rollingFrictionForce = carVelocity.clone().normalize().multiplyScalar(-ROLLING_FRICTION);
        force.add(rollingFrictionForce);
     }
 
