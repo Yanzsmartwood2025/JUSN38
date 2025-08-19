@@ -142,6 +142,28 @@
             height: 60px;
             border-radius: 50%;
         }
+        #progress-bar-container {
+            width: 80%;
+            max-width: 400px;
+            height: 20px;
+            background-color: #333;
+            border: 1px solid #555;
+            border-radius: 10px;
+            margin-top: 20px;
+            overflow: hidden;
+        }
+        #progress-bar {
+            width: 0%;
+            height: 100%;
+            background: linear-gradient(90deg, #4caf50, #81c784);
+            transition: width 0.2s ease-out;
+        }
+        #loading-text {
+            margin-top: 15px;
+            font-size: 18px;
+            color: #ddd;
+            text-shadow: 1px 1px 2px rgba(0,0,0,0.5);
+        }
     </style>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -154,7 +176,10 @@
     </div>
     <div id="loading-overlay">
         <div class="spinner"></div>
-        <p>Generando Bosque Mixto...</p>
+        <p id="loading-text">Cargando Circuito y Modelo 3D...</p>
+        <div id="progress-bar-container">
+            <div id="progress-bar"></div>
+        </div>
     </div>
 
     <div id="joystick-zone" style="position: absolute; left: 15vw; bottom: 20vh; width: 150px; height: 150px;"></div>
