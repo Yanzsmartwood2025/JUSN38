@@ -178,13 +178,16 @@ let steeringWheel;
 let engineOn = false; // Estado del motor
 const carVelocity = new THREE.Vector3();
 const TURN_SPEED = 3.0; // Radianes por segundo a velocidad cero
-const ACCELERATION = 18900.0; // Aceleración de F1
-const REVERSE_ACCELERATION = 9000.0;
-const BRAKE_FORCE = 25000.0; // Fuerza de frenado dedicada
-const DRAG_COEFFICIENT = 2.0;
-const ROLLING_FRICTION = 1.0;
-const MAX_SPEED = 69.4; // 250 km/h
-const MAX_REVERSE_SPEED = 41.7; // 150 km/h
+
+// --- Parámetros de Física Realista ---
+const ACCELERATION = 0.4;             // fuerza de aceleración hacia adelante
+const MAX_SPEED = 250 / 3.6;          // 250 km/h en m/s
+const BRAKE_FORCE = 1.2;              // fuerza de frenado fuerte y realista
+const REVERSE_ACCELERATION = 0.2;     // aceleración en reversa (más lenta)
+const DRAG_COEFFICIENT = 0.0025;      // resistencia del aire
+const ROLLING_FRICTION = 0.01;        // fricción de las ruedas
+const MAX_REVERSE_SPEED = 50 / 3.6;   // 50 km/h en m/s (valor razonable)
+
 const REFERENCE_SPEED_FOR_EFFECTS = 69.4; // Velocidad de referencia para giro, FOV, y audio. Sincronizado con MAX_SPEED.
 
 const keys = {};
@@ -283,15 +286,16 @@ engineButton.addEventListener('touchcancel', (e) => {
 });
 
 
-let cameraMode = 0;
-const cameraButton = document.getElementById('camera-button');
-cameraButton.addEventListener('click', () => { cameraMode = (cameraMode + 1) % 4; });
-const cameraSettings = [
-    { offset: new THREE.Vector3(0, 5, 12), lookAt: new THREE.Vector3(0, 1, 0) }, // Lejana
-    { offset: new THREE.Vector3(0, 3, 9), lookAt: new THREE.Vector3(0, 0.5, 0) }, // Cercana
-    { offset: new THREE.Vector3(0, 1.5, -1), lookAt: new THREE.Vector3(0, 1, -10) }, // Primera persona
-    { offset: new THREE.Vector3(0, 0.7, 0.5), lookAt: new THREE.Vector3(0, 0.5, -100) } // Vista de Cabina
-];
+// La cámara ahora es fija, por lo que el botón y los modos múltiples se eliminan.
+// let cameraMode = 0;
+// const cameraButton = document.getElementById('camera-button');
+// cameraButton.addEventListener('click', () => { cameraMode = (cameraMode + 1) % 4; });
+// const cameraSettings = [
+//     { offset: new THREE.Vector3(0, 5, 12), lookAt: new THREE.Vector3(0, 1, 0) }, // Lejana
+//     { offset: new THREE.Vector3(0, 3, 9), lookAt: new THREE.Vector3(0, 0.5, 0) }, // Cercana
+//     { offset: new THREE.Vector3(0, 1.5, -1), lookAt: new THREE.Vector3(0, 1, -10) }, // Primera persona
+//     { offset: new THREE.Vector3(0, 0.7, 0.5), lookAt: new THREE.Vector3(0, 0.5, -100) } // Vista de Cabina
+// ];
 const clock = new THREE.Clock();
 const speedometer = document.getElementById('speedometer');
 
@@ -425,88 +429,75 @@ function animate() {
 
     // --- PHYSICS ---
     const forward = new THREE.Vector3();
-    car.getWorldDirection(forward); // Vector de dirección del coche
+    car.getWorldDirection(forward);
 
-    const speed = carVelocity.length();
+    let speed = carVelocity.length();
     const velocityIsForward = forward.dot(carVelocity) >= 0;
 
-    // Animar el volante
+    // Animar el volante y las ruedas
     if (steeringWheel) {
-        const maxSteerRotation = Math.PI / 4; // 45 grados
+        const maxSteerRotation = Math.PI / 4;
         steeringWheel.rotation.z = turnInput * maxSteerRotation;
     }
-
-    // 1. Animar las ruedas delanteras (visual)
     const maxWheelTurn = Math.PI / 6;
-    car.wheels[2].rotation.y = turnInput * maxWheelTurn;
-    car.wheels[3].rotation.y = turnInput * maxWheelTurn;
+    if(car.wheels && car.wheels.length > 3){
+        car.wheels[2].rotation.y = turnInput * maxWheelTurn;
+        car.wheels[3].rotation.y = turnInput * maxWheelTurn;
+    }
 
-    // 2. Rotación del coche (física)
+    // Rotación del coche (física de giro)
     if (speed > 0.2) {
         const turnFactor = 1.0 - Math.min(1, speed / REFERENCE_SPEED_FOR_EFFECTS);
         const effectiveTurnSpeed = TURN_SPEED * turnFactor;
-        // La dirección del giro depende de si vamos hacia adelante o en reversa
         const turnDirection = velocityIsForward ? 1 : -1;
         const turnAmount = turnInput * effectiveTurnSpeed * delta * turnDirection;
         car.rotateOnWorldAxis(new THREE.Vector3(0, 1, 0), turnAmount);
     }
 
-    // 3. Calcular fuerzas
-    const force = new THREE.Vector3();
+    // --- LÓGICA DE VELOCIDAD REFACTORIZADA ---
+
+    // 1. Aplicar aceleración y freno del motor
     if (engineOn) {
-        // Aceleración hacia adelante
         if (accelerationInput > 0) {
+            // Aceleración progresiva
             if (speed < MAX_SPEED) {
-                force.add(forward.clone().multiplyScalar(ACCELERATION * accelerationInput));
+                carVelocity.add(forward.clone().multiplyScalar(ACCELERATION));
             }
-        }
-        // Lógica de Freno y Reversa
-        else if (accelerationInput < 0) {
-            // Si el coche se mueve hacia adelante, frenamos
-            if (velocityIsForward && speed > 0.1) {
-                const brakeDirection = carVelocity.clone().normalize().multiplyScalar(-1);
-                force.add(brakeDirection.multiplyScalar(BRAKE_FORCE));
-            }
-            // Si está parado o ya va en reversa, aceleramos en reversa
-            else {
+        } else if (accelerationInput < 0) {
+            // Freno y Reversa
+            if (velocityIsForward && speed > 0.05) {
+                const brakeVector = carVelocity.clone().normalize().multiplyScalar(-BRAKE_FORCE);
+                carVelocity.add(brakeVector);
+            } else {
                 if (speed < MAX_REVERSE_SPEED) {
-                    // Usamos REVERSE_ACCELERATION y el input negativo
-                    force.add(forward.clone().multiplyScalar(REVERSE_ACCELERATION * accelerationInput));
+                    carVelocity.add(forward.clone().multiplyScalar(-REVERSE_ACCELERATION));
                 }
             }
         }
     }
 
-    // 4. Aplicar fricción y resistencia del aire (siempre)
-    const dragForce = carVelocity.clone().multiplyScalar(-DRAG_COEFFICIENT * speed);
-    force.add(dragForce);
+    // 2. Aplicar resistencia del aire y fricción (inercia)
+    // Se aplican en direcciones opuestas a la velocidad actual
+    const drag = carVelocity.clone().multiplyScalar(speed * DRAG_COEFFICIENT);
+    const friction = carVelocity.clone().normalize().multiplyScalar(ROLLING_FRICTION);
+    const inertiaForces = drag.add(friction);
 
-    // Solo aplicar fricción de rodadura si el coche se está moviendo
-    if (speed > 0.1) {
-       const rollingFrictionForce = carVelocity.clone().normalize().multiplyScalar(-ROLLING_FRICTION);
-       force.add(rollingFrictionForce);
-    }
-
-    // 5. Actualizar velocidad
-    carVelocity.add(force.clone().multiplyScalar(delta));
-
-    // Forzar parada si la velocidad es muy baja para evitar deslizamiento infinito
-    if (accelerationInput === 0 && speed > 0 && speed < 0.5) {
-        carVelocity.set(0, 0, 0);
-    }
-
-    // 6. Limitar la velocidad después de aplicar todas las fuerzas
-    // (Esto es un seguro en caso de que las fuerzas superen el límite momentáneamente)
-    if (carVelocity.length() > 0) {
-        const currentSpeed = carVelocity.length();
-        if(forward.dot(carVelocity) > 0) { // Hacia adelante
-            if (currentSpeed > MAX_SPEED) carVelocity.setLength(MAX_SPEED);
-        } else { // Hacia atrás
-            if (currentSpeed > MAX_REVERSE_SPEED) carVelocity.setLength(MAX_REVERSE_SPEED);
+    // Solo aplicar inercia si hay velocidad
+    if (speed > 0) {
+        // Asegurarse de no invertir la velocidad, solo reducirla
+        if (carVelocity.length() > inertiaForces.length()){
+             carVelocity.sub(inertiaForces);
+        } else {
+             carVelocity.set(0,0,0);
         }
     }
 
-    // 7. Actualizar posición
+    // 3. Forzar parada si la velocidad es muy baja
+    if (accelerationInput === 0 && speed > 0 && speed < 0.1) {
+        carVelocity.set(0, 0, 0);
+    }
+
+    // 4. Actualizar posición del coche
     car.position.add(carVelocity.clone().multiplyScalar(delta));
 
     // --- UI UPDATES ---
@@ -539,18 +530,19 @@ function animate() {
         Object.values(engineSounds).forEach(s => s.setVolume(0));
     }
 
-    // --- CÁMARA ---
-    // Efecto FOV dinámico
-    const baseFov = 75;
-    const fovBoost = Math.min(1, speed / REFERENCE_SPEED_FOR_EFFECTS) * 15; // Aumenta hasta 15 grados
-    camera.fov = baseFov + fovBoost;
+    // --- CÁMARA REFACTORIZADA ---
+    // Se elimina el FOV dinámico para una sensación de velocidad más consistente y predecible.
+    camera.fov = 75;
     camera.updateProjectionMatrix();
 
-    const currentSettings = cameraSettings[cameraMode];
-    const targetCameraPosition = car.position.clone().add(currentSettings.offset.clone().applyQuaternion(car.quaternion));
-    camera.position.lerp(targetCameraPosition, delta * 5.0);
-    const targetLookAtPosition = car.position.clone().add(currentSettings.lookAt.clone().applyQuaternion(car.quaternion));
-    camera.lookAt(targetLookAtPosition);
+    // Implementación de una cámara de seguimiento estable con un desplazamiento (offset) fijo.
+    // Esto proporciona una vista clara y directa de la acción, como en muchos juegos de carreras.
+    const cameraOffset = new THREE.Vector3(0, 5, 12); // Eje-X, Altura, Distancia
+    const targetCameraPosition = car.position.clone().add(
+        cameraOffset.applyQuaternion(car.quaternion)
+    );
+    camera.position.copy(targetCameraPosition);
+    camera.lookAt(car.position);
 
     renderer.render(scene, camera);
 }
