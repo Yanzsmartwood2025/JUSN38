@@ -251,11 +251,13 @@ scene.add(car);
 let engineOn = false; // Estado del motor
 const carVelocity = new THREE.Vector3();
 const TURN_SPEED = 3.0; // Radianes por segundo a velocidad cero
-const ACCELERATION = 12000.0; // Aceleración de F1 (ajustada)
-const BRAKE_FORCE = 150.0;
+const ACCELERATION = 18900.0; // Aceleración de F1
+const REVERSE_ACCELERATION = 9000.0;
+const BRAKE_FORCE = 25000.0; // Fuerza de frenado dedicada
 const DRAG_COEFFICIENT = 2.0;
 const ROLLING_FRICTION = 1.0;
-const MAX_SPEED = 69.4; // 250 KM/H
+const MAX_SPEED = 97.2; // 350 km/h
+const MAX_REVERSE_SPEED = 41.7; // 150 km/h
 const MAX_SPEED_FOR_TURN_CALC = 150.0; // Velocidad de referencia para el cálculo del giro
 
 const keys = {};
@@ -380,51 +382,82 @@ function animate() {
 
     // --- PHYSICS ---
     const forward = new THREE.Vector3();
-    car.getWorldDirection(forward);
+    car.getWorldDirection(forward); // Vector de dirección del coche
 
     const speed = carVelocity.length();
+    const velocityIsForward = forward.dot(carVelocity) >= 0;
 
-    // 1. Animar las ruedas delanteras (siempre es visual)
-    const maxWheelTurn = Math.PI / 6; // 30 grados
-    const wheelTurnAngle = turnInput * maxWheelTurn;
-    car.wheels[2].rotation.y = wheelTurnAngle;
-    car.wheels[3].rotation.y = wheelTurnAngle;
+    // 1. Animar las ruedas delanteras (visual)
+    const maxWheelTurn = Math.PI / 6;
+    car.wheels[2].rotation.y = turnInput * maxWheelTurn;
+    car.wheels[3].rotation.y = turnInput * maxWheelTurn;
 
-    // 2. Aplicar rotación al cuerpo del carro (física, solo si se mueve)
-    if (speed > 0.1) {
+    // 2. Rotación del coche (física)
+    if (speed > 0.2) {
         const turnFactor = 1.0 - Math.min(1, speed / MAX_SPEED_FOR_TURN_CALC);
         const effectiveTurnSpeed = TURN_SPEED * turnFactor;
-        const turnAmount = turnInput * effectiveTurnSpeed * delta;
+        // La dirección del giro depende de si vamos hacia adelante o en reversa
+        const turnDirection = velocityIsForward ? 1 : -1;
+        const turnAmount = turnInput * effectiveTurnSpeed * delta * turnDirection;
         car.rotateOnWorldAxis(new THREE.Vector3(0, 1, 0), turnAmount);
     }
 
-    // 2. Calcular fuerzas
+    // 3. Calcular fuerzas
     const force = new THREE.Vector3();
     if (engineOn) {
+        // Aceleración hacia adelante
         if (accelerationInput > 0) {
-            force.add(forward.clone().multiplyScalar(ACCELERATION * accelerationInput));
-        } else if (accelerationInput < 0) {
-            // Frenado y reversa siempre van en la dirección opuesta a la que mira el carro.
-            force.add(forward.clone().multiplyScalar(BRAKE_FORCE * accelerationInput));
+            if (speed < MAX_SPEED) {
+                force.add(forward.clone().multiplyScalar(ACCELERATION * accelerationInput));
+            }
+        }
+        // Lógica de Freno y Reversa
+        else if (accelerationInput < 0) {
+            // Si el coche se mueve hacia adelante, frenamos
+            if (velocityIsForward && speed > 0.1) {
+                const brakeDirection = carVelocity.clone().normalize().multiplyScalar(-1);
+                force.add(brakeDirection.multiplyScalar(BRAKE_FORCE));
+            }
+            // Si está parado o ya va en reversa, aceleramos en reversa
+            else {
+                if (speed < MAX_REVERSE_SPEED) {
+                    // Usamos REVERSE_ACCELERATION y el input negativo
+                    force.add(forward.clone().multiplyScalar(REVERSE_ACCELERATION * accelerationInput));
+                }
+            }
         }
     }
 
-    // 3. Aplicar fricción y resistencia del aire
+    // 4. Aplicar fricción y resistencia del aire (siempre)
     const dragForce = carVelocity.clone().multiplyScalar(-DRAG_COEFFICIENT * speed);
-    const rollingFrictionForce = carVelocity.clone().normalize().multiplyScalar(-ROLLING_FRICTION);
     force.add(dragForce);
+
+    // Solo aplicar fricción de rodadura si el coche se está moviendo
     if (speed > 0.1) {
+       const rollingFrictionForce = carVelocity.clone().normalize().multiplyScalar(-ROLLING_FRICTION);
        force.add(rollingFrictionForce);
     }
 
-    // 4. Actualizar velocidad y posición
+    // 5. Actualizar velocidad
     carVelocity.add(force.clone().multiplyScalar(delta));
 
-    // Limitar velocidad máxima
-    if (carVelocity.length() > MAX_SPEED) {
-        carVelocity.setLength(MAX_SPEED);
+    // Forzar parada si la velocidad es muy baja para evitar deslizamiento infinito
+    if (accelerationInput === 0 && speed > 0 && speed < 0.5) {
+        carVelocity.set(0, 0, 0);
     }
 
+    // 6. Limitar la velocidad después de aplicar todas las fuerzas
+    // (Esto es un seguro en caso de que las fuerzas superen el límite momentáneamente)
+    if (carVelocity.length() > 0) {
+        const currentSpeed = carVelocity.length();
+        if(forward.dot(carVelocity) > 0) { // Hacia adelante
+            if (currentSpeed > MAX_SPEED) carVelocity.setLength(MAX_SPEED);
+        } else { // Hacia atrás
+            if (currentSpeed > MAX_REVERSE_SPEED) carVelocity.setLength(MAX_REVERSE_SPEED);
+        }
+    }
+
+    // 7. Actualizar posición
     car.position.add(carVelocity.clone().multiplyScalar(delta));
 
     // --- UI UPDATES ---
