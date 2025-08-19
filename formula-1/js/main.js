@@ -46,23 +46,60 @@ function createGrassMaterial() { const size = 512; const canvas = document.creat
 function createCrowdTexture() { const canvas = document.createElement('canvas'); canvas.width = 512; canvas.height = 128; const ctx = canvas.getContext('2d'); ctx.fillStyle = '#444'; ctx.fillRect(0,0,512,128); for(let i=0; i < 2000; i++) { const x = Math.random() * 512; const y = 32 + Math.random() * 96; const size = Math.random() * 2 + 1; ctx.fillStyle = `hsl(${Math.random() * 360}, 50%, ${60 + Math.random() * 20}%)`; ctx.beginPath(); ctx.arc(x, y, size, 0, Math.PI * 2); ctx.fill(); } return new THREE.CanvasTexture(canvas); }
 function createFenceTexture() { const canvas = document.createElement('canvas'); canvas.width = 128; canvas.height = 128; const ctx = canvas.getContext('2d'); ctx.strokeStyle = 'rgba(100, 100, 100, 0.7)'; ctx.lineWidth = 2; for(let i = -128; i < 256; i+=10) { ctx.beginPath(); ctx.moveTo(i, 0); ctx.lineTo(i + 128, 128); ctx.stroke(); ctx.beginPath(); ctx.moveTo(i, 128); ctx.lineTo(i + 128, 0); ctx.stroke(); } const texture = new THREE.CanvasTexture(canvas); texture.wrapS = THREE.RepeatWrapping; texture.wrapT = THREE.RepeatWrapping; return texture; }
 
-function createBirthdayFenceTexture() {
-    const canvas = document.createElement('canvas');
-    canvas.width = 1024;
-    canvas.height = 128;
-    const ctx = canvas.getContext('2d');
-    ctx.fillStyle = 'rgba(255, 255, 255, 0.1)';
-    ctx.fillRect(0, 0, canvas.width, canvas.height);
-    ctx.font = 'bold 70px Rajdhani, sans-serif';
-    ctx.fillStyle = '#E53E3E';
-    ctx.textAlign = 'center';
-    ctx.textBaseline = 'middle';
-    ctx.fillText('Feliz Cumpleaños Yajaira', canvas.width / 2, canvas.height / 2);
-    const texture = new THREE.CanvasTexture(canvas);
-    texture.wrapS = THREE.RepeatWrapping;
-    texture.wrapT = THREE.RepeatWrapping;
-    return texture;
+// --- LÓGICA DE LA VALLA ANIMADA ---
+let fenceCanvas, fenceContext, fenceTexture;
+const fenceText = " --- Feliz Cumpleaños Yajaira 34 --- ";
+let textXPosition;
+
+function createAnimatedFence(curve, offset, yPos, height) {
+    const segments = Math.floor(curve.getLength() / 2);
+    const geometry = new THREE.BufferGeometry();
+    const positions = [];
+    const uvs = [];
+    const indices = [];
+
+    for (let i = 0; i <= segments; i++) {
+        const p = i / segments;
+        const point = curve.getPointAt(p);
+        const tangent = curve.getTangentAt(p);
+        const normal = new THREE.Vector3(-tangent.z, 0, tangent.x).normalize();
+        const basePoint = point.clone().add(normal.clone().multiplyScalar(offset));
+
+        positions.push(basePoint.x, yPos, basePoint.z);
+        uvs.push(p, 0);
+
+        positions.push(basePoint.x, yPos + height, basePoint.z);
+        uvs.push(p, 1);
+    }
+
+    for (let i = 0; i < segments; i++) {
+        const a = i * 2, b = a + 1, c = a + 2, d = a + 3;
+        indices.push(a, c, b, b, c, d);
+    }
+
+    geometry.setIndex(indices);
+    geometry.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3));
+    geometry.setAttribute('uv', new THREE.Float32BufferAttribute(uvs, 2));
+    geometry.computeVertexNormals();
+
+    if (!fenceCanvas) { // Initialize canvas only once
+        fenceCanvas = document.createElement('canvas');
+        fenceCanvas.width = 2048;
+        fenceCanvas.height = 128;
+        fenceContext = fenceCanvas.getContext('2d');
+        textXPosition = fenceCanvas.width;
+        fenceTexture = new THREE.CanvasTexture(fenceCanvas);
+    }
+
+    const material = new THREE.MeshBasicMaterial({
+        map: fenceTexture,
+        transparent: true,
+        side: THREE.DoubleSide
+    });
+
+    return new THREE.Mesh(geometry, material);
 }
+
 function createFlatTrackSegment(curve, width, material, yOffset = 0) { const segments = Math.floor(curve.getLength() / 2); const geometry = new THREE.BufferGeometry(); const positions = [], normals = [], uvs = [], indices = []; const repeatFactor = trackLength / 10; for (let i = 0; i <= segments; i++) { const p = i / segments; const point = curve.getPointAt(p); const tangent = curve.getTangentAt(p); const normal = new THREE.Vector3(-tangent.z, 0, tangent.x).normalize(); positions.push(point.x - normal.x * width / 2, yOffset, point.z - normal.z * width / 2); normals.push(0, 1, 0); uvs.push(0, p * repeatFactor); positions.push(point.x + normal.x * width / 2, yOffset, point.z + normal.z * width / 2); normals.push(0, 1, 0); uvs.push(width / 10, p * repeatFactor); } for (let i = 0; i < segments; i++) { const a = i * 2, b = a + 1, c = a + 2, d = a + 3; indices.push(a, b, c, b, d, c); } geometry.setIndex(indices); geometry.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3)); geometry.setAttribute('normal', new THREE.Float32BufferAttribute(normals, 3)); geometry.setAttribute('uv', new THREE.Float32BufferAttribute(uvs, 2)); const mesh = new THREE.Mesh(geometry, material); mesh.receiveShadow = true; return mesh; }
 function createOffsetFlatTrackSegment(curve, width, material, offset, yOffset) { const segments = Math.floor(curve.getLength() / 2); const geometry = new THREE.BufferGeometry(); const positions = [], normals = [], uvs = [], indices = []; for (let i = 0; i <= segments; i++) { const p = i / segments; const point = curve.getPointAt(p); const tangent = curve.getTangentAt(p); const normal = new THREE.Vector3(-tangent.z, 0, tangent.x).normalize(); const basePoint = point.clone().add(normal.clone().multiplyScalar(offset)); const textureRepeatFactor = 1 / (1.5 * 2); positions.push(basePoint.x - normal.x * width / 2, yOffset, basePoint.z - normal.z * width / 2); normals.push(0, 1, 0); uvs.push(0, p * trackLength * textureRepeatFactor); positions.push(basePoint.x + normal.x * width / 2, yOffset, basePoint.z + normal.z * width / 2); normals.push(0, 1, 0); uvs.push(1, p * trackLength * textureRepeatFactor); } for (let i = 0; i < segments; i++) { const a = i * 2, b = a + 1, c = a + 2, d = a + 3; indices.push(a, b, c, b, d, c); } geometry.setIndex(indices); geometry.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3)); geometry.setAttribute('normal', new THREE.Float32BufferAttribute(normals, 3)); geometry.setAttribute('uv', new THREE.Float32BufferAttribute(uvs, 2)); return new THREE.Mesh(geometry, material); }
 
@@ -136,17 +173,16 @@ function populateMixedForest() {
 // --- CREACIÓN DEL ESCENARIO ---
 function createScenery() {
     const crowdMaterial = new THREE.MeshBasicMaterial({ map: createCrowdTexture() });
-    const fenceMaterial = new THREE.MeshBasicMaterial({ map: createBirthdayFenceTexture(), transparent: true });
-    fenceMaterial.map.repeat.set(20, 1);
+    const fenceMaterial = new THREE.MeshBasicMaterial({ map: createFenceTexture(), transparent: true, alphaTest: 0.1 });
+    fenceMaterial.map.repeat.set(80, 1);
 
     // --- Material de Cumpleaños para Paneles Existentes ---
     const birthdayAdTexture = new THREE.TextureLoader().load('assets/images/Feliz-cumpleaños.jpg');
     const birthdayAdMaterial = new THREE.MeshBasicMaterial({ map: birthdayAdTexture, side: THREE.DoubleSide });
 
     const sceneryPlanes = [
-        { progress: 0.95, side: 'outer', size: new THREE.Vector2(150, 30), material: crowdMaterial },
+        // Se eliminan las gradas con crowdMaterial para despejar la vista.
         { progress: 0.2, side: 'outer', size: new THREE.Vector2(100, 25), material: birthdayAdMaterial }, // <-- Changed material
-        { progress: 0.6, side: 'outer', size: new THREE.Vector2(120, 28), material: crowdMaterial },
     ];
 
     sceneryPlanes.forEach(p => {
@@ -166,44 +202,45 @@ function createScenery() {
 
     // --- PANTALLAS DE CUMPLEAÑOS ---
     const birthdayTextureLoader = new THREE.TextureLoader();
+
+    // Pantalla "Feliz Cumpleaños"
     const felizCumpleTexture = birthdayTextureLoader.load('assets/images/Feliz-cumpleaños.jpg');
     const felizCumpleMat = new THREE.MeshBasicMaterial({ map: felizCumpleTexture, side: THREE.DoubleSide });
     const felizCumpleGeo = new THREE.PlaneGeometry(80, 40);
+    const felizCumpleScreen = new THREE.Mesh(felizCumpleGeo, felizCumpleMat);
 
-    for (let i = 0; i < 10; i++) {
-        const screen = new THREE.Mesh(felizCumpleGeo, felizCumpleMat);
-        const progress = i / 10;
-        const point = trackCurve.getPointAt(progress);
-        const tangent = trackCurve.getTangentAt(progress);
-        const normal = new THREE.Vector3(-tangent.z, 0, tangent.x);
-        const offset = ASPHALT_WIDTH / 2 + 20;
-        const sideMultiplier = (i % 2 === 0) ? 1 : -1;
-        screen.position.copy(point).add(normal.clone().multiplyScalar(offset * sideMultiplier));
-        screen.position.y = 20;
-        screen.lookAt(point);
-        scene.add(screen);
-    }
+    let point = trackCurve.getPointAt(0.1);
+    let tangent = trackCurve.getTangentAt(0.1);
+    let normal = new THREE.Vector3(-tangent.z, 0, tangent.x);
+    let offset = ASPHALT_WIDTH / 2 + 20;
+    felizCumpleScreen.position.copy(point).add(normal.clone().multiplyScalar(offset));
+    felizCumpleScreen.position.y = 20;
+    felizCumpleScreen.lookAt(point);
+    scene.add(felizCumpleScreen);
 
-    const fenceHeight = 3;
+    // Pantalla "Yajaira"
+    const yajairaTexture = birthdayTextureLoader.load('assets/images/Yajaira-transparente.png');
+    const yajairaMat = new THREE.MeshBasicMaterial({ map: yajairaTexture, transparent: true, side: THREE.DoubleSide });
+    const yajairaGeo = new THREE.PlaneGeometry(40, 40);
+    const yajairaScreen = new THREE.Mesh(yajairaGeo, yajairaMat);
+
+    point = trackCurve.getPointAt(0.5);
+    tangent = trackCurve.getTangentAt(0.5);
+    normal = new THREE.Vector3(-tangent.z, 0, tangent.x);
+    yajairaScreen.position.copy(point).add(normal.clone().multiplyScalar(offset));
+    yajairaScreen.position.y = 20;
+    yajairaScreen.lookAt(point);
+    scene.add(yajairaScreen);
+
+    // --- VALLA ANIMADA ---
+    const fenceHeight = 4; // A bit taller for better visibility
     const fenceOffset = ASPHALT_WIDTH / 2 + CURB_WIDTH + FENCE_BUFFER;
-    const fenceSegments = 200;
-    const fenceGeo = new THREE.PlaneGeometry(trackLength / fenceSegments, fenceHeight);
-    for (let i = 0; i < fenceSegments; i++) {
-        const progress = i / fenceSegments;
-        const point = trackCurve.getPointAt(progress);
-        const tangent = trackCurve.getTangentAt(progress);
-        const normal = new THREE.Vector3(-tangent.z, 0, tangent.x);
-        const fence_outer = new THREE.Mesh(fenceGeo, fenceMaterial);
-        fence_outer.position.copy(point).add(normal.clone().multiplyScalar(fenceOffset));
-        fence_outer.position.y = fenceHeight / 2;
-        fence_outer.lookAt(point);
-        scene.add(fence_outer);
-        const fence_inner = new THREE.Mesh(fenceGeo, fenceMaterial);
-        fence_inner.position.copy(point).add(normal.clone().multiplyScalar(-fenceOffset));
-        fence_inner.position.y = fenceHeight / 2;
-        fence_inner.lookAt(point.clone().add(normal.clone().multiplyScalar(-100)));
-        scene.add(fence_inner);
-    }
+
+    const outerFence = createAnimatedFence(trackCurve, fenceOffset, 0, fenceHeight);
+    scene.add(outerFence);
+
+    const innerFence = createAnimatedFence(trackCurve, -fenceOffset, 0, fenceHeight);
+    scene.add(innerFence);
 }
 
 // --- LÓGICA DE GLOBOS ---
@@ -214,13 +251,15 @@ function createBalloons() {
     const numTextures = 6;
     let loadedCount = 0;
 
+    // Pre-load all balloon textures
     for (let i = 1; i <= numTextures; i++) {
         balloonTextureLoader.load(`assets/images/Globo${i}.png`, (texture) => {
             balloonMaterials.push(new THREE.MeshBasicMaterial({
                 map: texture,
                 transparent: true,
                 side: THREE.DoubleSide,
-                depthWrite: false // Good for transparent objects
+                alphaTest: 0.5, // Use alphaTest for clean edges
+                depthWrite: false
             }));
             loadedCount++;
             if (loadedCount === numTextures) {
@@ -230,53 +269,71 @@ function createBalloons() {
     }
 
     function populateBalloons() {
-        const geometry = new THREE.PlaneGeometry(15, 15);
-        for (let i = 0; i < 100; i++) { // Increased balloon count
+        const planeGeo = new THREE.PlaneGeometry(15, 15);
+
+        for (let i = 0; i < 200; i++) { // Increased balloon count
             const material = balloonMaterials[Math.floor(Math.random() * numTextures)];
-            const balloon = new THREE.Mesh(geometry, material);
+
+            const balloon3D = new THREE.Group();
+            const balloon_plane1 = new THREE.Mesh(planeGeo, material);
+            const balloon_plane2 = new THREE.Mesh(planeGeo, material);
+            balloon_plane2.rotation.y = Math.PI / 2;
+
+            balloon3D.add(balloon_plane1);
+            balloon3D.add(balloon_plane2);
 
             const x = (Math.random() - 0.5) * 1500; // Wider spread
-            const y = 50 + Math.random() * 100; // Higher and more varied
+            const y = 20 + Math.random() * 40;     // Lower altitude
             const z = (Math.random() - 0.5) * 1500; // Wider spread
 
-            balloon.position.set(x, y, z);
-            balloon.userData.originalY = y;
-            balloons.push(balloon);
-            scene.add(balloon);
+            balloon3D.position.set(x, y, z);
+            balloon3D.userData.originalY = y;
+            balloons.push(balloon3D);
+            scene.add(balloon3D);
         }
     }
 }
 
 // --- LÓGICA DE ROSAS CAYENDO ---
-let roseParticles;
-const numRoses = 500;
+const fallingRoses = [];
+const numFallingRoses = 500; // Total number of roses in the system
 
 function createFallingRoses() {
-    const roseTexture = new THREE.TextureLoader().load('assets/images/Rosa.png');
-    const roseMaterial = new THREE.PointsMaterial({
-        map: roseTexture,
-        size: 5,
-        transparent: true,
-        alphaTest: 0.5,
-        depthWrite: false
+    const roseTextureLoader = new THREE.TextureLoader();
+    roseTextureLoader.load('assets/images/Rosa.png', (texture) => {
+        const material = new THREE.MeshBasicMaterial({
+            map: texture,
+            transparent: true,
+            side: THREE.DoubleSide,
+            alphaTest: 0.5,
+            depthWrite: false
+        });
+
+        const planeGeo = new THREE.PlaneGeometry(2, 2); // Roses are smaller than balloons
+
+        for (let i = 0; i < numFallingRoses; i++) {
+            const rose3D = new THREE.Group();
+            const rose_plane1 = new THREE.Mesh(planeGeo, material);
+            const rose_plane2 = new THREE.Mesh(planeGeo, material);
+            rose_plane2.rotation.y = Math.PI / 2;
+            rose3D.add(rose_plane1, rose_plane2);
+
+            rose3D.position.set(
+                (Math.random() - 0.5) * 1000,
+                150 + Math.random() * 100,
+                (Math.random() - 0.5) * 1000
+            );
+
+            rose3D.userData = {
+                velocity: 5 + Math.random() * 5,
+                landed: false,
+                timeLanded: 0
+            };
+
+            fallingRoses.push(rose3D);
+            scene.add(rose3D);
+        }
     });
-
-    const rosePositions = new Float32Array(numRoses * 3);
-    const roseVelocities = new Float32Array(numRoses);
-
-    for (let i = 0; i < numRoses; i++) {
-        rosePositions[i * 3] = (Math.random() - 0.5) * 2000; // x
-        rosePositions[i * 3 + 1] = Math.random() * 1000 + 200; // y (start high)
-        rosePositions[i * 3 + 2] = (Math.random() - 0.5) * 2000; // z
-        roseVelocities[i] = 10 + Math.random() * 10; // individual fall speed
-    }
-
-    const roseGeometry = new THREE.BufferGeometry();
-    roseGeometry.setAttribute('position', new THREE.BufferAttribute(rosePositions, 3));
-    roseGeometry.setAttribute('velocity', new THREE.BufferAttribute(roseVelocities, 1));
-
-    roseParticles = new THREE.Points(roseGeometry, roseMaterial);
-    scene.add(roseParticles);
 }
 
 // --- INICIALIZACIÓN DE LA ESCENA ---
@@ -646,22 +703,57 @@ function animate() {
         }
     });
 
-    // --- ANIMACIÓN DE ROSAS CAYENDO ---
-    if (roseParticles) {
-        const positions = roseParticles.geometry.attributes.position.array;
-        const velocities = roseParticles.geometry.attributes.velocity.array;
+    // --- ANIMACIÓN DE VALLA ---
+    if (fenceContext) {
+        // Clear canvas
+        fenceContext.fillStyle = 'rgba(20, 20, 40, 0.7)';
+        fenceContext.fillRect(0, 0, fenceCanvas.width, fenceCanvas.height);
 
-        for (let i = 0; i < numRoses; i++) {
-            positions[i * 3 + 1] -= velocities[i] * deltaTime;
-            positions[i * 3] += Math.sin(now + i * 0.1) * 0.2; // Gentle sway
+        // Style and draw text
+        fenceContext.font = 'bold 80px Rajdhani, sans-serif';
+        fenceContext.fillStyle = '#4299E1';
+        fenceContext.textAlign = 'left';
+        fenceContext.textBaseline = 'middle';
+        fenceContext.fillText(fenceText, textXPosition, fenceCanvas.height / 2);
 
-            if (positions[i * 3 + 1] < -10) {
-                positions[i * 3 + 1] = Math.random() * 500 + 600;
-                positions[i * 3] = (Math.random() - 0.5) * 2000;
-                positions[i * 3 + 2] = (Math.random() - 0.5) * 2000;
-            }
+        // Move text
+        textXPosition -= 5;
+
+        // Reset text position
+        const textWidth = fenceContext.measureText(fenceText).width;
+        if (textXPosition < -textWidth) {
+            textXPosition = fenceCanvas.width;
         }
-        roseParticles.geometry.attributes.position.needsUpdate = true;
+
+        // Update texture
+        fenceTexture.needsUpdate = true;
+    }
+
+    // --- ANIMACIÓN DE ROSAS CAYENDO ---
+    if (fallingRoses.length > 0) {
+        fallingRoses.forEach(rose => {
+            if (!rose.userData.landed) {
+                rose.position.y -= rose.userData.velocity * deltaTime;
+                rose.rotation.y += deltaTime * 0.5;
+                rose.rotation.z += Math.sin(now + rose.position.x) * deltaTime * 0.2;
+
+                if (rose.position.y <= 0.1) {
+                    rose.position.y = 0.1;
+                    rose.userData.landed = true;
+                    rose.userData.timeLanded = now;
+                }
+            } else {
+                const timeOnGround = now - rose.userData.timeLanded;
+                if (timeOnGround > 10) {
+                    rose.position.set(
+                        (Math.random() - 0.5) * 1000,
+                        150 + Math.random() * 100,
+                        (Math.random() - 0.5) * 1000
+                    );
+                    rose.userData.landed = false;
+                }
+            }
+        });
     }
 
     // --- CÁMARA (sin cambios) ---
