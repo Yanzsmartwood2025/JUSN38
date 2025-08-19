@@ -212,6 +212,7 @@ document.addEventListener('keyup', (e) => {
 const touchState = {
     accelerate: false,
     brake: false,
+    reverse: false,
     turn: 0 // -1 for left, 1 for right, 0 for straight
 };
 
@@ -246,24 +247,28 @@ const joystick = nipplejs.create({
 // Botones
 const accelButton = document.getElementById('touch-accelerate');
 const brakeButton = document.getElementById('touch-brake');
+const reverseButton = document.getElementById('touch-reverse');
 const engineButton = document.getElementById('engine-button');
 let engineToggleTimeout;
 
-const setAccelerate = (state) => {
-    touchState.accelerate = state;
-};
+const setAccelerate = (state) => { touchState.accelerate = state; };
+const setBrake = (state) => { touchState.brake = state; };
+const setReverse = (state) => { touchState.reverse = state; };
 
-const setBrake = (state) => {
-    touchState.brake = state;
-};
-
+// Acelerar (Botón C)
 accelButton.addEventListener('touchstart', (e) => { e.preventDefault(); setAccelerate(true); accelButton.classList.add('active'); }, { passive: false });
 accelButton.addEventListener('touchend', (e) => { e.preventDefault(); setAccelerate(false); accelButton.classList.remove('active'); });
 accelButton.addEventListener('touchcancel', (e) => { e.preventDefault(); setAccelerate(false); accelButton.classList.remove('active'); });
 
+// Frenar (Botón B)
 brakeButton.addEventListener('touchstart', (e) => { e.preventDefault(); setBrake(true); brakeButton.classList.add('active'); }, { passive: false });
 brakeButton.addEventListener('touchend', (e) => { e.preventDefault(); setBrake(false); brakeButton.classList.remove('active'); });
 brakeButton.addEventListener('touchcancel', (e) => { e.preventDefault(); setBrake(false); brakeButton.classList.remove('active'); });
+
+// Reversa (Botón A)
+reverseButton.addEventListener('touchstart', (e) => { e.preventDefault(); setReverse(true); reverseButton.classList.add('active'); }, { passive: false });
+reverseButton.addEventListener('touchend', (e) => { e.preventDefault(); setReverse(false); reverseButton.classList.remove('active'); });
+reverseButton.addEventListener('touchcancel', (e) => { e.preventDefault(); setReverse(false); reverseButton.classList.remove('active'); });
 
 
 // --- Engine Button with Hold ---
@@ -414,69 +419,64 @@ function loadCar(callback) {
 
 // carVelocity: THREE.Vector3 velocidad en m/s
 // carForward: dirección adelante del coche (Vector3 normalizado)
-function updateCarPhysics(deltaTime, accelInput) {
+function updateCarPhysics(deltaTime) {
   const carForward = new THREE.Vector3();
   car.getWorldDirection(carForward);
-
-  // Vector de fuerzas (en m/s^2)
-  const forwardForce = new THREE.Vector3();
-  if (engineOn) {
-    if (accelInput === 1) {
-      forwardForce.addScaledVector(carForward, ACCELERATION);
-    }
-  }
-
-  // Frenado/Reversa
   const speed = carVelocity.length();
-  const movingForward = carVelocity.dot(carForward) > 0.001;
-  const nearlyStopped = speed < 0.1;
 
-  if (accelInput === -1) {
-    if (movingForward || (!nearlyStopped && speed > 0.1)) {
-      // Frena fuerte contra la dirección actual
-      const brake = carVelocity.clone().normalize().multiplyScalar(-BRAKE_FORCE);
-      forwardForce.add(brake);
-    } else {
-      // Reversa
-      forwardForce.addScaledVector(carForward, -REVERSE_ACCELERATION);
+  // --- Lógica de 3 botones ---
+  const accelerate = touchState.accelerate || keys['arrowup'];
+  const brake = touchState.brake; // Freno solo es táctil por ahora.
+  const reverse = touchState.reverse || keys['arrowdown'];
+
+  const forwardForce = new THREE.Vector3();
+
+  // 1. Aceleración (Botón C / Flecha Arriba)
+  if (engineOn && accelerate) {
+    if (speed < MAX_SPEED) {
+        forwardForce.addScaledVector(carForward, ACCELERATION);
     }
   }
 
-  // 2) Aplicar fricciones
-  // Fricción de rodadura (lineal)
+  // 2. Freno (Botón B)
+  const movingForward = carVelocity.dot(carForward) > 0;
+  if (brake && speed > 0.1 && movingForward) {
+      const brakeForce = carVelocity.clone().normalize().multiplyScalar(-BRAKE_FORCE);
+      forwardForce.add(brakeForce);
+  }
+
+  // 3. Reversa (Botón A / Flecha Abajo)
+  if (engineOn && reverse) {
+      // Solo permite reversa si el coche está casi quieto
+      if (speed < 1.0) {
+          forwardForce.addScaledVector(carForward, -REVERSE_ACCELERATION);
+      }
+  }
+
+  // 4. Aplicar fricciones (Inercia)
   if (speed > 0) {
     const rolling = carVelocity.clone().multiplyScalar(-ROLLING_FRICTION);
     forwardForce.add(rolling);
-  }
-  // Resistencia del aire (cuadrática con la velocidad)
-  if (speed > 0) {
     const drag = carVelocity.clone().multiplyScalar(-DRAG_COEFFICIENT * speed);
     forwardForce.add(drag);
   }
 
-  // 3) Integración con deltaTime (¡clave!)
+  // 5. Integración Euler
   carVelocity.addScaledVector(forwardForce, deltaTime);
 
-  // 4) Limitar velocidades por dirección
-  const forwardSpeed = carVelocity.dot(carForward); // componente en eje del coche
-  // Límite hacia adelante
+  // 6. Limitar velocidad máxima (para evitar que las fuerzas la superen)
+  const forwardSpeed = carVelocity.dot(carForward);
   if (forwardSpeed > MAX_SPEED) {
     const lateral = carVelocity.clone().sub(carForward.clone().multiplyScalar(forwardSpeed));
     carVelocity.copy(carForward).multiplyScalar(MAX_SPEED).add(lateral);
-  }
-  // Límite en reversa
-  if (forwardSpeed < -MAX_REVERSE_SPEED) {
+  } else if (forwardSpeed < -MAX_REVERSE_SPEED) {
     const lateral = carVelocity.clone().sub(carForward.clone().multiplyScalar(forwardSpeed));
     carVelocity.copy(carForward).multiplyScalar(-MAX_REVERSE_SPEED).add(lateral);
   }
 
-  // 5) Actualizar posición (m = m + v * dt)
-  // (Esto se hará en el bucle de animación principal)
-
-  // 6) Velocímetro (m/s -> km/h)
+  // 7. Actualizar velocímetro
   const kmh = carVelocity.length() * 3.6;
-  const speedEl = document.getElementById('speedometer'); // Corregido de 'speed' a 'speedometer'
-  if (speedEl) speedEl.textContent = `${Math.round(kmh)} KM/H`;
+  speedometer.textContent = `${Math.round(kmh)} KM/H`;
 }
 
 function animate() {
@@ -498,14 +498,11 @@ function animate() {
     const touchTurn = -touchState.turn;
     const turnInput = touchTurn !== 0 ? touchTurn : keyboardTurn;
 
-    // Aceleración (Táctil sobreescribe teclado, Freno tiene prioridad)
-    let accelerationInput = (keys['arrowup']) ? 1.0 : (keys['arrowdown']) ? -1.0 : 0;
-    if (touchState.accelerate) accelerationInput = 1.0;
-    if (touchState.brake) accelerationInput = -1.0;
-
+    // La nueva lógica de física manejará el estado directamente,
+    // así que el cálculo de `accelerationInput` ya no es necesario aquí.
 
     // --- FÍSICA DEL COCHE (delegada a la nueva función) ---
-    updateCarPhysics(deltaTime, accelerationInput);
+    updateCarPhysics(deltaTime);
 
     // --- LÓGICA DE GIRO (visual) ---
     const speed = carVelocity.length();
