@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
 
 // --- CONFIGURACIÓN BÁSICA DE LA ESCENA ---
 const scene = new THREE.Scene();
@@ -172,81 +173,8 @@ scene.add(groundPlane);
 createScenery();
 
 // --- LÓGICA DEL COCHE Y CONTROLES ---
-function createCar() {
-    const car = new THREE.Group();
-
-    const mainColor = 0xff0000;
-    const darkColor = 0x111111;
-
-    // Chasis principal
-    const chassisGeo = new THREE.BoxGeometry(2.2, 0.6, 5);
-    const chassisMat = new THREE.MeshStandardMaterial({ color: mainColor, roughness: 0.4, metalness: 0.1 });
-    const chassis = new THREE.Mesh(chassisGeo, chassisMat);
-    chassis.castShadow = true;
-    chassis.receiveShadow = true;
-    car.add(chassis);
-
-    // Cabina
-    const cabinGeo = new THREE.BoxGeometry(1.6, 0.8, 2);
-    const cabinMat = new THREE.MeshStandardMaterial({ color: darkColor, roughness: 0.2 });
-    const cabin = new THREE.Mesh(cabinGeo, cabinMat);
-    cabin.position.set(0, 0.7, -0.5);
-    cabin.castShadow = true;
-    car.add(cabin);
-
-    // Alerón delantero
-    const frontWingGeo = new THREE.BoxGeometry(2.5, 0.1, 1);
-    const frontWingMat = new THREE.MeshStandardMaterial({ color: darkColor });
-    const frontWing = new THREE.Mesh(frontWingGeo, frontWingMat);
-    frontWing.position.set(0, 0.3, -2.2);
-    frontWing.castShadow = true;
-    car.add(frontWing);
-
-    // Alerón trasero
-    const rearWingGeo = new THREE.BoxGeometry(2.5, 0.2, 0.8);
-    const rearWing = new THREE.Mesh(rearWingGeo, frontWingMat);
-    rearWing.position.set(0, 1, 2.2);
-    rearWing.castShadow = true;
-    car.add(rearWing);
-
-    // Ruedas
-    const wheelGeo = new THREE.CylinderGeometry(0.4, 0.4, 0.5, 32);
-    wheelGeo.rotateZ(Math.PI / 2);
-    const wheelMat = new THREE.MeshStandardMaterial({ color: 0x050505, roughness: 0.8 });
-
-    const wheelPositions = [
-        { x: -1.3, y: 0.2, z: 1.5, isFront: false },  // trasera izq
-        { x: 1.3, y: 0.2, z: 1.5, isFront: false },   // trasera der
-        { x: -1.3, y: 0.2, z: -1.8, isFront: true }, // delantera izq
-        { x: 1.3, y: 0.2, z: -1.8, isFront: true }   // delantera der
-    ];
-
-    car.wheels = [];
-
-    wheelPositions.forEach(pos => {
-        const wheel = new THREE.Mesh(wheelGeo, wheelMat);
-        wheel.position.set(pos.x, pos.y, pos.z);
-        wheel.castShadow = true;
-
-        if (pos.isFront) {
-            const pivot = new THREE.Group();
-            pivot.position.set(pos.x, pos.y, pos.z);
-            wheel.position.set(0, 0, 0); // La rueda está en el origen del pivote
-            pivot.add(wheel);
-            car.add(pivot);
-            car.wheels.push(pivot);
-        } else {
-            car.add(wheel);
-            car.wheels.push(wheel);
-        }
-    });
-
-    return car;
-}
-
-const car = createCar();
-car.rotation.y = Math.PI; // Corregir la orientación inicial del modelo
-scene.add(car);
+let car;
+let steeringWheel;
 
 let engineOn = false; // Estado del motor
 const carVelocity = new THREE.Vector3();
@@ -358,17 +286,135 @@ engineButton.addEventListener('touchcancel', (e) => {
 
 let cameraMode = 0;
 const cameraButton = document.getElementById('camera-button');
-cameraButton.addEventListener('click', () => { cameraMode = (cameraMode + 1) % 3; });
+cameraButton.addEventListener('click', () => { cameraMode = (cameraMode + 1) % 4; });
 const cameraSettings = [
     { offset: new THREE.Vector3(0, 5, 12), lookAt: new THREE.Vector3(0, 1, 0) }, // Lejana
     { offset: new THREE.Vector3(0, 3, 9), lookAt: new THREE.Vector3(0, 0.5, 0) }, // Cercana
-    { offset: new THREE.Vector3(0, 1.5, -1), lookAt: new THREE.Vector3(0, 1, -10) } // Primera persona
+    { offset: new THREE.Vector3(0, 1.5, -1), lookAt: new THREE.Vector3(0, 1, -10) }, // Primera persona
+    { offset: new THREE.Vector3(0, 0.7, 0.5), lookAt: new THREE.Vector3(0, 0.5, -100) } // Vista de Cabina
 ];
 const clock = new THREE.Clock();
 const speedometer = document.getElementById('speedometer');
 
+// --- LÓGICA DE CARGA DEL MODELO Y INICIO ---
+function loadCar(callback) {
+    const loader = new GLTFLoader();
+    loadingOverlay.style.opacity = '1';
+    loadingOverlay.style.display = 'flex';
+
+    loader.load(
+        'assets/3d/mercedesf1.glb',
+        (gltf) => {
+            car = gltf.scene;
+
+            const wheelMeshes = {};
+            // Encontrar las mallas importantes recorriendo el modelo
+            car.traverse(function(object) {
+                switch(object.name) {
+                    case "Steering_wheel_Steering_wheel_0":
+                        steeringWheel = object;
+                        break;
+                    case "Wheel_FL_Wheel_0":
+                        wheelMeshes.frontLeft = object;
+                        break;
+                    case "Wheel_FR_Wheel_0":
+                        wheelMeshes.frontRight = object;
+                        break;
+                }
+
+                // Habilitar sombras para todas las mallas
+                if (object.isMesh) {
+                    object.castShadow = true;
+                    object.receiveShadow = true;
+                }
+            });
+
+            // Si encontramos un volante, le añadimos las manos
+            if (steeringWheel) {
+                const hands = createHands();
+                // Ajustar la orientación y posición de las manos para que encajen
+                hands.rotation.x = -Math.PI / 2;
+                hands.position.y = 0.1;
+                steeringWheel.add(hands);
+            }
+
+            // Asignar las ruedas delanteras al array `car.wheels` para la animación de giro.
+            // Se usan dummies para las traseras para mantener la compatibilidad con el código existente.
+            car.wheels = [
+                new THREE.Object3D(), // Dummy RL
+                new THREE.Object3D(), // Dummy RR
+                wheelMeshes.frontLeft,
+                wheelMeshes.frontRight
+            ];
+
+            // Ajustar escala y orientación
+            car.scale.set(2.5, 2.5, 2.5);
+            car.rotation.y = Math.PI;
+            scene.add(car);
+
+            // Ocultar overlay y empezar el juego
+            loadingOverlay.style.opacity = '0';
+            loadingOverlay.addEventListener('transitionend', () => {
+                loadingOverlay.style.display = 'none';
+            });
+
+            callback();
+        },
+        undefined,
+        (error) => {
+            console.error('Ocurrió un error al cargar el modelo:', error);
+        }
+    );
+}
+
+function createHands() {
+    const hands = new THREE.Group();
+    const handMaterial = new THREE.MeshStandardMaterial({ color: 0x333333, roughness: 0.8 });
+
+    // Function to create a single hand
+    const createSingleHand = (isLeft) => {
+        const hand = new THREE.Group();
+        const palmGeo = new THREE.BoxGeometry(0.2, 0.25, 0.05);
+        const palm = new THREE.Mesh(palmGeo, handMaterial);
+
+        const thumbGeo = new THREE.BoxGeometry(0.06, 0.1, 0.05);
+        const thumb = new THREE.Mesh(thumbGeo, handMaterial);
+        thumb.position.set(isLeft ? -0.1 : 0.1, 0.05, 0);
+        thumb.rotation.z = isLeft ? Math.PI / 8 : -Math.PI / 8;
+
+        hand.add(palm);
+        hand.add(thumb);
+        return hand;
+    };
+
+    const leftHand = createSingleHand(true);
+    leftHand.position.set(-0.4, 0, 0.1); // Position for 9 o'clock
+
+    const rightHand = createSingleHand(false);
+    rightHand.position.set(0.4, 0, 0.1); // Position for 3 o'clock
+
+    hands.add(leftHand);
+    hands.add(rightHand);
+
+    // Enable shadows for hands
+    hands.traverse(node => {
+        if(node.isMesh) {
+            node.castShadow = true;
+        }
+    });
+
+    return hands;
+}
+
+
 // --- BUCLE DE ANIMACIÓN ---
 function animate() {
+    // Si el coche aún no se ha cargado, no hacer nada.
+    if (!car) {
+        requestAnimationFrame(animate);
+        return;
+    }
+
     requestAnimationFrame(animate);
     const delta = clock.getDelta();
 
@@ -386,6 +432,12 @@ function animate() {
 
     const speed = carVelocity.length();
     const velocityIsForward = forward.dot(carVelocity) >= 0;
+
+    // Animar el volante
+    if (steeringWheel) {
+        const maxSteerRotation = Math.PI / 4; // 45 grados
+        steeringWheel.rotation.z = turnInput * maxSteerRotation;
+    }
 
     // 1. Animar las ruedas delanteras (visual)
     const maxWheelTurn = Math.PI / 6;
@@ -517,19 +569,23 @@ const engineSounds = {};
 
 loadingManager.onLoad = () => {
     populateMixedForest();
-    loadingOverlay.style.opacity = '0';
-    loadingOverlay.addEventListener('transitionend', () => {
-        loadingOverlay.style.display = 'none';
-    });
+    // No ocultar el overlay de carga aquí, se hará después de cargar el coche
 };
 
 startButton.addEventListener('click', () => {
+    // Ocultar el overlay de inicio
+    startOverlay.style.display = 'none';
+
+    // Inicializar audio
+    if (audioListener.context.state === 'suspended') {
+        audioListener.context.resume();
+    }
+
     // --- INICIALIZAR AUDIO Y VIBRACIÓN ---
     if (navigator.vibrate) {
         navigator.vibrate(100);
     }
 
-    // Cargar y preparar sonidos
     const soundsToLoad = ['engine_idle_garage.mp3', 'engine_low_rpm_loop.mp3', 'engine_mid_rpm_loop.mp3', 'engine_high_rpm_loop.mp3'];
     let soundsLoaded = 0;
     soundsToLoad.forEach(soundFile => {
@@ -540,15 +596,17 @@ startButton.addEventListener('click', () => {
             sound.setVolume(0);
             engineSounds[soundFile.split('.')[0]] = sound;
             soundsLoaded++;
-            // Una vez que todos los sonidos están cargados, los reproducimos en bucle (silenciosamente)
             if (soundsLoaded === soundsToLoad.length) {
                 Object.values(engineSounds).forEach(s => s.play());
             }
         });
     });
 
-    startOverlay.style.display = 'none';
-    animate();
+    // Cargar el modelo del coche e iniciar el bucle de animación cuando esté listo
+    loadCar(() => {
+        // La animación ahora solo comienza después de que el coche se carga.
+        requestAnimationFrame(animate);
+    });
 });
 
 // Cargar todas las texturas
