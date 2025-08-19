@@ -428,94 +428,19 @@ function animate() {
 
     // --- CÁLCULO DE DELTA TIME ---
     const now = performance.now() / 1000;
-    const deltaTime = Math.min(now - lastTime, 1 / 30); // Cap de 30 FPS para evitar saltos
+    const deltaTime = Math.min(now - lastTime, 1 / 30);
     lastTime = now;
 
-    // --- INPUT HANDLING ---
-    // Giro
-    const keyboardTurn = (keys['arrowleft']) ? 1.0 : (keys['arrowright']) ? -1.0 : 0;
-    const touchTurn = -touchState.turn;
-    const turnInput = touchTurn !== 0 ? touchTurn : keyboardTurn;
-
-    // --- LÓGICA DE FÍSICA SIMPLIFICADA (MODELO 1D) ---
-
-    // 1. Leer entradas
-    const accelerate = (touchState.accelerate || keys['arrowup']) && engineOn;
-    const brake = touchState.brake;
-    const reverse = (touchState.reverse || keys['arrowdown']) && engineOn;
-
-    // 2. Aplicar aceleración, freno y reversa a la variable `carSpeed`
-    if (accelerate) {
-        carSpeed += ACCELERATION * deltaTime;
-    } else if (brake) {
-        if (carSpeed > 0) {
-            carSpeed -= BRAKE_FORCE * deltaTime;
-        }
-    } else if (reverse) {
-        if (carSpeed > -MAX_REVERSE_SPEED) {
-            carSpeed -= REVERSE_ACCELERATION * deltaTime;
-        }
-    } else {
-        // 3. Aplicar fricción y resistencia si no se presiona nada
-        const currentDrag = carSpeed * carSpeed * DRAG_COEFFICIENT;
-        const totalFriction = ROLLING_FRICTION + currentDrag;
-        if (carSpeed > 0) {
-            carSpeed -= totalFriction * deltaTime;
-            if (carSpeed < 0) carSpeed = 0;
-        } else if (carSpeed < 0) {
-            carSpeed += totalFriction * deltaTime;
-            if (carSpeed > 0) carSpeed = 0;
-        }
-    }
-
-    // 4. Limitar velocidad
-    carSpeed = Math.max(-MAX_REVERSE_SPEED, Math.min(MAX_SPEED, carSpeed));
-
-    // 5. Calcular el vector de velocidad final y actualizar posición
+    // --- PRUEBA DE MOVIMIENTO CONSTANTE ---
+    const constantSpeed = 25; // Aproximadamente 90 km/h
     const carForward = car.getWorldDirection(new THREE.Vector3());
-    carVelocity.copy(carForward).multiplyScalar(carSpeed);
-    car.position.addScaledVector(carVelocity, deltaTime);
+    const constantVelocity = carForward.multiplyScalar(constantSpeed);
 
-    // --- LÓGICA DE GIRO (visual) ---
-    const speed = carSpeed; // Usar la nueva variable de velocidad
-    const velocityIsForward = speed >= 0;
+    // Actualizar posición
+    car.position.addScaledVector(constantVelocity, deltaTime);
 
-    if (steeringWheel) {
-        const maxSteerRotation = Math.PI / 4;
-        steeringWheel.rotation.z = turnInput * maxSteerRotation;
-    }
-    const maxWheelTurn = Math.PI / 6;
-    if (car.wheels && car.wheels.length > 3) {
-        car.wheels[2].rotation.y = turnInput * maxWheelTurn;
-        car.wheels[3].rotation.y = turnInput * maxWheelTurn;
-    }
-
-    // Rotación del coche
-    if (Math.abs(speed) > 0.2) {
-        const turnFactor = 1.0 - Math.min(1, Math.abs(speed) / REFERENCE_SPEED_FOR_EFFECTS);
-        const effectiveTurnSpeed = TURN_SPEED * turnFactor;
-        const turnDirection = velocityIsForward ? 1 : -1;
-        const turnAmount = turnInput * effectiveTurnSpeed * deltaTime;
-        car.rotateOnWorldAxis(new THREE.Vector3(0, 1, 0), turnAmount);
-    }
-
-    // --- UI & AUDIO ---
-    speedometer.textContent = `${Math.round(Math.abs(carSpeed) * 3.6)} KM/H`;
-
-    if (engineOn && Object.keys(engineSounds).length > 0) {
-        const baseVolume = 0.4;
-        const speedRatio = Math.min(1, Math.abs(carSpeed) / MAX_SPEED);
-        const overallVolume = baseVolume * Math.min(1, Math.abs(carSpeed) / 5.0);
-        const highRpmVolume = speedRatio;
-        const lowRpmVolume = 1 - highRpmVolume;
-        const accelerate = touchState.accelerate || keys['arrowup'];
-        const accelerationBoost = accelerate ? 1.5 : 1.0;
-        engineSounds.engine_low_rpm_loop.setVolume(lowRpmVolume * overallVolume * accelerationBoost);
-        engineSounds.engine_high_rpm_loop.setVolume(highRpmVolume * overallVolume * accelerationBoost);
-        engineSounds.engine_idle_garage.setVolume(speed < 1 && engineOn ? 0.2 : 0);
-    } else if (Object.keys(engineSounds).length > 0) {
-        Object.values(engineSounds).forEach(s => s.setVolume(0));
-    }
+    // Actualizar velocímetro para reflejar la prueba
+    speedometer.textContent = `${Math.round(constantSpeed * 3.6)} KM/H (PRUEBA)`;
 
     // --- CÁMARA (sin cambios) ---
     camera.fov = 75;
