@@ -187,7 +187,7 @@ const REVERSE_ACCELERATION = 3.0;         // reversa más suave
 const MAX_SPEED = 250 / 3.6;              // 250 km/h -> m/s
 const MAX_REVERSE_SPEED = MAX_SPEED;      // Igualado a la velocidad máxima
 
-const DRAG_COEFFICIENT = 0.0009;          // drag cuadrático (bajo, realista)
+const DRAG_COEFFICIENT = 0.00015;         // Reducido a la mitad para una aceleración aún más fuerte
 const ROLLING_FRICTION = 0.003;           // fricción basal
 
 const REFERENCE_SPEED_FOR_EFFECTS = 69.4; // Velocidad de referencia para giro, FOV, y audio. Sincronizado con MAX_SPEED.
