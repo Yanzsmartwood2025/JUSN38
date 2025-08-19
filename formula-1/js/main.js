@@ -413,12 +413,7 @@ function loadCar(callback) {
 
 // carVelocity: THREE.Vector3 velocidad en m/s
 // carForward: dirección adelante del coche (Vector3 normalizado)
-function updateCarPhysics(deltaTime) {
-  // 1) Entrada
-  let accelInput = 0; // -1 freno/reversa, 0 nada, 1 acelerar
-  if (touchState?.accelerate) accelInput = 1;
-  if (touchState?.brake)      accelInput = -1;
-
+function updateCarPhysics(deltaTime, accelInput) {
   const carForward = new THREE.Vector3();
   car.getWorldDirection(carForward);
 
@@ -494,13 +489,20 @@ function animate() {
     const deltaTime = Math.min(now - lastTime, 1 / 30); // Cap de 30 FPS para evitar saltos
     lastTime = now;
 
-    // --- INPUT HANDLING (sin cambios) ---
+    // --- INPUT HANDLING ---
+    // Giro
     const keyboardTurn = (keys['arrowleft']) ? 1.0 : (keys['arrowright']) ? -1.0 : 0;
     const touchTurn = -touchState.turn;
     const turnInput = touchTurn !== 0 ? touchTurn : keyboardTurn;
 
+    // Aceleración (Táctil sobreescribe teclado, Freno tiene prioridad)
+    let accelerationInput = (keys['arrowup']) ? 1.0 : (keys['arrowdown']) ? -1.0 : 0;
+    if (touchState.accelerate) accelerationInput = 1.0;
+    if (touchState.brake) accelerationInput = -1.0;
+
+
     // --- FÍSICA DEL COCHE (delegada a la nueva función) ---
-    updateCarPhysics(deltaTime);
+    updateCarPhysics(deltaTime, accelerationInput);
 
     // --- LÓGICA DE GIRO (visual) ---
     const speed = carVelocity.length();
@@ -530,9 +532,6 @@ function animate() {
 
 
     // --- AUDIO (sin cambios) ---
-    const keyboardAccel = (keys['arrowup']) ? 1.0 : (keys['arrowdown']) ? -1.0 : 0;
-    const touchAccel = (touchState.accelerate) ? 1.0 : (touchState.brake) ? -1.0 : 0;
-    const accelerationInput = touchAccel !== 0 ? touchAccel : keyboardAccel;
     if (engineOn && Object.keys(engineSounds).length > 0) {
         const baseVolume = 0.4;
         const speedRatio = Math.min(1, speed / REFERENCE_SPEED_FOR_EFFECTS);
