@@ -299,6 +299,9 @@ const speedometer = document.getElementById('speedometer');
 // --- LÓGICA DE CARGA DEL MODELO Y INICIO ---
 function loadCar(callback) {
     const loader = new GLTFLoader();
+    const progressBar = document.getElementById('progress-bar');
+    const loadingText = document.getElementById('loading-text');
+
     loadingOverlay.style.opacity = '1';
     loadingOverlay.style.display = 'flex';
 
@@ -360,9 +363,15 @@ function loadCar(callback) {
 
             callback();
         },
-        undefined,
+        (xhr) => {
+            const percentComplete = (xhr.loaded / xhr.total) * 100;
+            progressBar.style.width = percentComplete + '%';
+            loadingText.textContent = `Cargando Modelo 3D... ${Math.round(percentComplete)}%`;
+        },
         (error) => {
             console.error('Ocurrió un error al cargar el modelo:', error);
+            loadingText.textContent = 'Error al cargar el modelo. Revisa la consola.';
+            loadingText.style.color = 'red';
         }
     );
 }
