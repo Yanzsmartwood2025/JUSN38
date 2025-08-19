@@ -315,21 +315,21 @@ function createBasicCar() {
     // Alerón delantero
     const frontWingGeo = new THREE.BoxGeometry(1.8, 0.1, 1);
     const frontWing = new THREE.Mesh(frontWingGeo, bodyMat);
-    frontWing.position.set(0, 0.4, 2.75);
+    frontWing.position.set(0, 0.4, -2.75); // Invertido
     frontWing.castShadow = true;
     car.add(frontWing);
 
     // Alerón trasero
     const rearWingGeo = new THREE.BoxGeometry(1.8, 0.2, 0.8);
     const rearWing = new THREE.Mesh(rearWingGeo, bodyMat);
-    rearWing.position.set(0, 1.2, -2.65);
+    rearWing.position.set(0, 1.2, 2.65); // Invertido
     rearWing.castShadow = true;
     car.add(rearWing);
 
     // Cabina del piloto
     const cockpitGeo = new THREE.BoxGeometry(1.2, 0.6, 1.5);
     const cockpit = new THREE.Mesh(cockpitGeo, cockpitMat);
-    cockpit.position.set(0, 1.2, -0.5);
+    cockpit.position.set(0, 1.2, 0.5); // Invertido
     cockpit.castShadow = true;
     car.add(cockpit);
 
@@ -337,10 +337,10 @@ function createBasicCar() {
     const wheelGeo = new THREE.CylinderGeometry(0.4, 0.4, 0.4, 32);
 
     const wheelPositions = [
-        { x: -1.2, y: 0.4, z: 1.5 },  // Delantera Izquierda
-        { x: 1.2, y: 0.4, z: 1.5 },   // Delantera Derecha
-        { x: -1.2, y: 0.4, z: -1.8 }, // Trasera Izquierda
-        { x: 1.2, y: 0.4, z: -1.8 }   // Trasera Derecha
+        { x: -1.2, y: 0.4, z: -1.5 },  // Delantera Izquierda
+        { x: 1.2, y: 0.4, z: -1.5 },   // Delantera Derecha
+        { x: -1.2, y: 0.4, z: 1.8 }, // Trasera Izquierda
+        { x: 1.2, y: 0.4, z: 1.8 }   // Trasera Derecha
     ];
 
     const frontLeftWheel = new THREE.Mesh(wheelGeo, wheelMat);
