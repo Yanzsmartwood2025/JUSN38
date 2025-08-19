@@ -185,7 +185,7 @@ const ACCELERATION = 8.0;                 // ~0-100 km/h en ~3.5s (F1 sensato)
 const BRAKE_FORCE = 12.0;                 // frenado fuerte
 const REVERSE_ACCELERATION = 3.0;         // reversa más suave
 const MAX_SPEED = 250 / 3.6;              // 250 km/h -> m/s
-const MAX_REVERSE_SPEED = 30 / 3.6;       // limita reversa a 30 km/h
+const MAX_REVERSE_SPEED = MAX_SPEED;      // Igualado a la velocidad máxima
 
 const DRAG_COEFFICIENT = 0.0009;          // drag cuadrático (bajo, realista)
 const ROLLING_FRICTION = 0.003;           // fricción basal
@@ -491,8 +491,8 @@ function animate() {
     }
 
     // Rotación del coche
-    if (speed > 0.2) {
-        const turnFactor = 1.0 - Math.min(1, speed / REFERENCE_SPEED_FOR_EFFECTS);
+    if (Math.abs(speed) > 0.2) {
+        const turnFactor = 1.0 - Math.min(1, Math.abs(speed) / REFERENCE_SPEED_FOR_EFFECTS);
         const effectiveTurnSpeed = TURN_SPEED * turnFactor;
         const turnDirection = velocityIsForward ? 1 : -1;
         const turnAmount = turnInput * effectiveTurnSpeed * deltaTime;
