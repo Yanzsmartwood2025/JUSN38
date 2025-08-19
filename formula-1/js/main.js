@@ -251,9 +251,9 @@ scene.add(car);
 let engineOn = false; // Estado del motor
 const carVelocity = new THREE.Vector3();
 const TURN_SPEED = 3.0; // Radianes por segundo a velocidad cero
-const ACCELERATION = 9650.0; // Aceleración de F1
+const ACCELERATION = 4500.0; // Aceleración de F1
 const BRAKE_FORCE = 150.0;
-const DRAG_COEFFICIENT = 2.0;
+const DRAG_COEFFICIENT = 1.0;
 const ROLLING_FRICTION = 1.0;
 const MAX_SPEED_FOR_TURN_CALC = 150.0; // Velocidad de referencia para el cálculo del giro
 
