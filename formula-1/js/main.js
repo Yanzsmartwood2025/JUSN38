@@ -120,7 +120,16 @@ function createScenery() {
     const crowdMaterial = new THREE.MeshBasicMaterial({ map: createCrowdTexture() });
     const fenceMaterial = new THREE.MeshBasicMaterial({ map: createFenceTexture(), transparent: true, alphaTest: 0.1 });
     fenceMaterial.map.repeat.set(80, 1);
-    const sceneryPlanes = [ { progress: 0.95, side: 'outer', size: new THREE.Vector2(150, 30), material: crowdMaterial }, { progress: 0.2, side: 'outer', size: new THREE.Vector2(100, 25), material: crowdMaterial }, { progress: 0.6, side: 'outer', size: new THREE.Vector2(120, 28), material: crowdMaterial }, ];
+
+    // --- Material de Cumpleaños para Paneles Existentes ---
+    const birthdayAdTexture = new THREE.TextureLoader().load('assets/images/Feliz-cumpleaños.jpg');
+    const birthdayAdMaterial = new THREE.MeshBasicMaterial({ map: birthdayAdTexture, side: THREE.DoubleSide });
+
+    const sceneryPlanes = [
+        { progress: 0.95, side: 'outer', size: new THREE.Vector2(150, 30), material: crowdMaterial },
+        { progress: 0.2, side: 'outer', size: new THREE.Vector2(100, 25), material: birthdayAdMaterial }, // <-- Changed material
+        { progress: 0.6, side: 'outer', size: new THREE.Vector2(120, 28), material: crowdMaterial },
+    ];
 
     sceneryPlanes.forEach(p => {
         const point = trackCurve.getPointAt(p.progress);
@@ -136,6 +145,38 @@ function createScenery() {
         plane.lookAt(point);
         scene.add(plane);
     });
+
+    // --- PANTALLAS DE CUMPLEAÑOS ---
+    const birthdayTextureLoader = new THREE.TextureLoader();
+
+    // Pantalla "Feliz Cumpleaños"
+    const felizCumpleTexture = birthdayTextureLoader.load('assets/images/Feliz-cumpleaños.jpg');
+    const felizCumpleMat = new THREE.MeshBasicMaterial({ map: felizCumpleTexture, side: THREE.DoubleSide });
+    const felizCumpleGeo = new THREE.PlaneGeometry(80, 40);
+    const felizCumpleScreen = new THREE.Mesh(felizCumpleGeo, felizCumpleMat);
+
+    let point = trackCurve.getPointAt(0.1);
+    let tangent = trackCurve.getTangentAt(0.1);
+    let normal = new THREE.Vector3(-tangent.z, 0, tangent.x);
+    let offset = ASPHALT_WIDTH / 2 + 20;
+    felizCumpleScreen.position.copy(point).add(normal.clone().multiplyScalar(offset));
+    felizCumpleScreen.position.y = 20;
+    felizCumpleScreen.lookAt(point);
+    scene.add(felizCumpleScreen);
+
+    // Pantalla "Yajaira"
+    const yajairaTexture = birthdayTextureLoader.load('assets/images/Yajaira-transparente.png');
+    const yajairaMat = new THREE.MeshBasicMaterial({ map: yajairaTexture, transparent: true, side: THREE.DoubleSide });
+    const yajairaGeo = new THREE.PlaneGeometry(40, 40);
+    const yajairaScreen = new THREE.Mesh(yajairaGeo, yajairaMat);
+
+    point = trackCurve.getPointAt(0.5);
+    tangent = trackCurve.getTangentAt(0.5);
+    normal = new THREE.Vector3(-tangent.z, 0, tangent.x);
+    yajairaScreen.position.copy(point).add(normal.clone().multiplyScalar(offset));
+    yajairaScreen.position.y = 20;
+    yajairaScreen.lookAt(point);
+    scene.add(yajairaScreen);
 
     const fenceHeight = 3;
     const fenceOffset = ASPHALT_WIDTH / 2 + CURB_WIDTH + FENCE_BUFFER;
@@ -159,6 +200,33 @@ function createScenery() {
     }
 }
 
+// --- LÓGICA DE GLOBOS ---
+const balloons = [];
+function createBalloons() {
+    const balloonTextureLoader = new THREE.TextureLoader();
+    for (let i = 1; i <= 6; i++) {
+        balloonTextureLoader.load(`assets/images/Globo${i}.png`, (texture) => {
+            const material = new THREE.MeshBasicMaterial({
+                map: texture,
+                transparent: true,
+                side: THREE.DoubleSide
+            });
+            const geometry = new THREE.PlaneGeometry(15, 15);
+            const balloon = new THREE.Mesh(geometry, material);
+
+            const x = (Math.random() - 0.5) * 1000;
+            const y = 50 + Math.random() * 50;
+            const z = (Math.random() - 0.5) * 1000;
+
+            balloon.position.set(x, y, z);
+            // Store original y position for animation
+            balloon.userData.originalY = y;
+            balloons.push(balloon);
+            scene.add(balloon);
+        });
+    }
+}
+
 // --- INICIALIZACIÓN DE LA ESCENA ---
 scene.add(createFlatTrackSegment(trackCurve, ASPHALT_WIDTH, createAsphaltMaterial(), 0.01));
 const curbMaterial = new THREE.MeshStandardMaterial({ map: createCurbTexture(), roughness: 0.7 });
@@ -170,6 +238,7 @@ groundPlane.rotation.x = -Math.PI / 2;
 groundPlane.receiveShadow = true;
 scene.add(groundPlane);
 createScenery();
+createBalloons();
 
 // --- LÓGICA DEL COCHE Y CONTROLES ---
 let car;
@@ -517,6 +586,13 @@ function animate() {
         Object.values(engineSounds).forEach(s => s.setVolume(0));
     }
 
+    // --- ANIMACIÓN DE GLOBOS ---
+    balloons.forEach(balloon => {
+        if (balloon.userData.originalY) { // Check if balloon is loaded
+            balloon.position.y = balloon.userData.originalY + Math.sin(now * 0.5 + balloon.position.x) * 5;
+        }
+    });
+
     // --- CÁMARA (sin cambios) ---
     camera.fov = 75;
     camera.updateProjectionMatrix();
@@ -561,6 +637,15 @@ startButton.addEventListener('click', () => {
     if (navigator.vibrate) {
         navigator.vibrate(100);
     }
+
+    // Cargar y reproducir música de fondo
+    const backgroundMusic = new THREE.Audio(audioListener);
+    audioLoader.load('assets/audios/Iframe RBD - Aun Hay Algo [kAvMav3TOAE] (1).mp3', function(buffer) {
+        backgroundMusic.setBuffer(buffer);
+        backgroundMusic.setLoop(true);
+        backgroundMusic.setVolume(0.5); // Volumen ajustado para no opacar otros sonidos
+        backgroundMusic.play();
+    });
 
     const soundsToLoad = ['engine_idle_garage.mp3', 'engine_low_rpm_loop.mp3', 'engine_mid_rpm_loop.mp3', 'engine_high_rpm_loop.mp3'];
     let soundsLoaded = 0;
