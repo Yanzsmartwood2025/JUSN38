@@ -251,10 +251,11 @@ scene.add(car);
 let engineOn = false; // Estado del motor
 const carVelocity = new THREE.Vector3();
 const TURN_SPEED = 3.0; // Radianes por segundo a velocidad cero
-const ACCELERATION = 18900.0; // Aceleración de F1
+const ACCELERATION = 12000.0; // Aceleración de F1 (ajustada)
 const BRAKE_FORCE = 150.0;
 const DRAG_COEFFICIENT = 2.0;
 const ROLLING_FRICTION = 1.0;
+const MAX_SPEED = 69.4; // 250 KM/H
 const MAX_SPEED_FOR_TURN_CALC = 150.0; // Velocidad de referencia para el cálculo del giro
 
 const keys = {};
@@ -418,6 +419,12 @@ function animate() {
 
     // 4. Actualizar velocidad y posición
     carVelocity.add(force.clone().multiplyScalar(delta));
+
+    // Limitar velocidad máxima
+    if (carVelocity.length() > MAX_SPEED) {
+        carVelocity.setLength(MAX_SPEED);
+    }
+
     car.position.add(carVelocity.clone().multiplyScalar(delta));
 
     // --- UI UPDATES ---
