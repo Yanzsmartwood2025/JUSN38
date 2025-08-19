@@ -1,5 +1,4 @@
 import * as THREE from 'three';
-import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
 
 // --- CONFIGURACIÓN BÁSICA DE LA ESCENA ---
 const scene = new THREE.Scene();
@@ -297,122 +296,111 @@ const clock = new THREE.Clock();
 const speedometer = document.getElementById('speedometer');
 
 // --- LÓGICA DE CARGA DEL MODELO Y INICIO ---
+
+function createBasicCar() {
+    const car = new THREE.Group();
+
+    const bodyMat = new THREE.MeshStandardMaterial({ color: 0xdc2626, roughness: 0.4, metalness: 0.2 });
+    const cockpitMat = new THREE.MeshStandardMaterial({ color: 0x171717, roughness: 0.8 });
+    const wheelMat = new THREE.MeshStandardMaterial({ color: 0x111111, roughness: 0.9 });
+
+    // Carlinga principal
+    const bodyGeo = new THREE.BoxGeometry(2, 0.8, 4.5);
+    const body = new THREE.Mesh(bodyGeo, bodyMat);
+    body.position.y = 0.6;
+    body.castShadow = true;
+    body.receiveShadow = true;
+    car.add(body);
+
+    // Alerón delantero
+    const frontWingGeo = new THREE.BoxGeometry(1.8, 0.1, 1);
+    const frontWing = new THREE.Mesh(frontWingGeo, bodyMat);
+    frontWing.position.set(0, 0.4, 2.75);
+    frontWing.castShadow = true;
+    car.add(frontWing);
+
+    // Alerón trasero
+    const rearWingGeo = new THREE.BoxGeometry(1.8, 0.2, 0.8);
+    const rearWing = new THREE.Mesh(rearWingGeo, bodyMat);
+    rearWing.position.set(0, 1.2, -2.65);
+    rearWing.castShadow = true;
+    car.add(rearWing);
+
+    // Cabina del piloto
+    const cockpitGeo = new THREE.BoxGeometry(1.2, 0.6, 1.5);
+    const cockpit = new THREE.Mesh(cockpitGeo, cockpitMat);
+    cockpit.position.set(0, 1.2, -0.5);
+    cockpit.castShadow = true;
+    car.add(cockpit);
+
+    // Ruedas
+    const wheelGeo = new THREE.CylinderGeometry(0.4, 0.4, 0.4, 32);
+
+    const wheelPositions = [
+        { x: -1.2, y: 0.4, z: 1.5 },  // Delantera Izquierda
+        { x: 1.2, y: 0.4, z: 1.5 },   // Delantera Derecha
+        { x: -1.2, y: 0.4, z: -1.8 }, // Trasera Izquierda
+        { x: 1.2, y: 0.4, z: -1.8 }   // Trasera Derecha
+    ];
+
+    const frontLeftWheel = new THREE.Mesh(wheelGeo, wheelMat);
+    const frontRightWheel = new THREE.Mesh(wheelGeo, wheelMat);
+    const rearLeftWheel = new THREE.Mesh(wheelGeo, wheelMat);
+    const rearRightWheel = new THREE.Mesh(wheelGeo, wheelMat);
+
+    const wheels = [frontLeftWheel, frontRightWheel, rearLeftWheel, rearRightWheel];
+    wheels.forEach((wheel, i) => {
+        wheel.rotation.z = Math.PI / 2; // Orientar cilindros como ruedas
+        wheel.position.set(wheelPositions[i].x, wheelPositions[i].y, wheelPositions[i].z);
+        wheel.castShadow = true;
+        car.add(wheel);
+    });
+
+    // Asignar ruedas para el control de la dirección, manteniendo la estructura original
+    car.wheels = [
+        new THREE.Object3D(), // Dummy para rueda trasera izquierda
+        new THREE.Object3D(), // Dummy para rueda trasera derecha
+        frontLeftWheel,
+        frontRightWheel
+    ];
+
+    // Crear un volante simple
+    const steeringWheelGeo = new THREE.TorusGeometry(0.25, 0.05, 8, 24);
+    steeringWheel = new THREE.Mesh(steeringWheelGeo, cockpitMat);
+    steeringWheel.position.set(0, 1.2, 0);
+    steeringWheel.rotation.x = Math.PI / 3;
+    car.add(steeringWheel);
+
+    return car;
+}
+
 function loadCar(callback) {
-    const loader = new GLTFLoader();
-    const progressBar = document.getElementById('progress-bar');
+    // Mostrar el overlay de carga
+    const loadingOverlay = document.getElementById('loading-overlay');
     const loadingText = document.getElementById('loading-text');
 
     loadingOverlay.style.opacity = '1';
     loadingOverlay.style.display = 'flex';
+    if (loadingText) loadingText.textContent = 'Cargando Escenario...';
 
-    loader.load(
-        'assets/3d/mercedesf1.glb',
-        (gltf) => {
-            car = gltf.scene;
+    // Crear el coche básico de forma síncrona
+    car = createBasicCar();
 
-            const wheelMeshes = {};
-            // Encontrar las mallas importantes recorriendo el modelo
-            car.traverse(function(object) {
-                switch(object.name) {
-                    case "Steering_wheel_Steering_wheel_0":
-                        steeringWheel = object;
-                        break;
-                    case "Wheel_FL_Wheel_0":
-                        wheelMeshes.frontLeft = object;
-                        break;
-                    case "Wheel_FR_Wheel_0":
-                        wheelMeshes.frontRight = object;
-                        break;
-                }
+    // La función `createBasicCar` ya asigna `steeringWheel` y `car.wheels`.
 
-                // Habilitar sombras para todas las mallas
-                if (object.isMesh) {
-                    object.castShadow = true;
-                    object.receiveShadow = true;
-                }
-            });
+    // Ajustar escala y orientación. El coche básico no necesita la misma escala que el modelo GLB.
+    car.scale.set(1.0, 1.0, 1.0);
+    car.rotation.y = Math.PI;
+    scene.add(car);
 
-            // Si encontramos un volante, le añadimos las manos
-            if (steeringWheel) {
-                const hands = createHands();
-                // Ajustar la orientación y posición de las manos para que encajen
-                hands.rotation.x = -Math.PI / 2;
-                hands.position.y = 0.1;
-                steeringWheel.add(hands);
-            }
-
-            // Asignar las ruedas delanteras al array `car.wheels` para la animación de giro.
-            // Se usan dummies para las traseras para mantener la compatibilidad con el código existente.
-            car.wheels = [
-                new THREE.Object3D(), // Dummy RL
-                new THREE.Object3D(), // Dummy RR
-                wheelMeshes.frontLeft,
-                wheelMeshes.frontRight
-            ];
-
-            // Ajustar escala y orientación
-            car.scale.set(2.5, 2.5, 2.5);
-            car.rotation.y = Math.PI;
-            scene.add(car);
-
-            // Ocultar overlay y empezar el juego
-            loadingOverlay.style.opacity = '0';
-            loadingOverlay.addEventListener('transitionend', () => {
-                loadingOverlay.style.display = 'none';
-            });
-
-            callback();
-        },
-        (xhr) => {
-            const percentComplete = (xhr.loaded / xhr.total) * 100;
-            progressBar.style.width = percentComplete + '%';
-            loadingText.textContent = `Cargando Modelo 3D... ${Math.round(percentComplete)}%`;
-        },
-        (error) => {
-            console.error('Ocurrió un error al cargar el modelo:', error);
-            loadingText.textContent = 'Error al cargar el modelo. Revisa la consola.';
-            loadingText.style.color = 'red';
-        }
-    );
-}
-
-function createHands() {
-    const hands = new THREE.Group();
-    const handMaterial = new THREE.MeshStandardMaterial({ color: 0x333333, roughness: 0.8 });
-
-    // Function to create a single hand
-    const createSingleHand = (isLeft) => {
-        const hand = new THREE.Group();
-        const palmGeo = new THREE.BoxGeometry(0.2, 0.25, 0.05);
-        const palm = new THREE.Mesh(palmGeo, handMaterial);
-
-        const thumbGeo = new THREE.BoxGeometry(0.06, 0.1, 0.05);
-        const thumb = new THREE.Mesh(thumbGeo, handMaterial);
-        thumb.position.set(isLeft ? -0.1 : 0.1, 0.05, 0);
-        thumb.rotation.z = isLeft ? Math.PI / 8 : -Math.PI / 8;
-
-        hand.add(palm);
-        hand.add(thumb);
-        return hand;
-    };
-
-    const leftHand = createSingleHand(true);
-    leftHand.position.set(-0.4, 0, 0.1); // Position for 9 o'clock
-
-    const rightHand = createSingleHand(false);
-    rightHand.position.set(0.4, 0, 0.1); // Position for 3 o'clock
-
-    hands.add(leftHand);
-    hands.add(rightHand);
-
-    // Enable shadows for hands
-    hands.traverse(node => {
-        if(node.isMesh) {
-            node.castShadow = true;
-        }
+    // Ocultar el overlay de carga. Las texturas del escenario (árboles) pueden seguir cargando en segundo plano.
+    loadingOverlay.style.opacity = '0';
+    loadingOverlay.addEventListener('transitionend', () => {
+        loadingOverlay.style.display = 'none';
     });
 
-    return hands;
+    // Llamar al callback para iniciar el bucle de animación.
+    callback();
 }
 
 
