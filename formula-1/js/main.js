@@ -256,9 +256,9 @@ const REVERSE_ACCELERATION = 9000.0;
 const BRAKE_FORCE = 25000.0; // Fuerza de frenado dedicada
 const DRAG_COEFFICIENT = 2.0;
 const ROLLING_FRICTION = 1.0;
-const MAX_SPEED = 97.2; // 350 km/h
+const MAX_SPEED = 69.4; // 250 km/h
 const MAX_REVERSE_SPEED = 41.7; // 150 km/h
-const MAX_SPEED_FOR_TURN_CALC = 150.0; // Velocidad de referencia para el cálculo del giro
+const REFERENCE_SPEED_FOR_EFFECTS = 69.4; // Velocidad de referencia para giro, FOV, y audio. Sincronizado con MAX_SPEED.
 
 const keys = {};
 document.addEventListener('keydown', (e) => {
@@ -394,7 +394,7 @@ function animate() {
 
     // 2. Rotación del coche (física)
     if (speed > 0.2) {
-        const turnFactor = 1.0 - Math.min(1, speed / MAX_SPEED_FOR_TURN_CALC);
+        const turnFactor = 1.0 - Math.min(1, speed / REFERENCE_SPEED_FOR_EFFECTS);
         const effectiveTurnSpeed = TURN_SPEED * turnFactor;
         // La dirección del giro depende de si vamos hacia adelante o en reversa
         const turnDirection = velocityIsForward ? 1 : -1;
@@ -467,7 +467,7 @@ function animate() {
     // --- AUDIO ---
     if (engineOn && Object.keys(engineSounds).length > 0) {
         const baseVolume = 0.4;
-        const speedRatio = Math.min(1, speed / MAX_SPEED_FOR_TURN_CALC);
+        const speedRatio = Math.min(1, speed / REFERENCE_SPEED_FOR_EFFECTS);
 
         // Volumen general basado en la velocidad, para que no sea abrupto
         const overallVolume = baseVolume * Math.min(1, speed / 5.0);
@@ -493,7 +493,7 @@ function animate() {
     // --- CÁMARA ---
     // Efecto FOV dinámico
     const baseFov = 75;
-    const fovBoost = Math.min(1, speed / MAX_SPEED_FOR_TURN_CALC) * 15; // Aumenta hasta 15 grados
+    const fovBoost = Math.min(1, speed / REFERENCE_SPEED_FOR_EFFECTS) * 15; // Aumenta hasta 15 grados
     camera.fov = baseFov + fovBoost;
     camera.updateProjectionMatrix();
 
