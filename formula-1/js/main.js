@@ -420,8 +420,10 @@ function updateCarPhysics(deltaTime, accelInput) {
 
   // Vector de fuerzas (en m/s^2)
   const forwardForce = new THREE.Vector3();
-  if (accelInput === 1) {
-    forwardForce.addScaledVector(carForward, ACCELERATION);
+  if (engineOn) {
+    if (accelInput === 1) {
+      forwardForce.addScaledVector(carForward, ACCELERATION);
+    }
   }
 
   // Frenado/Reversa
