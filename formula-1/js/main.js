@@ -45,6 +45,24 @@ function createCurbTexture() { const canvas = document.createElement('canvas'); 
 function createGrassMaterial() { const size = 512; const canvas = document.createElement('canvas'); canvas.width = size; canvas.height = size; const ctx = canvas.getContext('2d'); ctx.fillStyle = '#3a5921'; ctx.fillRect(0, 0, size, size); for (let i = 0; i < 15000; i++) { const x = Math.random() * size; const y = Math.random() * size; const lightness = Math.random() * 0.15; ctx.fillStyle = `rgba(255, 255, 150, ${lightness})`; ctx.fillRect(x, y, 2, 2); } const texture = new THREE.CanvasTexture(canvas); texture.wrapS = THREE.RepeatWrapping; texture.wrapT = THREE.RepeatWrapping; texture.repeat.set(GRASS_SIZE / 50, GRASS_SIZE / 50); return new THREE.MeshStandardMaterial({ map: texture, roughness: 1, color: 0x4a7931 }); }
 function createCrowdTexture() { const canvas = document.createElement('canvas'); canvas.width = 512; canvas.height = 128; const ctx = canvas.getContext('2d'); ctx.fillStyle = '#444'; ctx.fillRect(0,0,512,128); for(let i=0; i < 2000; i++) { const x = Math.random() * 512; const y = 32 + Math.random() * 96; const size = Math.random() * 2 + 1; ctx.fillStyle = `hsl(${Math.random() * 360}, 50%, ${60 + Math.random() * 20}%)`; ctx.beginPath(); ctx.arc(x, y, size, 0, Math.PI * 2); ctx.fill(); } return new THREE.CanvasTexture(canvas); }
 function createFenceTexture() { const canvas = document.createElement('canvas'); canvas.width = 128; canvas.height = 128; const ctx = canvas.getContext('2d'); ctx.strokeStyle = 'rgba(100, 100, 100, 0.7)'; ctx.lineWidth = 2; for(let i = -128; i < 256; i+=10) { ctx.beginPath(); ctx.moveTo(i, 0); ctx.lineTo(i + 128, 128); ctx.stroke(); ctx.beginPath(); ctx.moveTo(i, 128); ctx.lineTo(i + 128, 0); ctx.stroke(); } const texture = new THREE.CanvasTexture(canvas); texture.wrapS = THREE.RepeatWrapping; texture.wrapT = THREE.RepeatWrapping; return texture; }
+
+function createBirthdayFenceTexture() {
+    const canvas = document.createElement('canvas');
+    canvas.width = 1024;
+    canvas.height = 128;
+    const ctx = canvas.getContext('2d');
+    ctx.fillStyle = 'rgba(255, 255, 255, 0.1)';
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+    ctx.font = 'bold 70px Rajdhani, sans-serif';
+    ctx.fillStyle = '#E53E3E';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText('Feliz Cumpleaños Yajaira', canvas.width / 2, canvas.height / 2);
+    const texture = new THREE.CanvasTexture(canvas);
+    texture.wrapS = THREE.RepeatWrapping;
+    texture.wrapT = THREE.RepeatWrapping;
+    return texture;
+}
 function createFlatTrackSegment(curve, width, material, yOffset = 0) { const segments = Math.floor(curve.getLength() / 2); const geometry = new THREE.BufferGeometry(); const positions = [], normals = [], uvs = [], indices = []; const repeatFactor = trackLength / 10; for (let i = 0; i <= segments; i++) { const p = i / segments; const point = curve.getPointAt(p); const tangent = curve.getTangentAt(p); const normal = new THREE.Vector3(-tangent.z, 0, tangent.x).normalize(); positions.push(point.x - normal.x * width / 2, yOffset, point.z - normal.z * width / 2); normals.push(0, 1, 0); uvs.push(0, p * repeatFactor); positions.push(point.x + normal.x * width / 2, yOffset, point.z + normal.z * width / 2); normals.push(0, 1, 0); uvs.push(width / 10, p * repeatFactor); } for (let i = 0; i < segments; i++) { const a = i * 2, b = a + 1, c = a + 2, d = a + 3; indices.push(a, b, c, b, d, c); } geometry.setIndex(indices); geometry.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3)); geometry.setAttribute('normal', new THREE.Float32BufferAttribute(normals, 3)); geometry.setAttribute('uv', new THREE.Float32BufferAttribute(uvs, 2)); const mesh = new THREE.Mesh(geometry, material); mesh.receiveShadow = true; return mesh; }
 function createOffsetFlatTrackSegment(curve, width, material, offset, yOffset) { const segments = Math.floor(curve.getLength() / 2); const geometry = new THREE.BufferGeometry(); const positions = [], normals = [], uvs = [], indices = []; for (let i = 0; i <= segments; i++) { const p = i / segments; const point = curve.getPointAt(p); const tangent = curve.getTangentAt(p); const normal = new THREE.Vector3(-tangent.z, 0, tangent.x).normalize(); const basePoint = point.clone().add(normal.clone().multiplyScalar(offset)); const textureRepeatFactor = 1 / (1.5 * 2); positions.push(basePoint.x - normal.x * width / 2, yOffset, basePoint.z - normal.z * width / 2); normals.push(0, 1, 0); uvs.push(0, p * trackLength * textureRepeatFactor); positions.push(basePoint.x + normal.x * width / 2, yOffset, basePoint.z + normal.z * width / 2); normals.push(0, 1, 0); uvs.push(1, p * trackLength * textureRepeatFactor); } for (let i = 0; i < segments; i++) { const a = i * 2, b = a + 1, c = a + 2, d = a + 3; indices.push(a, b, c, b, d, c); } geometry.setIndex(indices); geometry.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3)); geometry.setAttribute('normal', new THREE.Float32BufferAttribute(normals, 3)); geometry.setAttribute('uv', new THREE.Float32BufferAttribute(uvs, 2)); return new THREE.Mesh(geometry, material); }
 
@@ -118,8 +136,8 @@ function populateMixedForest() {
 // --- CREACIÓN DEL ESCENARIO ---
 function createScenery() {
     const crowdMaterial = new THREE.MeshBasicMaterial({ map: createCrowdTexture() });
-    const fenceMaterial = new THREE.MeshBasicMaterial({ map: createFenceTexture(), transparent: true, alphaTest: 0.1 });
-    fenceMaterial.map.repeat.set(80, 1);
+    const fenceMaterial = new THREE.MeshBasicMaterial({ map: createBirthdayFenceTexture(), transparent: true });
+    fenceMaterial.map.repeat.set(20, 1);
 
     // --- Material de Cumpleaños para Paneles Existentes ---
     const birthdayAdTexture = new THREE.TextureLoader().load('assets/images/Feliz-cumpleaños.jpg');
@@ -148,35 +166,23 @@ function createScenery() {
 
     // --- PANTALLAS DE CUMPLEAÑOS ---
     const birthdayTextureLoader = new THREE.TextureLoader();
-
-    // Pantalla "Feliz Cumpleaños"
     const felizCumpleTexture = birthdayTextureLoader.load('assets/images/Feliz-cumpleaños.jpg');
     const felizCumpleMat = new THREE.MeshBasicMaterial({ map: felizCumpleTexture, side: THREE.DoubleSide });
     const felizCumpleGeo = new THREE.PlaneGeometry(80, 40);
-    const felizCumpleScreen = new THREE.Mesh(felizCumpleGeo, felizCumpleMat);
 
-    let point = trackCurve.getPointAt(0.1);
-    let tangent = trackCurve.getTangentAt(0.1);
-    let normal = new THREE.Vector3(-tangent.z, 0, tangent.x);
-    let offset = ASPHALT_WIDTH / 2 + 20;
-    felizCumpleScreen.position.copy(point).add(normal.clone().multiplyScalar(offset));
-    felizCumpleScreen.position.y = 20;
-    felizCumpleScreen.lookAt(point);
-    scene.add(felizCumpleScreen);
-
-    // Pantalla "Yajaira"
-    const yajairaTexture = birthdayTextureLoader.load('assets/images/Yajaira-transparente.png');
-    const yajairaMat = new THREE.MeshBasicMaterial({ map: yajairaTexture, transparent: true, side: THREE.DoubleSide });
-    const yajairaGeo = new THREE.PlaneGeometry(40, 40);
-    const yajairaScreen = new THREE.Mesh(yajairaGeo, yajairaMat);
-
-    point = trackCurve.getPointAt(0.5);
-    tangent = trackCurve.getTangentAt(0.5);
-    normal = new THREE.Vector3(-tangent.z, 0, tangent.x);
-    yajairaScreen.position.copy(point).add(normal.clone().multiplyScalar(offset));
-    yajairaScreen.position.y = 20;
-    yajairaScreen.lookAt(point);
-    scene.add(yajairaScreen);
+    for (let i = 0; i < 10; i++) {
+        const screen = new THREE.Mesh(felizCumpleGeo, felizCumpleMat);
+        const progress = i / 10;
+        const point = trackCurve.getPointAt(progress);
+        const tangent = trackCurve.getTangentAt(progress);
+        const normal = new THREE.Vector3(-tangent.z, 0, tangent.x);
+        const offset = ASPHALT_WIDTH / 2 + 20;
+        const sideMultiplier = (i % 2 === 0) ? 1 : -1;
+        screen.position.copy(point).add(normal.clone().multiplyScalar(offset * sideMultiplier));
+        screen.position.y = 20;
+        screen.lookAt(point);
+        scene.add(screen);
+    }
 
     const fenceHeight = 3;
     const fenceOffset = ASPHALT_WIDTH / 2 + CURB_WIDTH + FENCE_BUFFER;
@@ -204,27 +210,73 @@ function createScenery() {
 const balloons = [];
 function createBalloons() {
     const balloonTextureLoader = new THREE.TextureLoader();
-    for (let i = 1; i <= 6; i++) {
+    const balloonMaterials = [];
+    const numTextures = 6;
+    let loadedCount = 0;
+
+    for (let i = 1; i <= numTextures; i++) {
         balloonTextureLoader.load(`assets/images/Globo${i}.png`, (texture) => {
-            const material = new THREE.MeshBasicMaterial({
+            balloonMaterials.push(new THREE.MeshBasicMaterial({
                 map: texture,
                 transparent: true,
-                side: THREE.DoubleSide
-            });
-            const geometry = new THREE.PlaneGeometry(15, 15);
+                side: THREE.DoubleSide,
+                depthWrite: false // Good for transparent objects
+            }));
+            loadedCount++;
+            if (loadedCount === numTextures) {
+                populateBalloons();
+            }
+        });
+    }
+
+    function populateBalloons() {
+        const geometry = new THREE.PlaneGeometry(15, 15);
+        for (let i = 0; i < 100; i++) { // Increased balloon count
+            const material = balloonMaterials[Math.floor(Math.random() * numTextures)];
             const balloon = new THREE.Mesh(geometry, material);
 
-            const x = (Math.random() - 0.5) * 1000;
-            const y = 50 + Math.random() * 50;
-            const z = (Math.random() - 0.5) * 1000;
+            const x = (Math.random() - 0.5) * 1500; // Wider spread
+            const y = 50 + Math.random() * 100; // Higher and more varied
+            const z = (Math.random() - 0.5) * 1500; // Wider spread
 
             balloon.position.set(x, y, z);
-            // Store original y position for animation
             balloon.userData.originalY = y;
             balloons.push(balloon);
             scene.add(balloon);
-        });
+        }
     }
+}
+
+// --- LÓGICA DE ROSAS CAYENDO ---
+let roseParticles;
+const numRoses = 500;
+
+function createFallingRoses() {
+    const roseTexture = new THREE.TextureLoader().load('assets/images/Rosa.png');
+    const roseMaterial = new THREE.PointsMaterial({
+        map: roseTexture,
+        size: 5,
+        transparent: true,
+        alphaTest: 0.5,
+        depthWrite: false
+    });
+
+    const rosePositions = new Float32Array(numRoses * 3);
+    const roseVelocities = new Float32Array(numRoses);
+
+    for (let i = 0; i < numRoses; i++) {
+        rosePositions[i * 3] = (Math.random() - 0.5) * 2000; // x
+        rosePositions[i * 3 + 1] = Math.random() * 1000 + 200; // y (start high)
+        rosePositions[i * 3 + 2] = (Math.random() - 0.5) * 2000; // z
+        roseVelocities[i] = 10 + Math.random() * 10; // individual fall speed
+    }
+
+    const roseGeometry = new THREE.BufferGeometry();
+    roseGeometry.setAttribute('position', new THREE.BufferAttribute(rosePositions, 3));
+    roseGeometry.setAttribute('velocity', new THREE.BufferAttribute(roseVelocities, 1));
+
+    roseParticles = new THREE.Points(roseGeometry, roseMaterial);
+    scene.add(roseParticles);
 }
 
 // --- INICIALIZACIÓN DE LA ESCENA ---
@@ -239,6 +291,7 @@ groundPlane.receiveShadow = true;
 scene.add(groundPlane);
 createScenery();
 createBalloons();
+createFallingRoses();
 
 // --- LÓGICA DEL COCHE Y CONTROLES ---
 let car;
@@ -592,6 +645,24 @@ function animate() {
             balloon.position.y = balloon.userData.originalY + Math.sin(now * 0.5 + balloon.position.x) * 5;
         }
     });
+
+    // --- ANIMACIÓN DE ROSAS CAYENDO ---
+    if (roseParticles) {
+        const positions = roseParticles.geometry.attributes.position.array;
+        const velocities = roseParticles.geometry.attributes.velocity.array;
+
+        for (let i = 0; i < numRoses; i++) {
+            positions[i * 3 + 1] -= velocities[i] * deltaTime;
+            positions[i * 3] += Math.sin(now + i * 0.1) * 0.2; // Gentle sway
+
+            if (positions[i * 3 + 1] < -10) {
+                positions[i * 3 + 1] = Math.random() * 500 + 600;
+                positions[i * 3] = (Math.random() - 0.5) * 2000;
+                positions[i * 3 + 2] = (Math.random() - 0.5) * 2000;
+            }
+        }
+        roseParticles.geometry.attributes.position.needsUpdate = true;
+    }
 
     // --- CÁMARA (sin cambios) ---
     camera.fov = 75;
