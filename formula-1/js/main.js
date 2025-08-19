@@ -251,7 +251,7 @@ scene.add(car);
 let engineOn = false; // Estado del motor
 const carVelocity = new THREE.Vector3();
 const TURN_SPEED = 3.0; // Radianes por segundo a velocidad cero
-const ACCELERATION = 450.0; // Aceleración de F1
+const ACCELERATION = 18900.0; // Aceleración de F1
 const BRAKE_FORCE = 150.0;
 const DRAG_COEFFICIENT = 2.0;
 const ROLLING_FRICTION = 1.0;
@@ -421,7 +421,7 @@ function animate() {
     car.position.add(carVelocity.clone().multiplyScalar(delta));
 
     // --- UI UPDATES ---
-    const displaySpeed = Math.round(speed * 1.7); // Factor de conversión para 370km/h
+    const displaySpeed = Math.round(speed * 3.6); // Factor para convertir m/s a KM/H
     speedometer.textContent = `${displaySpeed} KM/H`;
 
     // --- AUDIO ---
