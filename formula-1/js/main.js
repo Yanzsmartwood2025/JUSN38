@@ -194,7 +194,8 @@ const REFERENCE_SPEED_FOR_EFFECTS = 69.4; // Velocidad de referencia para giro, 
 const keys = {};
 document.addEventListener('keydown', (e) => {
     const key = e.key.toLowerCase();
-    if (key === 'a') {
+    // La tecla 'e' ahora controla el motor para evitar conflictos con los controles de movimiento.
+    if (key === 'e') {
         engineOn = !engineOn;
     } else {
         keys[key] = true;
@@ -202,7 +203,7 @@ document.addEventListener('keydown', (e) => {
 });
 document.addEventListener('keyup', (e) => {
     const key = e.key.toLowerCase();
-    if (key !== 'a') {
+    if (key !== 'e') { // Asegurarse de que la tecla del motor no se quede "pegada"
         keys[key] = false;
     }
 });
