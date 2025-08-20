@@ -629,7 +629,7 @@ canvas {
 }
 
 /* Hacemos que los controles SÍ se puedan tocar */
-#joystick-container, #action-buttons-container, #top-bar, #fullscreen-btn {
+#joystick-container, #action-buttons-container, #top-bar, #fullscreen-btn, #start-button-container {
     pointer-events: auto;
     position: absolute;
 }
