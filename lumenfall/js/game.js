@@ -975,27 +975,20 @@
             }
         }
 
-const fullscreenToggle = document.getElementById('fullscreen-toggle');
+const fullscreenBtn = document.getElementById('fullscreen-btn');
+const gameContainer = document.getElementById('game-container');
 
-fullscreenToggle.addEventListener('change', () => {
-    if (fullscreenToggle.checked) {
-        if (document.documentElement.requestFullscreen) {
-            document.documentElement.requestFullscreen();
-        }
-    } else {
-        if (document.exitFullscreen) {
-            document.exitFullscreen();
-        }
-    }
-});
-
-document.addEventListener('fullscreenchange', () => {
+fullscreenBtn.addEventListener('click', () => {
     if (!document.fullscreenElement) {
-        fullscreenToggle.checked = false;
+        gameContainer.requestFullscreen().catch(err => {
+            console.error(`Error al activar pantalla completa: ${err.message}`);
+            alert('Tu navegador no permite activar la pantalla completa.');
+        });
     } else {
-        fullscreenToggle.checked = true;
+        document.exitFullscreen();
     }
 });
+
 
         const wallTexture = textureLoader.load(assetUrls.wallTexture);
         wallTexture.wrapS = wallTexture.wrapT = THREE.RepeatWrapping;
