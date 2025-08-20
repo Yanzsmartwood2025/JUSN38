@@ -947,6 +947,7 @@
 
                 this.mesh.position.x = Math.max(this.minPlayerX, Math.min(this.maxPlayerX, this.mesh.position.x));
                 this.mesh.rotation.y = this.isFacingLeft ? Math.PI : 0;
+                camera.position.x = this.mesh.position.x;
                 this.playerLight.position.set(this.mesh.position.x, this.mesh.position.y + 1, this.mesh.position.z + 2);
 
                 if (this.currentState !== previousState) this.currentFrame = 0;
@@ -973,6 +974,28 @@
                 }
             }
         }
+
+const fullscreenToggle = document.getElementById('fullscreen-toggle');
+
+fullscreenToggle.addEventListener('change', () => {
+    if (fullscreenToggle.checked) {
+        if (document.documentElement.requestFullscreen) {
+            document.documentElement.requestFullscreen();
+        }
+    } else {
+        if (document.exitFullscreen) {
+            document.exitFullscreen();
+        }
+    }
+});
+
+document.addEventListener('fullscreenchange', () => {
+    if (!document.fullscreenElement) {
+        fullscreenToggle.checked = false;
+    } else {
+        fullscreenToggle.checked = true;
+    }
+});
 
         const wallTexture = textureLoader.load(assetUrls.wallTexture);
         wallTexture.wrapS = wallTexture.wrapT = THREE.RepeatWrapping;
