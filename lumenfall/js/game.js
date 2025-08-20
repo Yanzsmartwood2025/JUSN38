@@ -369,8 +369,8 @@
                 await Promise.all([
                     loadAudio('pasos', '../assets/mp3/LUMENFALL/Pasos-Joziel.mp3'),
                     loadAudio('ambiente', '../assets/mp3/LUMENFALL/calabozo_de_piedra.mp3'),
-                    loadAudio('puerta', 'assets/audio/puerta-calabozo.mp3'),
-                    loadAudio('fantasma', 'assets/audio/voz-fantasma.mp3')
+                    loadAudio('puerta', '../assets/audio/puerta-calabozo.mp3'),
+                    loadAudio('fantasma_lamento', '../assets/audio/voz-fantasma.mp3')
                 ]);
             } catch (error) {
                 console.error("Error loading audio", error);
@@ -975,21 +975,6 @@
             }
         }
 
-const fullscreenBtn = document.getElementById('fullscreen-btn');
-const gameContainer = document.getElementById('game-container');
-
-fullscreenBtn.addEventListener('click', () => {
-    if (!document.fullscreenElement) {
-        gameContainer.requestFullscreen().catch(err => {
-            console.error(`Error al activar pantalla completa: ${err.message}`);
-            alert('Tu navegador no permite activar la pantalla completa.');
-        });
-    } else {
-        document.exitFullscreen();
-    }
-});
-
-
         const wallTexture = textureLoader.load(assetUrls.wallTexture);
         wallTexture.wrapS = wallTexture.wrapT = THREE.RepeatWrapping;
         const wallMaterial = new THREE.MeshStandardMaterial({ map: wallTexture, color: 0x454555 });
@@ -1089,7 +1074,7 @@ fullscreenBtn.addEventListener('click', () => {
             });
 
             levelData.specters.forEach(specterData => {
-                allSpecters.push(new Specter(scene, specterData.x, specterData.y, specterData.isMainDungeonSpecter));
+                allSpecters.push(new Specter(scene, specterData.x, specterData.y));
             });
 
             if (levelData.puzzles) {
@@ -1145,7 +1130,7 @@ fullscreenBtn.addEventListener('click', () => {
                     { id: 'gate_5', x: 30, destination: 'room_5', numeral: 'V' },
                     { id: 'gate_boss', x: 55, destination: 'boss_room', numeral: 'VI' },
                 ],
-                specters: [ { type: 'fear', x: 45, y: 3.5, isMainDungeonSpecter: true } ],
+                specters: [ { type: 'fear', x: 45, y: 3.5 } ],
             },
             room_1: { id: 'room_1', name: 'Habitación 1', gates: [{ id: 'return_1', x: 0, destination: 'dungeon_1', numeral: 'I' }], specters: [], puzzles: [{x: 15}] },
             room_2: { id: 'room_2', name: 'Habitación 2', gates: [{ id: 'return_2', x: 0, destination: 'dungeon_1', numeral: 'II' }], specters: [] },
@@ -1216,7 +1201,7 @@ fullscreenBtn.addEventListener('click', () => {
         }
 
         class Specter {
-            constructor(scene, initialX, initialY, isMainDungeonSpecter = false) {
+            constructor(scene, initialX, initialY) {
                 this.scene = scene;
                 this.initialX = initialX;
                 this.floatingCenterY = initialY;
@@ -1226,8 +1211,7 @@ fullscreenBtn.addEventListener('click', () => {
                 this.moveSpeed = 0.05;
                 this.lastFrameTime = 0;
                 this.currentFrame = 0;
-                this.isMainDungeonSpecter = isMainDungeonSpecter;
-                this.isPlayerNearby = false;
+                this.isPlayerInRange = false;
                 this.init();
             }
 
@@ -1318,20 +1302,22 @@ fullscreenBtn.addEventListener('click', () => {
                         break;
                 }
 
-                if (this.isMainDungeonSpecter && player) {
-                    const distanceToPlayer = this.mesh.position.distanceTo(player.mesh.position);
-                    if (distanceToPlayer < 12 && !this.isPlayerNearby) {
-                        this.isPlayerNearby = true;
-                        const randomPitch = 0.8 + Math.random() * 0.4; // Rango de 0.8 a 1.2
-                        playAudio('fantasma', false, randomPitch);
-                    } else if (distanceToPlayer >= 12 && this.isPlayerNearby) {
-                        this.isPlayerNearby = false;
-                    }
-                }
-
                 if (player && this.state !== 'PHASING_DOWN' && this.state !== 'PHASING_UP' && this.state !== 'FLEEING') {
-                    if (player.mesh.position.distanceTo(this.mesh.position) < 8) {
+                    const distanceToPlayer = player.mesh.position.distanceTo(this.mesh.position);
+
+                    if (distanceToPlayer < 8) {
                         this.setNewState('FLEEING');
+                    }
+
+                    // Ghost voice logic for the specific ghost
+                    if (this.initialX === 45) { // Check if it's the specific ghost from dungeon_1
+                        if (distanceToPlayer < 10 && !this.isPlayerInRange) {
+                            const randomPitch = 0.8 + Math.random() * 0.4; // Pitch between 0.8 and 1.2
+                            playAudio('fantasma_lamento', false, randomPitch);
+                            this.isPlayerInRange = true;
+                        } else if (distanceToPlayer >= 10 && this.isPlayerInRange) {
+                            this.isPlayerInRange = false;
+                        }
                     }
                 }
             }
