@@ -368,7 +368,8 @@
                 await Promise.all([
                     loadAudio('pasos', '../assets/mp3/LUMENFALL/Pasos-Joziel.mp3'),
                     loadAudio('ambiente', '../assets/mp3/LUMENFALL/calabozo_de_piedra.mp3'),
-                    loadAudio('puerta', 'assets/audio/puerta-calabozo.mp3')
+                    loadAudio('puerta', 'assets/audio/puerta-calabozo.mp3'),
+                    loadAudio('fantasma', 'assets/audio/voz-fantasma.mp3')
                 ]);
             } catch (error) {
                 console.error("Error loading audio", error);
@@ -1072,7 +1073,7 @@
             });
 
             levelData.specters.forEach(specterData => {
-                allSpecters.push(new Specter(scene, specterData.x, specterData.y));
+                allSpecters.push(new Specter(scene, specterData.x, specterData.y, specterData.isMainDungeonSpecter));
             });
 
             if (levelData.puzzles) {
@@ -1128,7 +1129,7 @@
                     { id: 'gate_5', x: 30, destination: 'room_5', numeral: 'V' },
                     { id: 'gate_boss', x: 55, destination: 'boss_room', numeral: 'VI' },
                 ],
-                specters: [ { type: 'fear', x: 45, y: 3.5 } ],
+                specters: [ { type: 'fear', x: 45, y: 3.5, isMainDungeonSpecter: true } ],
             },
             room_1: { id: 'room_1', name: 'Habitación 1', gates: [{ id: 'return_1', x: 0, destination: 'dungeon_1', numeral: 'I' }], specters: [], puzzles: [{x: 15}] },
             room_2: { id: 'room_2', name: 'Habitación 2', gates: [{ id: 'return_2', x: 0, destination: 'dungeon_1', numeral: 'II' }], specters: [] },
@@ -1199,7 +1200,7 @@
         }
 
         class Specter {
-            constructor(scene, initialX, initialY) {
+            constructor(scene, initialX, initialY, isMainDungeonSpecter = false) {
                 this.scene = scene;
                 this.initialX = initialX;
                 this.floatingCenterY = initialY;
@@ -1209,6 +1210,8 @@
                 this.moveSpeed = 0.05;
                 this.lastFrameTime = 0;
                 this.currentFrame = 0;
+                this.isMainDungeonSpecter = isMainDungeonSpecter;
+                this.soundHasPlayed = false;
                 this.init();
             }
 
@@ -1297,6 +1300,11 @@
                             this.setNewState('IDLE');
                         }
                         break;
+                }
+
+                if (this.isMainDungeonSpecter && player && !this.soundHasPlayed && this.mesh.position.distanceTo(player.mesh.position) < 12) {
+                    playAudio('fantasma');
+                    this.soundHasPlayed = true;
                 }
 
                 if (player && this.state !== 'PHASING_DOWN' && this.state !== 'PHASING_UP' && this.state !== 'FLEEING') {
