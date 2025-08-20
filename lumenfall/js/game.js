@@ -947,7 +947,6 @@
 
                 this.mesh.position.x = Math.max(this.minPlayerX, Math.min(this.maxPlayerX, this.mesh.position.x));
                 this.mesh.rotation.y = this.isFacingLeft ? Math.PI : 0;
-                camera.position.x = this.mesh.position.x;
                 this.playerLight.position.set(this.mesh.position.x, this.mesh.position.y + 1, this.mesh.position.z + 2);
 
                 if (this.currentState !== previousState) this.currentFrame = 0;
