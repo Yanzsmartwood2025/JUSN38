@@ -384,6 +384,8 @@
                 menuScreen.style.display = 'none';
                 document.getElementById('bg-canvas').style.display = 'block';
                 document.getElementById('ui-container').style.display = 'flex';
+                controlsContainer.style.opacity = '1';
+                controlsContainer.style.pointerEvents = 'auto';
                 player = new Player();
                 loadLevelById(currentLevelId);
                 animate();
