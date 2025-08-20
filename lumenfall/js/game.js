@@ -48,12 +48,13 @@
             });
         }
 
-        function playAudio(name, loop = false) {
+        function playAudio(name, loop = false, playbackRate = 1.0) {
             if (!audioBuffers[name]) return;
             if (audioSources[name] && audioSources[name].buffer) stopAudio(name);
             const source = audioContext.createBufferSource();
             source.buffer = audioBuffers[name];
             source.loop = loop;
+            source.playbackRate.value = playbackRate;
             const gainNode = audioContext.createGain();
             gainNode.gain.value = 0.5;
             source.connect(gainNode).connect(audioContext.destination);
@@ -1211,7 +1212,7 @@
                 this.lastFrameTime = 0;
                 this.currentFrame = 0;
                 this.isMainDungeonSpecter = isMainDungeonSpecter;
-                this.soundHasPlayed = false;
+                this.isPlayerNearby = false;
                 this.init();
             }
 
@@ -1302,9 +1303,15 @@
                         break;
                 }
 
-                if (this.isMainDungeonSpecter && player && !this.soundHasPlayed && this.mesh.position.distanceTo(player.mesh.position) < 12) {
-                    playAudio('fantasma');
-                    this.soundHasPlayed = true;
+                if (this.isMainDungeonSpecter && player) {
+                    const distanceToPlayer = this.mesh.position.distanceTo(player.mesh.position);
+                    if (distanceToPlayer < 12 && !this.isPlayerNearby) {
+                        this.isPlayerNearby = true;
+                        const randomPitch = 0.8 + Math.random() * 0.4; // Rango de 0.8 a 1.2
+                        playAudio('fantasma', false, randomPitch);
+                    } else if (distanceToPlayer >= 12 && this.isPlayerNearby) {
+                        this.isPlayerNearby = false;
+                    }
                 }
 
                 if (player && this.state !== 'PHASING_DOWN' && this.state !== 'PHASING_UP' && this.state !== 'FLEEING') {
