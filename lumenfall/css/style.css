@@ -4,6 +4,7 @@
             overflow: hidden;
             background-color: #000;
             font-family: 'Inter', sans-serif;
+            touch-action: none;
         }
 
         /* Canvas de fondo para Three.js */
