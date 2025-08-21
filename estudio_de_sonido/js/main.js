@@ -75,7 +75,11 @@ function init() {
     // Playback Controls
     dom.recordBtn.addEventListener('click', toggleRecording);
     dom.playPauseButton.addEventListener('click', togglePlayback);
-    dom.restartButton.addEventListener('click', () => { if(isPlaying) { stop(); play(); } });
+    dom.restartButton.addEventListener('click', () => {
+        if (player) {
+            player.seek(0);
+        }
+    });
     dom.loopButton.addEventListener('click', toggleLoop);
 
     // FX Controls Listeners
@@ -388,6 +392,7 @@ async function loadAudioBuffer(audioBuffer) {
     player.loop = true;
 
     await Tone.loaded();
+    Tone.Transport.start();
 
     // Start the player muted, it will loop forever until a new file is loaded
     player.mute = true;
@@ -419,6 +424,7 @@ async function togglePlayback() {
     if (!player || !player.loaded) return;
 
     await Tone.start();
+    Tone.Transport.start();
 
     isPlaying = !isPlaying;
     player.mute = !isPlaying;
