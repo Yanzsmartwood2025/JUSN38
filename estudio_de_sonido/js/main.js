@@ -14,10 +14,6 @@ const dom = {
     waveformCtx: document.getElementById('waveform-canvas').getContext('2d'),
     progressCanvas: document.getElementById('progress-canvas'),
     progressCtx: document.getElementById('progress-canvas').getContext('2d'),
-    eqCanvas: document.getElementById('eq-canvas'),
-    eqCtx: document.getElementById('eq-canvas').getContext('2d'),
-    djDisk: document.getElementById('dj-disk'),
-    diskHandle: document.getElementById('disk-handle'),
     currentTime: document.getElementById('current-time'),
     totalTime: document.getElementById('total-time'),
     restartButton: document.getElementById('restart-button'),
@@ -25,95 +21,71 @@ const dom = {
     playerControls: document.getElementById('player-controls'),
     placeholderText: document.getElementById('placeholder-text'),
     repeatsInput: document.getElementById('repeats-input'),
-    faders: {
-        volume: document.getElementById('volume-slider'),
-        pitch: document.getElementById('pitch-slider'),
-        reverb: document.getElementById('reverb-slider'),
-        delayMix: document.getElementById('delayMix-slider'),
-        chorus: document.getElementById('chorus-slider'),
-    }
+    // FX Controls will be referenced directly via their IDs
 };
 
-// --- GLOBAL STATE ---
-let audioContext, originalBuffer, masterGain, selection = { start: 0, end: 1 };
-let effectNodes = {};
-let activeSources = [], isPlaying = false, isLooping = false, progressAnimator, playbackStartTime = 0;
+// --- TONE.JS & GLOBAL STATE ---
+let player, compressor, noiseGate, eq, reverb, delay, chorus, distortion;
+let originalBuffer;
+let selection = { start: 0, end: 1 };
+let isPlaying = false, isLooping = false, progressAnimator;
 let isRecording = false, mediaRecorder, audioChunks = [];
-
-// --- EQ STATE ---
-const eqBands = [
-    { freq: 150, gain: 0, q: 0.7, type: 'lowshelf', color: '#f87171' },
-    { freq: 600, gain: 0, q: 1.5, type: 'peaking', color: '#fbbf24' },
-    { freq: 2500, gain: 0, q: 1.5, type: 'peaking', color: '#a3e635' },
-    { freq: 8000, gain: 0, q: 0.7, type: 'highshelf', color: '#60a5fa' },
-];
-let activeEQBand = -1;
 
 // --- INITIALIZATION ---
 function init() {
+    // Basic UI Listeners
     dom.openFileBtn.addEventListener('click', () => dom.audioUpload.click());
     dom.audioUpload.addEventListener('change', handleFileUpload);
     dom.recordBtn.addEventListener('click', toggleRecording);
-    dom.saveFileBtn.addEventListener('click', () => { if (originalBuffer) dom.downloadModal.classList.remove('hidden'); });
+    dom.saveFileBtn.addEventListener('click', () => { if (player && player.loaded) dom.downloadModal.classList.remove('hidden'); });
     dom.cancelDownloadBtn.addEventListener('click', () => dom.downloadModal.classList.add('hidden'));
     dom.confirmDownloadBtn.addEventListener('click', handleDownload);
 
+    // Playback Controls
     dom.playPauseButton.addEventListener('click', togglePlayback);
-    dom.restartButton.addEventListener('click', () => { if(isPlaying) { stopPlayback(); playWithEffects(); } });
+    dom.restartButton.addEventListener('click', () => { if(isPlaying) { stop(); play(); } });
     dom.loopButton.addEventListener('click', toggleLoop);
 
-    Object.values(dom.faders).forEach(fader => {
-        fader.addEventListener('input', handleFaderInput);
-        updateLevelMeter(fader);
+    // FX Controls Listeners
+    const fxControls = document.getElementById('fx-controls-container');
+    fxControls.querySelectorAll('input[type="range"]').forEach(slider => {
+        slider.addEventListener('input', updateFxValue);
     });
 
+    // Waveform interaction
     dom.waveformCanvas.addEventListener('mousedown', handleWaveformMouseDown);
     window.addEventListener('mousemove', handleWaveformMouseMove);
+    window.addEventListener('mouseup', () => { isSelecting = false; });
 
-    dom.eqCanvas.addEventListener('mousedown', handleEQMouseDown);
-    dom.eqCanvas.addEventListener('mousemove', handleEQMouseMove);
-
-    dom.djDisk.addEventListener('mousedown', handleDiskMouseDown);
-    window.addEventListener('mousemove', handleDiskMouseMove);
-
-    window.addEventListener('mouseup', () => {
-        isSelecting = false;
-        activeEQBand = -1;
-        handleDiskMouseUp();
-    });
-
+    // Canvas Resizing
     const resizeCanvases = () => {
-        const eqContainer = dom.eqCanvas.parentElement;
         const waveContainer = document.getElementById('waveform-container');
-        if (!eqContainer || !waveContainer) return;
+        if (!waveContainer) return;
 
         const { width: waveW, height: waveH } = waveContainer.getBoundingClientRect();
         dom.waveformCanvas.width = dom.progressCanvas.width = waveW;
         dom.waveformCanvas.height = dom.progressCanvas.height = waveH;
 
-        const { width: eqW, height: eqH } = eqContainer.getBoundingClientRect();
-        dom.eqCanvas.width = eqW;
-        dom.eqCanvas.height = eqH;
-
         if (originalBuffer) {
             drawWaveform();
             drawProgress(0);
         }
-        drawEQ();
     };
     new ResizeObserver(resizeCanvases).observe(document.getElementById('waveform-container'));
-    new ResizeObserver(resizeCanvases).observe(dom.eqCanvas.parentElement);
     resizeCanvases();
+
+    // Setup the audio pipeline
+    setupTonePipeline();
 }
 
 // --- EVENT HANDLERS ---
 async function handleFileUpload(event) {
     const file = event.target.files[0];
     if (!file) return;
-    if (!audioContext) await setupAudioContext();
+    await Tone.start(); // User interaction gesture
     const arrayBuffer = await file.arrayBuffer();
     try {
-        const audioBuffer = await audioContext.decodeAudioData(arrayBuffer);
+        const audioBuffer = await Tone.getContext().decodeAudioData(arrayBuffer);
         loadAudioBuffer(audioBuffer);
     } catch (e) {
         console.error("Error decoding audio data", e);
@@ -126,8 +98,8 @@ async function toggleRecording() {
         mediaRecorder.stop();
     } else {
         try {
+            await Tone.start(); // User interaction gesture
             const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-            if (!audioContext) await setupAudioContext();
             isRecording = true;
             audioChunks = [];
             mediaRecorder = new MediaRecorder(stream);
@@ -140,7 +112,7 @@ async function toggleRecording() {
                 stream.getTracks().forEach(track => track.stop());
                 const audioBlob = new Blob(audioChunks, { type: 'audio/wav' });
                 const arrayBuffer = await audioBlob.arrayBuffer();
-                const audioBuffer = await audioContext.decodeAudioData(arrayBuffer);
+                const audioBuffer = await Tone.getContext().decodeAudioData(arrayBuffer);
                 loadAudioBuffer(audioBuffer);
             };
             mediaRecorder.start();
@@ -151,93 +123,59 @@ async function toggleRecording() {
     }
 }
 
-function handleFaderInput(e) {
-    updateLevelMeter(e.target);
-    if (audioContext) updateEffectValues(null, effectNodes);
-}
+function updateFxValue(e) {
+    const { id, value } = e.target;
+    const floatValue = parseFloat(value);
 
-let isDraggingDisk = false;
-let diskDragStart = { x: 0, y: 0 };
-function handleDiskMouseDown(e) {
-    isDraggingDisk = true;
-    diskDragStart.x = e.clientX;
-    diskDragStart.y = e.clientY;
-    dom.djDisk.style.cursor = 'grabbing';
-}
-function handleDiskMouseMove(e) {
-    if (!isDraggingDisk) return;
-    const deltaX = e.clientX - diskDragStart.x;
-    const deltaY = e.clientY - diskDragStart.y;
-
-    // Map X to Delay Time (0 to 1s)
-    const delayTime = Math.max(0, Math.min(1, deltaX / 200)); // 200px drag = 1s
-    // Map Y to Delay Decay (0 to 0.9)
-    const delayDecay = Math.max(0, Math.min(0.9, -deltaY / 100)); // 100px drag up = 0.9 decay
-
-    if (effectNodes.delay) {
-        effectNodes.delay.delayTime.setTargetAtTime(delayTime, audioContext.currentTime, 0.01);
-        effectNodes.feedback.gain.setTargetAtTime(delayDecay, audioContext.currentTime, 0.01);
+    // Update value display span
+    const valueSpan = document.getElementById(`${id}-value`);
+    if (valueSpan) {
+        valueSpan.textContent = value;
     }
 
-    // Update handle position visually
-    const handleX = Math.max(-80, Math.min(80, deltaX));
-    const handleY = Math.max(-80, Math.min(80, deltaY));
-    dom.diskHandle.style.transform = `translate(${handleX}px, ${handleY}px)`;
-}
-function handleDiskMouseUp() {
-    if (!isDraggingDisk) return;
-    isDraggingDisk = false;
-    dom.djDisk.style.cursor = 'grab';
-    // Reset handle to center
-    dom.diskHandle.style.transform = `translate(-50%, -50%)`;
-}
-
-function handleEQMouseDown(e) {
-    const rect = dom.eqCanvas.getBoundingClientRect();
-    const x = e.clientX - rect.left;
-    const y = e.clientY - rect.top;
-    for (let i = eqBands.length - 1; i >= 0; i--) {
-        const band = eqBands[i];
-        const bandX = freqToX(band.freq, dom.eqCanvas.width);
-        const bandY = gainToY(band.gain, dom.eqCanvas.height);
-        if (Math.sqrt(Math.pow(x - bandX, 2) + Math.pow(y - bandY, 2)) < 10) {
-            activeEQBand = i;
-            return;
-        }
+    switch (id) {
+        // Compressor
+        case 'compressor-threshold': compressor.threshold.value = floatValue; break;
+        case 'compressor-ratio': compressor.ratio.value = floatValue; break;
+        case 'compressor-attack': compressor.attack.value = floatValue; break;
+        case 'compressor-release': compressor.release.value = floatValue; break;
+        // Gate
+        case 'gate-threshold': noiseGate.threshold.value = floatValue; break;
+        // EQ
+        case 'eq-low': eq.low.value = floatValue; break;
+        case 'eq-mid': eq.mid.value = floatValue; break;
+        case 'eq-high': eq.high.value = floatValue; break;
+        // Reverb
+        case 'reverb-decay': reverb.decay = floatValue; break;
+        case 'reverb-wet': reverb.wet.value = floatValue; break;
+        // Delay
+        case 'delay-time': delay.delayTime.value = floatValue; break;
+        case 'delay-feedback': delay.feedback.value = floatValue; break;
+        case 'delay-wet': delay.wet.value = floatValue; break;
+        // Chorus
+        case 'chorus-frequency': chorus.frequency.value = floatValue; break;
+        case 'chorus-depth': chorus.depth = floatValue; break;
+        case 'chorus-wet': chorus.wet.value = floatValue; break;
+        // Distortion
+        case 'distortion-amount': distortion.wet.value = floatValue; break;
     }
-}
-function handleEQMouseMove(e) {
-    if (activeEQBand === -1) return;
-    const rect = dom.eqCanvas.getBoundingClientRect();
-    const x = e.clientX - rect.left;
-    const y = e.clientY - rect.top;
-    const band = eqBands[activeEQBand];
-    band.freq = xToFreq(x, dom.eqCanvas.width);
-    band.gain = yToGain(y, dom.eqCanvas.height);
-
-    band.freq = Math.max(20, Math.min(22050, band.freq));
-    band.gain = Math.max(-24, Math.min(24, band.gain));
-
-    if (effectNodes.eq) {
-        effectNodes.eq[activeEQBand].frequency.setValueAtTime(band.freq, audioContext.currentTime);
-        effectNodes.eq[activeEQBand].gain.setValueAtTime(band.gain, audioContext.currentTime);
-    }
-    drawEQ();
 }
 
 let isSelecting = false;
 function handleWaveformMouseDown(e) {
-    if (!originalBuffer) return; isSelecting = true;
+    if (!player || !player.loaded) return;
+    isSelecting = true;
     const rect = dom.waveformCanvas.getBoundingClientRect();
-    const clickTime = ((e.clientX - rect.left) / rect.width) * originalBuffer.duration;
+    const clickTime = ((e.clientX - rect.left) / rect.width) * player.buffer.duration;
     selection.start = selection.end = clickTime;
     drawWaveform();
 }
+
 function handleWaveformMouseMove(e) {
-    if (!isSelecting || !originalBuffer) return;
+    if (!isSelecting || !player || !player.loaded) return;
     const rect = dom.waveformCanvas.getBoundingClientRect();
-    let end = ((e.clientX - rect.left) / rect.width) * originalBuffer.duration;
-    end = Math.max(0, Math.min(originalBuffer.duration, end));
+    let end = ((e.clientX - rect.left) / rect.width) * player.buffer.duration;
+    end = Math.max(0, Math.min(player.buffer.duration, end));
     if (end < selection.start) {
         selection.end = selection.start;
         selection.start = end;
@@ -247,106 +185,131 @@ function handleWaveformMouseMove(e) {
     drawWaveform();
 }
 
-// --- AUDIO CORE ---
-async function setupAudioContext() {
-    if (audioContext) return;
-    audioContext = new (window.AudioContext || window.webkitAudioContext)();
-    masterGain = audioContext.createGain();
-    masterGain.connect(audioContext.destination);
-    effectNodes = createEffectNodes(audioContext);
-}
-async function loadAudioBuffer(audioBuffer) {
-    stopPlayback();
-    originalBuffer = audioBuffer;
-    selection.start = 0;
-    selection.end = originalBuffer.duration;
-    dom.totalTime.textContent = formatTime(originalBuffer.duration);
-    drawWaveform();
-    dom.playerControls.classList.remove('hidden');
-    dom.placeholderText.classList.add('hidden');
-}
-function togglePlayback() {
-    if (!audioContext || !originalBuffer) return;
-    if (audioContext.state === 'suspended') audioContext.resume();
-    if (isPlaying) stopPlayback(); else playWithEffects();
-}
-function toggleLoop(e) {
-    isLooping = !isLooping;
-    e.currentTarget.classList.toggle('text-blue-400', isLooping);
-    activeSources.forEach(source => source.loop = isLooping);
-}
-function playWithEffects() {
-    stopPlayback();
-    if (selection.start >= selection.end) return;
-    const mainSource = audioContext.createBufferSource();
-    mainSource.buffer = originalBuffer;
-    mainSource.connect(effectNodes.eq[0]);
-    updateEffectValues(mainSource, effectNodes);
-    mainSource.loop = isLooping;
-    mainSource.loopStart = selection.start;
-    mainSource.loopEnd = selection.end;
-    const duration = selection.end - selection.start;
-    mainSource.start(audioContext.currentTime, selection.start, isLooping ? undefined : duration);
-    playbackStartTime = audioContext.currentTime;
-    isPlaying = true;
-    dom.playPauseButton.innerHTML = '<i class="fas fa-pause"></i>';
-    updateProgress();
-    mainSource.onended = () => { if (!isLooping && isPlaying) stopPlayback(); };
-    activeSources.push(mainSource);
-}
-function stopPlayback() {
-    activeSources.forEach(source => { try { source.stop(0); source.disconnect(); } catch(e) {} });
-    activeSources = [];
-    isPlaying = false;
-    dom.playPauseButton.innerHTML = '<i class="fas fa-play"></i>';
-    cancelAnimationFrame(progressAnimator);
-    dom.currentTime.textContent = formatTime(0);
-    drawProgress(0);
+
+// --- TONE.JS AUDIO CORE ---
+function setupTonePipeline() {
+    // Create effects with default values from the UI
+    compressor = new Tone.Compressor({
+        threshold: -24, ratio: 12, attack: 0.003, release: 0.25
+    });
+    noiseGate = new Tone.Gate(-40);
+    eq = new Tone.EQ3(0, 0, 0);
+    reverb = new Tone.Reverb({ decay: 1.5, wet: 0 });
+    delay = new Tone.FeedbackDelay({ delayTime: "8n", feedback: 0.5, wet: 0 });
+    chorus = new Tone.Chorus({ frequency: 4, depth: 0.5, wet: 0 }).start();
+    distortion = new Tone.Distortion({ distortion: 0.8, wet: 0 }); // wet is 0, so it's off by default
+
+    // Player will be created when audio is loaded and then chained.
 }
 
+function loadAudioBuffer(audioBuffer) {
+    if (isPlaying) stop();
+
+    originalBuffer = audioBuffer; // Keep a reference for drawing
+
+    // Dispose of the old player if it exists
+    if (player) {
+        player.dispose();
+    }
+
+    player = new Tone.Player(originalBuffer, () => {
+        // onloaded callback
+        selection.start = 0;
+        selection.end = player.buffer.duration;
+        dom.totalTime.textContent = formatTime(player.buffer.duration);
+        dom.playerControls.classList.remove('hidden');
+        dom.placeholderText.classList.add('hidden');
+        drawWaveform();
+    }).chain(compressor, noiseGate, eq, reverb, delay, chorus, distortion, Tone.Destination);
+}
+
+function togglePlayback() {
+    if (!player || !player.loaded) return;
+    // Request to start audio context if it's not already running
+    if (Tone.context.state !== 'running') {
+        Tone.context.resume();
+    }
+
+    if (isPlaying) {
+        stop();
+    } else {
+        play();
+    }
+}
+
+function toggleLoop(e) {
+    isLooping = !isLooping;
+    if (player) player.loop = isLooping;
+    e.currentTarget.classList.toggle('text-blue-400', isLooping);
+}
+
+let progressLoop;
+
+function play() {
+    if (!player || !player.loaded || selection.start >= selection.end) return;
+
+    const duration = selection.end - selection.start;
+    player.loopStart = selection.start;
+    player.loopEnd = selection.end;
+    player.loop = isLooping;
+
+    player.start(Tone.now(), selection.start);
+
+    isPlaying = true;
+    dom.playPauseButton.innerHTML = '<i class="fas fa-pause"></i>';
+
+    // Use Tone.Draw.schedule to sync drawing with audio thread
+    let startTime = Tone.now();
+
+    progressLoop = new Tone.Loop(time => {
+        const elapsed = (Tone.now() - startTime);
+        if (elapsed > duration && !isLooping) {
+            stop();
+            return;
+        }
+        const currentPosition = selection.start + (elapsed % duration);
+        const progress = currentPosition / player.buffer.duration;
+
+        Tone.Draw.schedule(() => {
+            dom.currentTime.textContent = formatTime(currentPosition);
+            drawProgress(progress);
+        }, time);
+
+    }, "16n").start(0);
+
+    // Schedule stop if not looping
+    if (!isLooping) {
+        player.stop(`+${duration}`);
+    }
+}
+
+function stop() {
+    if (player) player.stop();
+    if (progressLoop) progressLoop.dispose();
+
+    isPlaying = false;
+    dom.playPauseButton.innerHTML = '<i class="fas fa-play"></i>';
+
+    Tone.Draw.schedule(() => {
+        dom.currentTime.textContent = formatTime(selection.start);
+        drawProgress(selection.start / (player.buffer ? player.buffer.duration : 1));
+    }, Tone.now());
+}
+
+
 // --- DRAWING & UI ---
-function updateProgress() {
-    if (!isPlaying) return;
-    const selectionDuration = selection.end - selection.start;
-    const elapsedTime = (audioContext.currentTime - playbackStartTime) % selectionDuration;
-    dom.currentTime.textContent = formatTime(elapsedTime);
-    const progress = (selection.start + elapsedTime) / originalBuffer.duration;
-    drawProgress(progress);
-    progressAnimator = requestAnimationFrame(updateProgress);
-}
-function updateLevelMeter(fader) {
-    const meter = document.getElementById(`${fader.id.replace('-slider', '')}-meter`);
-    if (!meter) return;
-    const min = fader.min || 0;
-    const max = fader.max || 1;
-    const percent = ((fader.value - min) / (max - min)) * 100;
-    meter.style.height = `${percent}%`;
-}
 function drawWaveform() {
     if (!originalBuffer) return;
     const { waveformCtx: ctx, waveformCanvas: canvas } = dom;
+    const duration = originalBuffer.duration;
     ctx.clearRect(0, 0, canvas.width, canvas.height);
-    const startX = (selection.start / originalBuffer.duration) * canvas.width;
-    const endX = (selection.end / originalBuffer.duration) * canvas.width;
-    ctx.fillStyle = 'rgba(59, 130, 246, 0.3)';
-    ctx.fillRect(startX, 0, endX - startX, canvas.height);
-}
-function drawProgress(progress) {
-    if (!originalBuffer) return;
-    const { progressCtx: ctx, progressCanvas: canvas } = dom;
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+    // Draw the full waveform in a muted color first
     const data = originalBuffer.getChannelData(0);
     const step = Math.ceil(data.length / canvas.width);
     const amp = canvas.height / 2;
-    const progressPx = progress * canvas.width;
-    ctx.save();
-    ctx.beginPath();
-    ctx.rect(0, 0, progressPx, canvas.height);
-    ctx.clip();
-    ctx.shadowColor = 'rgba(255, 255, 255, 0.7)';
-    ctx.shadowBlur = 10;
-    ctx.strokeStyle = '#ffffff';
-    ctx.lineWidth = 2;
+    ctx.strokeStyle = 'rgba(255, 255, 255, 0.2)';
+    ctx.lineWidth = 1;
     ctx.beginPath();
     for (let i = 0; i < canvas.width; i++) {
         let min = 1.0, max = -1.0;
@@ -357,66 +320,27 @@ function drawProgress(progress) {
         ctx.moveTo(i, (1 + min) * amp); ctx.lineTo(i, (1 + max) * amp);
     }
     ctx.stroke();
-    ctx.restore();
+
+    // Draw the selection overlay
+    const startX = (selection.start / duration) * canvas.width;
+    const endX = (selection.end / duration) * canvas.width;
+    ctx.fillStyle = 'rgba(59, 130, 246, 0.3)';
+    ctx.fillRect(startX, 0, endX - startX, canvas.height);
 }
 
-// --- EQ DRAWING ---
-function drawEQ() {
-    const { eqCtx: ctx, eqCanvas: canvas } = dom;
-    const { width, height } = canvas;
-    ctx.clearRect(0, 0, width, height);
+function drawProgress(progress) {
+    if (!originalBuffer) return;
+    const { progressCtx: ctx, progressCanvas: canvas } = dom;
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    const progressPx = progress * canvas.width;
 
-    ctx.strokeStyle = 'rgba(255, 255, 255, 0.1)';
-    ctx.lineWidth = 1;
-    ctx.beginPath(); ctx.moveTo(0, height / 2); ctx.lineTo(width, height / 2); ctx.stroke();
-
-    if (effectNodes.eq) {
-        const freqs = new Float32Array(width);
-        const magResponse = new Float32Array(width);
-        const phaseResponse = new Float32Array(width);
-        for (let i = 0; i < width; i++) {
-            freqs[i] = 20 * Math.pow(1000, i / width);
-        }
-        const totalMag = new Float32Array(width).fill(1);
-        effectNodes.eq.forEach(band => {
-            band.getFrequencyResponse(freqs, magResponse, phaseResponse);
-            for(let i=0; i<width; i++) totalMag[i] *= magResponse[i];
-        });
-
-        ctx.strokeStyle = '#a78bfa';
-        ctx.lineWidth = 2;
-        ctx.beginPath();
-        for (let i = 0; i < width; i++) {
-            const db = 20 * Math.log10(totalMag[i]);
-            const y = (1 - (db + 24) / 48) * height;
-            if (i === 0) ctx.moveTo(i, y);
-            else ctx.lineTo(i, y);
-        }
-        ctx.stroke();
-    }
-
-    eqBands.forEach((band, index) => {
-        const x = freqToX(band.freq, width);
-        const y = gainToY(band.gain, height);
-        ctx.fillStyle = band.color;
-        ctx.beginPath();
-        ctx.arc(x, y, 6, 0, Math.PI * 2);
-        ctx.fill();
-        if (index === activeEQBand) {
-            ctx.strokeStyle = 'white';
-            ctx.lineWidth = 2;
-            ctx.stroke();
-        }
-    });
+    ctx.fillStyle = '#a78bfa'; // violet-400
+    ctx.fillRect(progressPx - 1, 0, 2, canvas.height);
 }
-const freqToX = (freq, width) => (Math.log(freq / 20) / Math.log(22050 / 20)) * width;
-const xToFreq = (x, width) => 20 * Math.pow(22050 / 20, x / width);
-const gainToY = (gain, height) => (1 - (gain + 24) / 48) * height;
-const yToGain = (y, height) => (1 - y / height) * 48 - 24;
 
 // --- OFFLINE PROCESSING & DOWNLOAD ---
 async function handleDownload() {
-    if (!originalBuffer) return;
+    if (!player || !player.loaded) return;
     dom.downloadModal.classList.add('hidden');
     const btn = dom.confirmDownloadBtn;
     btn.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i>Procesando...';
@@ -428,28 +352,43 @@ async function handleDownload() {
         if (selectionDuration <= 0) throw new Error("Selection duration is zero.");
 
         const totalDuration = selectionDuration * repeats;
+        const sampleRate = player.buffer.sampleRate;
+        const channels = player.buffer.numberOfChannels;
 
-        const offlineCtx = new OfflineAudioContext(originalBuffer.numberOfChannels, Math.ceil(totalDuration * originalBuffer.sampleRate), originalBuffer.sampleRate);
+        const renderedBuffer = await Tone.Offline(async (offlineCtx) => {
+            // Create a player and effects within the offline context
+            const offlinePlayer = new Tone.Player(player.buffer);
 
-        const loopCtx = new OfflineAudioContext(originalBuffer.numberOfChannels, Math.ceil(selectionDuration * originalBuffer.sampleRate), originalBuffer.sampleRate);
-        const loopEffects = createEffectNodes(loopCtx);
-        const loopSource = loopCtx.createBufferSource();
-        loopSource.buffer = originalBuffer;
-        loopSource.connect(loopEffects.eq[0]);
-        updateEffectValues(loopSource, loopEffects);
-        loopSource.start(0, selection.start, selectionDuration);
-        const renderedLoopBuffer = await loopCtx.startRendering();
+            // Create offline versions of all effects, using current values
+            const offlineCompressor = new Tone.Compressor(compressor.get());
+            const offlineGate = new Tone.Gate(noiseGate.get());
+            const offlineEq = new Tone.EQ3(eq.get());
+            const offlineReverb = new Tone.Reverb(reverb.get());
+            const offlineDelay = new Tone.FeedbackDelay(delay.get());
+            const offlineChorus = new Tone.Chorus(chorus.get()).start();
+            const offlineDistortion = new Tone.Distortion(distortion.get());
 
-        for (let i = 0; i < repeats; i++) {
-            const finalSource = offlineCtx.createBufferSource();
-            finalSource.buffer = renderedLoopBuffer;
-            finalSource.connect(offlineCtx.destination);
-            finalSource.start(i * selectionDuration);
-        }
+            // Chain them to the offline context's destination
+            offlinePlayer.chain(
+                offlineCompressor,
+                offlineGate,
+                offlineEq,
+                offlineReverb,
+                offlineDelay,
+                offlineChorus,
+                offlineDistortion,
+                offlineCtx.destination
+            );
 
-        const renderedBuffer = await offlineCtx.startRendering();
+            // Play the selected part, looped as many times as requested
+            for (let i = 0; i < repeats; i++) {
+                offlinePlayer.start(i * selectionDuration, selection.start, selectionDuration);
+            }
+
+        }, totalDuration);
+
         const format = dom.downloadFormatSelect.value;
-        const blob = format === 'wav' ? bufferToWavBlob(renderedBuffer) : bufferToMp3Blob(renderedBuffer);
+        const blob = format === 'wav' ? bufferToWavBlob(renderedBuffer.get()) : bufferToMp3Blob(renderedBuffer.get());
         const filename = `Jusn38_Studio_output.${format}`;
 
         const a = document.createElement('a');
@@ -459,7 +398,7 @@ async function handleDownload() {
         URL.revokeObjectURL(a.href);
 
     } catch (error) {
-        console.error("Error processing audio:", error);
+        console.error("Error processing audio for download:", error);
         alert("Hubo un error al procesar el audio para la descarga.");
     } finally {
         btn.innerHTML = 'Descargar';
@@ -468,83 +407,13 @@ async function handleDownload() {
 }
 
 // --- HELPERS ---
-const createEffectNodes = (context) => {
-    const nodes = {};
-    nodes.eq = eqBands.map(band => {
-        const filter = context.createBiquadFilter();
-        filter.type = band.type;
-        filter.frequency.value = band.freq;
-        filter.gain.value = band.gain;
-        filter.Q.value = band.q;
-        return filter;
-    });
-    for (let i = 0; i < nodes.eq.length - 1; i++) {
-        nodes.eq[i].connect(nodes.eq[i + 1]);
-    }
-
-    nodes.dryGain = context.createGain();
-    nodes.wetGain = context.createGain();
-    nodes.delayGain = context.createGain(); // For Delay Mix
-    nodes.convolver = context.createConvolver();
-    nodes.convolver.buffer = createSimpleImpulse(context);
-    nodes.delay = context.createDelay(2.0);
-    nodes.feedback = context.createGain();
-    nodes.chorusDelay = context.createDelay(0.1);
-    nodes.chorusLFO = context.createOscillator();
-    nodes.chorusDepth = context.createGain();
-    nodes.chorusLFO.frequency.value = 4;
-    nodes.chorusDepth.gain.value = 0;
-    nodes.chorusLFO.connect(nodes.chorusDepth);
-    nodes.chorusDepth.connect(nodes.chorusDelay.delayTime);
-    nodes.chorusLFO.start();
-
-    const lastEQ = nodes.eq[nodes.eq.length - 1];
-    const destination = context.destination || masterGain;
-    lastEQ.connect(nodes.dryGain);
-    lastEQ.connect(nodes.chorusDelay);
-
-    nodes.chorusDelay.connect(nodes.convolver);
-    nodes.convolver.connect(nodes.wetGain);
-
-    lastEQ.connect(nodes.delay);
-    nodes.delay.connect(nodes.feedback);
-    nodes.feedback.connect(nodes.delay);
-    nodes.delay.connect(nodes.delayGain);
-    nodes.delayGain.connect(destination);
-
-    nodes.dryGain.connect(destination);
-    nodes.wetGain.connect(destination);
-    return nodes;
-};
-const updateEffectValues = (sourceNode, nodes) => {
-    if (!nodes.eq) return;
-    const now = nodes.eq[0].context.currentTime;
-    const values = Object.fromEntries(
-        Object.entries(dom.faders).map(([key, fader]) => [key, parseFloat(fader.value)])
-    );
-    masterGain.gain.setTargetAtTime(values.volume, now, 0.01);
-    const reverbAndChorusWet = (values.reverb + values.chorus) / 2;
-    nodes.dryGain.gain.setTargetAtTime(1.0 - reverbAndChorusWet, now, 0.01);
-    nodes.wetGain.gain.setTargetAtTime(reverbAndChorusWet, now, 0.01);
-    nodes.delayGain.gain.setTargetAtTime(values.delayMix, now, 0.01);
-    nodes.chorusDepth.gain.setTargetAtTime(values.chorus * 0.01, now, 0.01);
-    if (sourceNode) sourceNode.playbackRate.setTargetAtTime(values.pitch, now, 0.01);
-};
 const formatTime = (seconds) => {
     if (isNaN(seconds)) return "0:00";
     const min = Math.floor(seconds / 60);
     const sec = Math.floor(seconds % 60);
     return `${min}:${sec.toString().padStart(2, '0')}`;
 };
-const createSimpleImpulse = (ctx) => {
-    const len = ctx.sampleRate * 2;
-    const impulse = ctx.createBuffer(2, len, ctx.sampleRate);
-    for (let ch = 0; ch < 2; ch++) {
-        const data = impulse.getChannelData(ch);
-        for (let i = 0; i < len; i++) data[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / len, 3);
-    }
-    return impulse;
-};
+
 const bufferToWavBlob = (abuffer) => {
     let numOfChan = abuffer.numberOfChannels, len = abuffer.length * numOfChan * 2 + 44,
         buf = new ArrayBuffer(len), view = new DataView(buf),
