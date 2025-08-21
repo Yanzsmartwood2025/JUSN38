@@ -5,6 +5,9 @@ const dom = {
     recordBtn: document.getElementById('record-btn'),
     recordingIndicator: document.getElementById('recording-indicator'),
     saveFileBtn: document.getElementById('save-file-btn'),
+    toggleLeftPanelBtn: document.getElementById('toggle-left-panel-btn'),
+    leftPanel: document.getElementById('left-panel'),
+    centerPanel: document.getElementById('center-panel'),
     downloadModal: document.getElementById('download-modal'),
     cancelDownloadBtn: document.getElementById('cancel-download-btn'),
     confirmDownloadBtn: document.getElementById('confirm-download-btn'),
@@ -23,15 +26,42 @@ const dom = {
     playerControls: document.getElementById('player-controls'),
     placeholderText: document.getElementById('placeholder-text'),
     repeatsInput: document.getElementById('repeats-input'),
+    partyModeBtn: document.getElementById('party-mode-btn'),
     // FX Controls will be referenced directly via their IDs
 };
 
 // --- TONE.JS & GLOBAL STATE ---
-let player, compressor, noiseGate, eq, filter, reverb, delay, chorus, distortion;
+let player, compressor, noiseGate, eq, filter, reverb, delay, chorus, distortion, scratchPlayer;
 let originalBuffer;
 let selection = { start: 0, end: 1 };
 let isPlaying = false, isLooping = false, progressAnimator;
 let isRecording = false, mediaRecorder, audioChunks = [];
+let isPartyMode = false, partyModeInterval = null;
+const partyColors = [
+    'blue', 'red', 'green', 'yellow', 'purple', 'white',
+    '#ff00ff', '#00ffff', '#ff9900', '#00ff00', '#ff3399',
+    '#66ff66', '#ff6666', '#6666ff', '#ffff66'
+];
+
+
+// --- UI & CANVAS ---
+const resizeCanvases = () => {
+    const waveContainer = document.getElementById('waveform-container');
+    if (!waveContainer) return;
+
+    // Use a timeout to wait for the flexbox transition to finish
+    setTimeout(() => {
+        const { width: waveW, height: waveH } = waveContainer.getBoundingClientRect();
+        dom.waveformCanvas.width = dom.progressCanvas.width = waveW;
+        dom.waveformCanvas.height = dom.progressCanvas.height = waveH;
+
+        if (originalBuffer) {
+            drawWaveform();
+            drawProgress(player && isPlaying ? player.progress : 0);
+        }
+    }, 300); // 300ms should be enough for most CSS transitions
+};
+
 
 // --- INITIALIZATION ---
 function init() {
@@ -42,6 +72,14 @@ function init() {
     dom.saveFileBtn.addEventListener('click', () => { if (player && player.loaded) dom.downloadModal.classList.remove('hidden'); });
     dom.cancelDownloadBtn.addEventListener('click', () => dom.downloadModal.classList.add('hidden'));
     dom.confirmDownloadBtn.addEventListener('click', handleDownload);
+    dom.toggleLeftPanelBtn.addEventListener('click', () => {
+        const isHidden = dom.leftPanel.classList.toggle('hidden');
+        dom.leftPanel.classList.toggle('flex', !isHidden); // Use flex display when not hidden
+        dom.centerPanel.classList.toggle('md:col-span-9');
+        dom.centerPanel.classList.toggle('md:col-span-6');
+        resizeCanvases();
+    });
+
 
     // Playback Controls
     dom.recordBtn.addEventListener('click', toggleRecording);
@@ -71,12 +109,14 @@ function init() {
     // DJ Disk Color Switcher
     document.querySelectorAll('.color-switcher').forEach(button => {
         button.addEventListener('click', (e) => {
+            stopPartyMode();
             const color = e.target.dataset.color;
             dom.djDisk.dataset.glowColor = color;
         });
     });
     // Set initial glow color
     dom.djDisk.dataset.glowColor = 'blue';
+    dom.partyModeBtn.addEventListener('click', togglePartyMode);
 
     // Disk Skin Switcher
     document.querySelectorAll('.skin-switcher').forEach(button => {
@@ -90,24 +130,42 @@ function init() {
     });
 
     // Canvas Resizing
-    const resizeCanvases = () => {
-        const waveContainer = document.getElementById('waveform-container');
-        if (!waveContainer) return;
-
-        const { width: waveW, height: waveH } = waveContainer.getBoundingClientRect();
-        dom.waveformCanvas.width = dom.progressCanvas.width = waveW;
-        dom.waveformCanvas.height = dom.progressCanvas.height = waveH;
-
-        if (originalBuffer) {
-            drawWaveform();
-            drawProgress(0);
-        }
-    };
     new ResizeObserver(resizeCanvases).observe(document.getElementById('waveform-container'));
     resizeCanvases();
 
     // Setup the audio pipeline
     setupTonePipeline();
+}
+
+function stopPartyMode() {
+    if (isPartyMode) {
+        clearInterval(partyModeInterval);
+        isPartyMode = false;
+        dom.partyModeBtn.classList.remove('glow-blue');
+        dom.djDisk.dataset.glowColor = 'blue'; // Reset to default
+    }
+}
+
+function togglePartyMode() {
+    isPartyMode = !isPartyMode;
+    if (isPartyMode) {
+        dom.partyModeBtn.classList.add('glow-blue');
+        partyModeInterval = setInterval(() => {
+            const randomColor = partyColors[Math.floor(Math.random() * partyColors.length)];
+            // To avoid setting a custom property for every color, we'll handle the custom colors here
+            if (randomColor.startsWith('#')) {
+                dom.djDisk.style.boxShadow = `0 0 15px 5px ${randomColor}, inset 0 0 10px ${randomColor}`;
+                // Clear data-glow-color so CSS rules don't override
+                dom.djDisk.removeAttribute('data-glow-color');
+            } else {
+                // Use CSS variables for predefined colors
+                dom.djDisk.style.boxShadow = ''; // Clear inline style so CSS class can take over
+                dom.djDisk.dataset.glowColor = randomColor;
+            }
+        }, 200);
+    } else {
+        stopPartyMode();
+    }
 }
 
 // --- EVENT HANDLERS ---
@@ -234,6 +292,9 @@ function handleDiskMouseDown(e) {
     diskDragStart.x = e.clientX;
     diskDragStart.y = e.clientY;
     dom.djDisk.style.cursor = 'grabbing';
+    if (scratchPlayer && scratchPlayer.loaded) {
+        scratchPlayer.start();
+    }
 }
 function handleDiskMouseMove(e) {
     if (!isDraggingDisk) return;
@@ -261,6 +322,9 @@ function handleDiskMouseUp() {
     dom.diskHandle.style.transform = `translate(-50%, -50%)`;
     distortion.wet.setTargetAtTime(0, Tone.context.currentTime, 0.1);
     filter.frequency.setTargetAtTime(20000, Tone.context.currentTime, 0.1);
+    if (scratchPlayer) {
+        scratchPlayer.stop();
+    }
 }
 
 
@@ -279,6 +343,10 @@ function setupTonePipeline() {
     distortion = new Tone.Distortion({ distortion: 0.8, wet: 0 }); // wet is 0, so it's off by default
 
     // Player will be created when audio is loaded and then chained.
+    scratchPlayer = new Tone.Player({
+        url: "../../formula-1/assets/audios/sfx_tires_skid.mp3",
+        loop: true,
+    }).toDestination();
 }
 
 async function loadAudioBuffer(audioBuffer) {
