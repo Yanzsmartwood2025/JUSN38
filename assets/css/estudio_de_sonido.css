@@ -1,0 +1,108 @@
+:root {
+    --bg-dark: #0c0c14;
+    --bg-panel: #1a1a26;
+    --bg-panel-darker: #111118;
+    --border-color: rgba(255, 255, 255, 0.1);
+    --accent-blue: #3b82f6;
+    --accent-red: #ef4444;
+    --text-light: #f0f0f0;
+}
+body {
+    background-color: var(--bg-dark);
+    color: var(--text-light);
+    font-family: 'Inter', sans-serif;
+    overflow: hidden;
+}
+.main-container {
+    background: var(--bg-panel);
+    border: 1px solid var(--border-color);
+    height: 95vh;
+    width: 95vw;
+}
+.top-bar {
+    background: rgba(12, 12, 20, 0.8);
+    border-bottom: 1px solid var(--border-color);
+}
+.menu-btn { transition: all 0.2s; }
+.menu-btn:hover { background: rgba(255, 255, 255, 0.1); }
+.menu-btn.recording {
+    background-color: var(--accent-red);
+    animation: pulse 1.5s infinite;
+}
+@keyframes pulse {
+    0% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.7); }
+    70% { box-shadow: 0 0 0 10px rgba(239, 68, 68, 0); }
+    100% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0); }
+}
+#waveform-container { position: relative; background-color: rgba(0,0,0,0.3); }
+#waveform-canvas, #progress-canvas { position: absolute; top: 0; left: 0; width: 100%; height: 100%; }
+#waveform-canvas { cursor: text; z-index: 10; }
+#progress-canvas { z-index: 5; }
+
+/* Fader Styles */
+.fader-container { display: flex; flex-direction: column; align-items: center; gap: 8px; }
+.fader-track {
+    position: relative;
+    background: var(--bg-panel-darker);
+    width: 20px;
+    height: 120px;
+    border-radius: 10px;
+    border: 1px solid var(--border-color);
+    padding: 2px;
+}
+.level-meter {
+    position: absolute;
+    bottom: 0;
+    width: 100%;
+    border-radius: 8px;
+    background: linear-gradient(to top, #4ade80, #facc15, #ef4444);
+    transition: height 0.05s;
+}
+input[type="range"][orient="vertical"] {
+    -webkit-appearance: none;
+    appearance: none;
+    position: relative;
+    width: 120px;
+    height: 20px;
+    background: transparent;
+    transform-origin: 60px 60px;
+    transform: rotate(-90deg);
+}
+input[type="range"][orient="vertical"]::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 30px;
+    height: 15px;
+    background: #e5e7eb;
+    border-radius: 4px;
+    cursor: pointer;
+    border: 1px solid #4b5563;
+}
+
+/* EQ Styles */
+#eq-canvas { background-color: var(--bg-panel-darker); border-radius: 8px; cursor: crosshair; }
+
+/* DJ Disk Styles */
+#dj-disk-container { display: flex; flex-direction: column; justify-content: center; align-items: center; }
+#dj-disk {
+    position: relative;
+    width: 180px;
+    height: 180px;
+    background: radial-gradient(circle, #4b5563 0%, #1f2937 70%);
+    border-radius: 50%;
+    border: 5px solid #374151;
+    cursor: grab;
+    user-select: none;
+}
+#dj-disk:active { cursor: grabbing; }
+#disk-handle {
+    position: absolute;
+    width: 15px;
+    height: 15px;
+    background: white;
+    border-radius: 50%;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    pointer-events: none; /* So it doesn't interfere with mouse events on the disk */
+}
