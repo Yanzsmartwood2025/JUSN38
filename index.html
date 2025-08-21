@@ -4,15 +4,20 @@
     <meta charset="UTF-8">
     <!-- Script de Google AdSense añadido aquí -->
     <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-2224408518904582"
-      crossorigin="anonymous"></script>
+     crossorigin="anonymous"></script>
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
 
-    <!-- Open Graph / Metaetiquetas para Redes Sociales -->
+    <!-- Open Graph / Metaetiquetas para Redes Sociales (CORREGIDAS) -->
     <meta property="og:title" content="JUSN38 STUDY: Juegos y Herramientas Creativas" />
     <meta property="og:description" content="¡El aburrimiento no existe aquí! 🎮 Descubre una colección de juegos adictivos y herramientas útiles. ¿Listo para el desafío? ¡Entra y juega!" />
-    <meta property="og:image" content="https://jusn-38.vercel.app/assets/images/JUSN38/Jusn38-icon-512x512.png" />
-    <meta property="og:url" content="https://jusn-38.vercel.app" />
     <meta property="og:type" content="website" />
+    <meta property="og:url" content="https://jusn-38.vercel.app" />
+    <!-- URL de la imagen corregida y etiquetas adicionales para mayor compatibilidad -->
+    <meta property="og:image" content="https://raw.githubusercontent.com/Yanzsmartwood2025/Runacoffee/main/public/assets/imagenes/logo_jusn38.png" />
+    <meta property="og:image:type" content="image/png" />
+    <meta property="og:image:width" content="512" />
+    <meta property="og:image:height" content="512" />
+
 
     <title>Jusn38 - Centro de Creación Digital</title>
     
@@ -846,42 +851,42 @@
     <script type="module">
         // Importa las funciones necesarias desde tu archivo principal de Firebase
         // Asumimos que tienes un archivo como "firebase-init.js" donde ya has inicializado todo.
-        import { auth, provider, signInWithPopup, onAuthStateChanged, signOut } from './firebase-init.js';
+        // import { auth, provider, signInWithPopup, onAuthStateChanged, signOut } from './firebase-init.js';
 
-        const loginBtn = document.getElementById('google-login-btn');
-        const logoutBtn = document.getElementById('logout-btn');
-        const userProfileDiv = document.getElementById('user-profile');
-        const userPhoto = document.getElementById('user-photo');
+        // const loginBtn = document.getElementById('google-login-btn');
+        // const logoutBtn = document.getElementById('logout-btn');
+        // const userProfileDiv = document.getElementById('user-profile');
+        // const userPhoto = document.getElementById('user-photo');
 
-        // Lógica para disparar el inicio de sesión
-        loginBtn.addEventListener('click', () => {
-            signInWithPopup(auth, provider)
-                .then((result) => {
-                    console.log("Usuario ha iniciado sesión:", result.user.displayName);
-                })
-                .catch((error) => {
-                    console.error("Error de autenticación:", error);
-                });
-        });
+        // // Lógica para disparar el inicio de sesión
+        // loginBtn.addEventListener('click', () => {
+        //     signInWithPopup(auth, provider)
+        //         .then((result) => {
+        //             console.log("Usuario ha iniciado sesión:", result.user.displayName);
+        //         })
+        //         .catch((error) => {
+        //             console.error("Error de autenticación:", error);
+        //         });
+        // });
 
-        // Lógica para cerrar sesión
-        logoutBtn.addEventListener('click', () => {
-            signOut(auth);
-        });
+        // // Lógica para cerrar sesión
+        // logoutBtn.addEventListener('click', () => {
+        //     signOut(auth);
+        // });
 
-        // Observador que actualiza la UI si el usuario está o no logueado
-        onAuthStateChanged(auth, (user) => {
-            if (user && !user.isAnonymous) {
-                // Usuario está logueado con Google
-                userPhoto.src = user.photoURL;
-                userProfileDiv.style.display = 'flex';
-                loginBtn.style.display = 'none';
-            } else {
-                // Usuario no está logueado o es anónimo
-                userProfileDiv.style.display = 'none';
-                loginBtn.style.display = 'block';
-            }
-        });
+        // // Observador que actualiza la UI si el usuario está o no logueado
+        // onAuthStateChanged(auth, (user) => {
+        //     if (user && !user.isAnonymous) {
+        //         // Usuario está logueado con Google
+        //         userPhoto.src = user.photoURL;
+        //         userProfileDiv.style.display = 'flex';
+        //         loginBtn.style.display = 'none';
+        //     } else {
+        //         // Usuario no está logueado o es anónimo
+        //         userProfileDiv.style.display = 'none';
+        //         loginBtn.style.display = 'block';
+        //     }
+        // });
     </script>
 </body>
 </html>
