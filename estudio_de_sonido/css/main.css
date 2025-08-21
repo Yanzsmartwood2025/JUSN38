@@ -173,6 +173,34 @@ input[type="range"].w-full::-webkit-slider-thumb {
     box-shadow: 0 0 15px 5px rgba(156, 163, 175, 0.7), inset 0 0 10px rgba(156, 163, 175, 0.5);
 }
 
+/* Button Glow Effects */
+@keyframes pulse-glow {
+    0% { box-shadow: 0 0 0 0 var(--glow-color-start); }
+    70% { box-shadow: 0 0 10px 10px var(--glow-color-end); }
+    100% { box-shadow: 0 0 0 0 var(--glow-color-start); }
+}
+
+.glow-red {
+    --glow-color-start: rgba(239, 68, 68, 0.7);
+    --glow-color-end: rgba(239, 68, 68, 0);
+    animation: pulse-glow 1.5s infinite;
+    background-color: #ef4444; /* red-500 */
+}
+
+.glow-white {
+    --glow-color-start: rgba(255, 255, 255, 0.7);
+    --glow-color-end: rgba(255, 255, 255, 0);
+    animation: pulse-glow 1.5s infinite;
+    box-shadow: 0 0 8px 2px #fff;
+}
+
+.glow-blue {
+    --glow-color-start: rgba(59, 130, 246, 0.7);
+    --glow-color-end: rgba(59, 130, 246, 0);
+    animation: pulse-glow 1.5s infinite;
+    background-color: #3b82f6; /* blue-500 */
+}
+
 input[type="range"].w-full::-moz-range-thumb {
     width: 16px;
     height: 16px;
