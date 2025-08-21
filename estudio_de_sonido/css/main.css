@@ -150,41 +150,6 @@ input[type="range"].w-full::-webkit-slider-thumb {
     cursor: pointer;
 }
 
-/* Estilos para la pantalla de rotación */
-#rotate-screen-overlay {
-    display: none; /* Oculto por defecto */
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    background-color: var(--bg-dark);
-    z-index: 100;
-    justify-content: center;
-    align-items: center;
-    text-align: center;
-    color: var(--text-light);
-}
-
-.rotate-screen-message {
-    padding: 20px;
-}
-
-.rotate-screen-message i {
-    font-size: 48px;
-    margin-bottom: 20px;
-}
-
-/* Media Query para modo vertical */
-@media (orientation: portrait) {
-    #rotate-screen-overlay {
-        display: flex; /* Mostrar en modo vertical */
-    }
-    .main-container {
-        display: none; /* Ocultar el contenido principal */
-    }
-}
-
 /* Disk Skin Images */
 #dj-disk.disk-skin-1 { background-image: url('../assets/imagenes/disco-1.png'); }
 #dj-disk.disk-skin-2 { background-image: url('../assets/imagenes/disco-2.png'); }
