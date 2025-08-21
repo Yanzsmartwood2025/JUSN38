@@ -44,6 +44,7 @@ function init() {
     dom.confirmDownloadBtn.addEventListener('click', handleDownload);
 
     // Playback Controls
+    dom.recordBtn.addEventListener('click', toggleRecording);
     dom.playPauseButton.addEventListener('click', togglePlayback);
     dom.restartButton.addEventListener('click', () => { if(isPlaying) { stop(); play(); } });
     dom.loopButton.addEventListener('click', toggleLoop);
@@ -106,7 +107,7 @@ async function handleFileUpload(event) {
     const arrayBuffer = await file.arrayBuffer();
     try {
         const audioBuffer = await Tone.getContext().decodeAudioData(arrayBuffer);
-        loadAudioBuffer(audioBuffer);
+        await loadAudioBuffer(audioBuffer);
     } catch (e) {
         console.error("Error decoding audio data", e);
         alert("No se pudo decodificar el archivo de audio. Por favor, intenta con otro formato (MP3, WAV).");
@@ -126,19 +127,17 @@ async function toggleRecording() {
             mediaRecorder.ondataavailable = event => audioChunks.push(event.data);
             mediaRecorder.onstop = async () => {
                 isRecording = false;
-                dom.recordBtn.classList.remove('recording');
-                dom.recordBtn.innerHTML = '<i class="fas fa-microphone mr-2"></i>Grabar';
+                dom.recordBtn.classList.remove('glow-red');
                 dom.recordingIndicator.classList.add('hidden');
                 stream.getTracks().forEach(track => track.stop());
                 const audioBlob = new Blob(audioChunks, { type: 'audio/wav' });
                 const arrayBuffer = await audioBlob.arrayBuffer();
                 const audioBuffer = await Tone.getContext().decodeAudioData(arrayBuffer);
-                loadAudioBuffer(audioBuffer);
+                await loadAudioBuffer(audioBuffer);
             };
             mediaRecorder.start();
-            dom.recordBtn.classList.add('recording');
-            dom.recordBtn.innerHTML = '<i class="fas fa-stop mr-2"></i>Detener';
-            dom.recordingIndicator.classList.remove('hidden');
+            dom.recordBtn.classList.add('glow-red');
+            dom.recordingIndicator.classList.remove('hidden'); // Keep this for accessibility, though button is primary indicator
         } catch (err) { console.error("Error accessing microphone:", err); }
     }
 }
@@ -271,31 +270,30 @@ function setupTonePipeline() {
     // Player will be created when audio is loaded and then chained.
 }
 
-function loadAudioBuffer(audioBuffer) {
+async function loadAudioBuffer(audioBuffer) {
     if (isPlaying) stop();
 
     originalBuffer = audioBuffer; // Keep a reference for drawing
 
     if (player) player.dispose();
 
-    player = new Tone.Player({
-        url: originalBuffer,
-        onload: () => {
-            selection.start = 0;
-            selection.end = player.buffer.duration;
-            dom.totalTime.textContent = formatTime(player.buffer.duration);
-            dom.playerControls.classList.remove('hidden');
-            dom.placeholderText.classList.add('hidden');
-            drawWaveform();
-        },
-        onstop: () => {
-            // This event handler is called when the player stops for any reason.
-            // We only want to reset the UI if it wasn't stopped by the user clicking the stop button.
-            if (isPlaying) {
-                stop();
-            }
-        }
-    }).chain(compressor, noiseGate, eq, filter, reverb, delay, chorus, distortion, Tone.Destination);
+    // Create the player and chain it.
+    player = new Tone.Player(originalBuffer).chain(compressor, noiseGate, eq, filter, reverb, delay, chorus, distortion, Tone.Destination);
+
+    // Assign the onstop handler
+    player.onstop = () => {
+        if (isPlaying) stop();
+    };
+
+    // Wait for Tone.js to confirm all buffers are loaded. This is the crucial fix.
+    await Tone.loaded();
+
+    // Now that the player is ready, update the UI.
+    selection.start = 0;
+    selection.end = player.buffer.duration;
+    dom.totalTime.textContent = formatTime(player.buffer.duration);
+    dom.placeholderText.classList.add('hidden');
+    drawWaveform();
 }
 
 async function togglePlayback() {
@@ -314,7 +312,7 @@ async function togglePlayback() {
 function toggleLoop(e) {
     isLooping = !isLooping;
     if (player) player.loop = isLooping;
-    e.currentTarget.classList.toggle('text-blue-400', isLooping);
+    e.currentTarget.classList.toggle('glow-blue', isLooping);
 }
 
 let progressLoop;
@@ -332,6 +330,7 @@ function play() {
 
     isPlaying = true;
     dom.playPauseButton.innerHTML = '<i class="fas fa-pause"></i>';
+    dom.playPauseButton.classList.add('glow-white');
     dom.djDisk.classList.add('spinning');
 
     // Stop any previous loop to avoid multiple running
@@ -359,6 +358,7 @@ function stop() {
 
     isPlaying = false;
     dom.playPauseButton.innerHTML = '<i class="fas fa-play"></i>';
+    dom.playPauseButton.classList.remove('glow-white');
     dom.djDisk.classList.remove('spinning');
 
     // Reset progress bar to the beginning of the selection
