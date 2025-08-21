@@ -1,0 +1,24 @@
+body { font-family: 'Inter', sans-serif; background: #111827; }
+.main-container { background-color: rgba(17, 24, 39, 0.8); backdrop-filter: blur(15px); -webkit-backdrop-filter: blur(15px); border: 1px solid rgba(55, 65, 81, 0.5); }
+.title-font { font-family: 'Orbitron', sans-serif; }
+.text-glow { text-shadow: 0 0 8px rgba(255, 255, 255, 0.5), 0 0 12px rgba(59, 130, 246, 0.5); }
+.file-input-wrapper { position: relative; overflow: hidden; display: inline-block; }
+.file-input-wrapper input[type=file] { font-size: 100px; position: absolute; left: 0; top: 0; opacity: 0; cursor: pointer; }
+.icon-card { background-color: rgba(31, 41, 55, 0.7); border: 1px solid rgba(55, 65, 81, 0.5); transition: transform 0.2s ease, box-shadow 0.2s ease; }
+.icon-card:hover { transform: translateY(-5px); box-shadow: 0 0 15px rgba(59, 130, 246, 0.4); }
+.btn { transition: all 0.2s ease-in-out; border: 1px solid rgba(255, 255, 255, 0.2); background-color: rgba(31, 41, 55, 0.5); }
+.btn:hover { background-color: rgba(55, 65, 81, 0.7); border-color: rgba(255, 255, 255, 0.4); box-shadow: 0 0 15px rgba(139, 92, 246, 0.5); }
+.btn-primary { box-shadow: 0 0 15px rgba(79, 70, 229, 0.5); border-color: rgba(79, 70, 229, 0.8); }
+.btn-primary:hover { box-shadow: 0 0 25px rgba(79, 70, 229, 0.8); }
+.input-field { background-color: rgba(17, 24, 39, 0.8); border: 1px solid #374151; }
+.input-field:focus { border-color: #4f46e5; box-shadow: 0 0 10px rgba(79, 70, 229, 0.5); }
+/* Estilos para la selección de plataforma */
+.platform-btn {
+    border: 2px solid #374151; /* border-gray-700 */
+    transition: all 0.2s ease;
+}
+.platform-btn.active {
+    border-color: #4f46e5; /* border-indigo-600 */
+    background-color: rgba(79, 70, 229, 0.2);
+    box-shadow: 0 0 15px rgba(79, 70, 229, 0.5);
+}

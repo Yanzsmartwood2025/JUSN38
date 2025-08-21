@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Generador de Iconos PWA por Plataforma</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&family=Inter:wght@400;500&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body class="text-gray-300 flex flex-col items-center min-h-screen p-4 sm:p-6 md:p-8">
+
+    <div class="w-full max-w-4xl main-container rounded-2xl shadow-2xl p-8 space-y-8">
+
+        <header class="text-center">
+            <h1 class="text-3xl sm:text-4xl font-bold text-white title-font text-glow">GENERADOR DE ICONOS</h1>
+            <p class="mt-2 text-gray-400">Crea sets de iconos para PWA, Android o iOS.</p>
+        </header>
+
+        <div class="flex flex-col items-center space-y-6">
+            <div id="image-preview-container" class="w-48 h-48 bg-gray-900/50 rounded-xl flex items-center justify-center border-2 border-dashed border-gray-700 hidden">
+                <img id="image-preview" src="" alt="Vista Previa" class="max-w-full max-h-full rounded-lg">
+            </div>
+
+            <div class="file-input-wrapper btn-primary text-white font-bold py-3 px-6 rounded-lg cursor-pointer shadow-lg">
+                <span id="file-label" class="title-font tracking-wider">1. SELECCIONAR IMAGEN</span>
+                <input type="file" id="image-uploader" accept="image/*">
+            </div>
+
+            <!-- Bandeja de Selección de Plataforma -->
+            <div class="w-full max-w-md">
+                <label class="block text-center font-medium text-gray-400 mb-3 title-font tracking-wider">2. ELIGE LA PLATAFORMA</label>
+                <div id="platform-selector" class="grid grid-cols-3 gap-4">
+                    <button class="platform-btn p-4 rounded-lg flex flex-col items-center active" data-platform="pwa">
+                        <span class="text-4xl">🌐</span>
+                        <span class="mt-2 font-semibold">PWA</span>
+                    </button>
+                    <button class="platform-btn p-4 rounded-lg flex flex-col items-center" data-platform="android">
+                        <span class="text-4xl">🤖</span>
+                        <span class="mt-2 font-semibold">Android</span>
+                    </button>
+                    <button class="platform-btn p-4 rounded-lg flex flex-col items-center" data-platform="ios">
+                        <span class="text-4xl"></span>
+                        <span class="mt-2 font-semibold">iOS</span>
+                    </button>
+                </div>
+            </div>
+
+            <div class="w-full max-w-sm">
+                <label for="filename-input" class="block text-center font-medium text-gray-400 mb-2 title-font tracking-wider">3. NOMBRE BASE</label>
+                <input type="text" id="filename-input" class="w-full px-4 py-2 rounded-lg text-white input-field focus:outline-none" placeholder="Ej: mi-app-icono" value="icon">
+            </div>
+
+            <button id="generate-btn" class="w-full sm:w-auto btn-primary text-white font-bold py-3 px-8 rounded-lg disabled:bg-gray-600 disabled:cursor-not-allowed disabled:shadow-none shadow-lg title-font tracking-wider" disabled>
+                4. GENERAR ICONOS
+            </button>
+        </div>
+
+        <div id="results-container" class="hidden">
+            <div id="icons-grid" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-6"></div>
+            <div class="mt-8 text-center">
+                <button id="download-all-btn" class="w-full sm:w-auto btn-primary text-white font-bold py-3 px-8 rounded-lg shadow-lg title-font tracking-wider">
+                    DESCARGAR TODO (.zip)
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script src="js/script.js"></script>
+</body>
+</html>
