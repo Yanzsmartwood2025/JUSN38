@@ -6,6 +6,14 @@
     <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-2224408518904582"
       crossorigin="anonymous"></script>
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+
+    <!-- Open Graph / Metaetiquetas para Redes Sociales -->
+    <meta property="og:title" content="Jusn38 Study" />
+    <meta property="og:description" content="¡El aburrimiento no existe aquí! 🎮 Descubre una colección de juegos adictivos y herramientas útiles. ¿Listo para el desafío? ¡Entra y juega!" />
+    <meta property="og:image" content="https://raw.githubusercontent.com/Yanzsmartwood2025/JUSN38/e02e4d6b9e8bb484e9bebd211e55cfdfe67eea7f/assets/images/JUSN38/social-preview.png" />
+    <meta property="og:url" content="https://jusn-38.vercel.app" />
+    <meta property="og:type" content="website" />
+
     <title>Jusn38 - Centro de Creación Digital</title>
     
     <!-- Metatags y Estilos -->
@@ -139,6 +147,20 @@
     </style>
 </head>
 <body>
+    <!-- Pega esto en el <body>, donde quieras el botón -->
+    <div id="auth-container" style="position: fixed; top: 20px; right: 20px; z-index: 100;">
+        <!-- Este botón se mostrará si el usuario no ha iniciado sesión -->
+        <button id="google-login-btn" style="display: none; background-color: #fff; border-radius: 50%; padding: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.2);">
+            <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" alt="Login con Google" style="width: 24px; height: 24px;">
+        </button>
+
+        <!-- Esto se mostrará si el usuario SÍ ha iniciado sesión -->
+        <div id="user-profile" style="display: none; align-items: center; gap: 10px;">
+            <img id="user-photo" src="" alt="Foto de perfil" style="width: 40px; height: 40px; border-radius: 50%;">
+            <button id="logout-btn" style="background: #eee; border: none; padding: 8px 12px; border-radius: 8px; cursor: pointer;">Salir</button>
+        </div>
+    </div>
+
     <div id="scene-container"></div>
 
     <div id="html-elements" style="display: none;">
@@ -819,6 +841,47 @@
         }
 
         window.addEventListener('load', main);
+    </script>
+
+    <script type="module">
+        // Importa las funciones necesarias desde tu archivo principal de Firebase
+        // Asumimos que tienes un archivo como "firebase-init.js" donde ya has inicializado todo.
+        import { auth, provider, signInWithPopup, onAuthStateChanged, signOut } from './firebase-init.js';
+
+        const loginBtn = document.getElementById('google-login-btn');
+        const logoutBtn = document.getElementById('logout-btn');
+        const userProfileDiv = document.getElementById('user-profile');
+        const userPhoto = document.getElementById('user-photo');
+
+        // Lógica para disparar el inicio de sesión
+        loginBtn.addEventListener('click', () => {
+            signInWithPopup(auth, provider)
+                .then((result) => {
+                    console.log("Usuario ha iniciado sesión:", result.user.displayName);
+                })
+                .catch((error) => {
+                    console.error("Error de autenticación:", error);
+                });
+        });
+
+        // Lógica para cerrar sesión
+        logoutBtn.addEventListener('click', () => {
+            signOut(auth);
+        });
+
+        // Observador que actualiza la UI si el usuario está o no logueado
+        onAuthStateChanged(auth, (user) => {
+            if (user && !user.isAnonymous) {
+                // Usuario está logueado con Google
+                userPhoto.src = user.photoURL;
+                userProfileDiv.style.display = 'flex';
+                loginBtn.style.display = 'none';
+            } else {
+                // Usuario no está logueado o es anónimo
+                userProfileDiv.style.display = 'none';
+                loginBtn.style.display = 'block';
+            }
+        });
     </script>
 </body>
 </html>
