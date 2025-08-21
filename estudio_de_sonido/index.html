@@ -42,30 +42,47 @@
                         <p>Abre un archivo o graba para comenzar</p>
                     </div>
                 </div>
-                <div id="dj-disk-container" class="bg-black/30 rounded-lg p-4 relative flex flex-col justify-center items-center">
-                    <div id="dj-disk" class="relative">
-                        <div id="disk-handle"></div>
-                        <!-- New controls positioned on the disk -->
-                        <div id="disk-controls" class="absolute inset-0 flex flex-col justify-center items-center gap-2 z-10">
-                            <button id="record-btn" title="Grabar" class="w-10 h-10 text-lg text-white bg-red-800 rounded-full hover:bg-red-700 transition"><i class="fas fa-microphone"></i></button>
-                            <div class="flex items-center justify-center gap-4">
-                                 <button id="restart-button" title="Reiniciar" class="w-10 h-10 text-lg text-white rounded-full hover:bg-white/10 transition"><i class="fas fa-undo"></i></button>
-                                 <button id="play-pause-button" title="Reproducir/Pausar" class="w-14 h-14 text-2xl text-black bg-white rounded-full hover:scale-105 transition flex-shrink-0"><i class="fas fa-play"></i></button>
-                                 <button id="loop-button" title="Repetir" class="w-10 h-10 text-lg text-white rounded-full hover:bg-white/10 transition"><i class="fas fa-retweet"></i></button>
-                            </div>
-                        </div>
-                    </div>
 
-                    <div class="w-full mt-2">
-                        <p class="text-xs text-gray-500 text-center mt-2">Control de Filtro (↕) y Distorsión (↔)</p>
-                        <div class="flex items-center justify-between gap-2 text-gray-400 text-sm w-full mt-1 px-4">
-                            <span id="current-time" class="w-12 text-left">0:00</span>
+                <!-- NEW PLAYER CONTROLS BAR -->
+                <div id="player-controls-bar" class="flex items-center justify-between gap-4 p-2 bg-black/30 rounded-lg">
+                    <span id="current-time" class="w-12 text-center text-gray-400 text-sm">0:00</span>
+                    <div class="flex-grow flex items-center justify-center gap-4">
+                        <button id="restart-button" title="Reiniciar" class="w-10 h-10 text-lg text-white rounded-full hover:bg-white/10 transition"><i class="fas fa-undo"></i></button>
+                        <button id="record-btn" title="Grabar" class="w-10 h-10 text-lg text-white bg-red-800 rounded-full hover:bg-red-700 transition"><i class="fas fa-microphone"></i></button>
+                        <button id="play-pause-button" title="Reproducir/Pausar" class="w-14 h-14 text-2xl text-black bg-white rounded-full hover:scale-105 transition flex-shrink-0"><i class="fas fa-play"></i></button>
+                        <button id="loop-button" title="Repetir" class="w-10 h-10 text-lg text-white rounded-full hover:bg-white/10 transition"><i class="fas fa-retweet"></i></button>
+                    </div>
+                    <span id="total-time" class="w-12 text-center text-gray-400 text-sm">0:00</span>
+                </div>
+
+                <div id="dj-disk-container" class="bg-black/30 rounded-lg p-4 relative flex flex-col justify-center items-center">
+                    <div id="dj-disk" class="relative disk-skin-1">
+                        <div id="disk-handle"></div>
+                    </div>
+                    <p class="text-xs text-gray-500 text-center mt-2">Control de Filtro (↕) y Distorsión (↔)</p>
+                </div>
+
+                <!-- NEW DISK CUSTOMIZATION PANEL -->
+                <div id="disk-customization-panel" class="bg-black/30 rounded-lg p-2 text-xs">
+                    <div class="grid grid-cols-2 gap-2">
+                        <!-- Light Controls -->
+                        <div class="flex flex-col items-center">
+                            <label class="font-bold mb-1">Color de Luz</label>
                             <div class="flex justify-center items-center gap-2">
                                 <button data-color="blue" class="color-switcher w-6 h-6 rounded-full bg-blue-500 border-2 border-gray-700 hover:border-white"></button>
                                 <button data-color="white" class="color-switcher w-6 h-6 rounded-full bg-white border-2 border-gray-700 hover:border-white"></button>
                                 <button data-color="gray" class="color-switcher w-6 h-6 rounded-full bg-gray-500 border-2 border-gray-700 hover:border-white"></button>
                             </div>
-                            <span id="total-time" class="w-12 text-right">0:00</span>
+                        </div>
+                        <!-- Skin Controls -->
+                        <div class="flex flex-col items-center">
+                            <label class="font-bold mb-1">Apariencia Disco</label>
+                            <div class="flex justify-center items-center gap-2">
+                                <button data-skin="1" class="skin-switcher w-6 h-6 rounded-full bg-gray-800 border-2 border-gray-700 hover:border-white">1</button>
+                                <button data-skin="2" class="skin-switcher w-6 h-6 rounded-full bg-gray-700 border-2 border-gray-700 hover:border-white">2</button>
+                                <button data-skin="3" class="skin-switcher w-6 h-6 rounded-full bg-gray-600 border-2 border-gray-700 hover:border-white">3</button>
+                                <button data-skin="4" class="skin-switcher w-6 h-6 rounded-full bg-gray-500 border-2 border-gray-700 hover:border-white">4</button>
+                            </div>
                         </div>
                     </div>
                 </div>
