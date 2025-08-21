@@ -150,10 +150,10 @@ input[type="range"].w-full::-webkit-slider-thumb {
 }
 
 /* Disk Skin Images */
-#dj-disk.disk-skin-1 { background-image: url('https://raw.githubusercontent.com/Yanzsmartwood2025/JUSN38/main/JUSN38/estudio_de_sonido/assets/imagenes/IMAGENES/disco-1.png'); }
-#dj-disk.disk-skin-2 { background-image: url('https://raw.githubusercontent.com/Yanzsmartwood2025/JUSN38/main/JUSN38/estudio_de_sonido/assets/imagenes/IMAGENES/disco-2.png'); }
-#dj-disk.disk-skin-3 { background-image: url('https://raw.githubusercontent.com/Yanzsmartwood2025/JUSN38/main/JUSN38/estudio_de_sonido/assets/imagenes/IMAGENES/disco-3.png'); }
-#dj-disk.disk-skin-4 { background-image: url('https://raw.githubusercontent.com/Yanzsmartwood2025/JUSN38/main/JUSN38/estudio_de_sonido/assets/imagenes/IMAGENES/disco-4.png'); }
+#dj-disk.disk-skin-1 { background-image: url('../assets/imagenes/disco-1.png'); }
+#dj-disk.disk-skin-2 { background-image: url('../assets/imagenes/disco-2.png'); }
+#dj-disk.disk-skin-3 { background-image: url('../assets/imagenes/disco-3.png'); }
+#dj-disk.disk-skin-4 { background-image: url('../assets/imagenes/disco-4.png'); }
 
 #dj-disk[class*="disk-skin-"] {
     background-size: cover;
