@@ -5,8 +5,6 @@ const dom = {
     recordBtn: document.getElementById('record-btn'),
     recordingIndicator: document.getElementById('recording-indicator'),
     saveFileBtn: document.getElementById('save-file-btn'),
-    toggleLeftPanelBtn: document.getElementById('toggle-left-panel-btn'),
-    leftPanel: document.getElementById('left-panel'),
     centerPanel: document.getElementById('center-panel'),
     downloadModal: document.getElementById('download-modal'),
     cancelDownloadBtn: document.getElementById('cancel-download-btn'),
@@ -72,13 +70,6 @@ function init() {
     dom.saveFileBtn.addEventListener('click', () => { if (player && player.loaded) dom.downloadModal.classList.remove('hidden'); });
     dom.cancelDownloadBtn.addEventListener('click', () => dom.downloadModal.classList.add('hidden'));
     dom.confirmDownloadBtn.addEventListener('click', handleDownload);
-    dom.toggleLeftPanelBtn.addEventListener('click', () => {
-        const isHidden = dom.leftPanel.classList.toggle('hidden');
-        dom.leftPanel.classList.toggle('flex', !isHidden); // Use flex display when not hidden
-        dom.centerPanel.classList.toggle('md:col-span-9');
-        dom.centerPanel.classList.toggle('md:col-span-6');
-        resizeCanvases();
-    });
 
 
     // Playback Controls

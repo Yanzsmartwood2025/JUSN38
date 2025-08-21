@@ -19,81 +19,75 @@
             <input type="file" id="audio-upload" class="hidden" accept="audio/*">
             <button id="open-file-btn" class="menu-btn px-3 py-1 rounded-md text-sm"><i class="fas fa-folder-open mr-2"></i>Abrir</button>
             <button id="save-file-btn" class="menu-btn px-3 py-1 rounded-md text-sm"><i class="fas fa-save mr-2"></i>Guardar</button>
-            <button id="toggle-left-panel-btn" class="menu-btn px-3 py-1 rounded-md text-sm" title="Mostrar/Ocultar Panel Izquierdo"><i class="fas fa-bars"></i></button>
             <span id="recording-indicator" class="hidden text-sm text-red-400 font-bold">Grabando...</span>
         </div>
 
         <!-- MAIN CONTENT GRID -->
         <div class="flex-grow p-4 grid grid-cols-12 gap-4 overflow-hidden">
-            <!-- LEFT PANEL: EMPTY (Future Use) -->
-            <div id="left-panel" class="hidden col-span-12 md:col-span-3 bg-black/20 rounded-lg p-4 flex-col">
-                <!-- This panel is now free for future additions. -->
-                 <h3 class="font-bold text-center mb-4">Visualizador</h3>
-                 <div id="visualizer-container" class="flex-grow min-h-0 bg-black/20 rounded-lg">
-                    <!-- A new visualizer could go here, e.g., Tone.Analyser -->
-                 </div>
-            </div>
 
-            <!-- CENTER PANEL: TRACK & DECK -->
+            <!-- MAIN HORIZONTAL LAYOUT PANEL -->
             <div id="center-panel" class="col-span-12 md:col-span-9 bg-black/20 rounded-lg flex flex-col gap-4 p-4">
-                <div id="waveform-container" class="rounded-lg w-full relative h-32 flex-shrink-0">
-                    <canvas id="progress-canvas"></canvas>
-                    <canvas id="waveform-canvas"></canvas>
-                    <div id="placeholder-text" class="absolute inset-0 text-center text-gray-500 h-full flex items-center justify-center">
-                        <p>Abre un archivo o graba para comenzar</p>
-                    </div>
-                </div>
 
-                <!-- NEW PLAYER CONTROLS BAR -->
-                <div id="player-controls-bar" class="flex items-center justify-between gap-4 p-2 bg-black/30 rounded-lg">
-                    <span id="current-time" class="w-12 text-center text-gray-400 text-sm">0:00</span>
-                    <div class="flex-grow flex items-center justify-center gap-4">
-                        <button id="restart-button" title="Reiniciar" class="w-10 h-10 text-lg text-white rounded-full hover:bg-white/10 transition"><i class="fas fa-undo"></i></button>
-                        <button id="record-btn" title="Grabar" class="w-10 h-10 text-lg text-white bg-red-800 rounded-full hover:bg-red-700 transition"><i class="fas fa-microphone"></i></button>
-                        <button id="play-pause-button" title="Reproducir/Pausar" class="w-14 h-14 text-2xl text-black bg-white rounded-full hover:scale-105 transition flex-shrink-0"><i class="fas fa-play"></i></button>
-                        <button id="loop-button" title="Repetir" class="w-10 h-10 text-lg text-white rounded-full hover:bg-white/10 transition"><i class="fas fa-retweet"></i></button>
-                    </div>
-                    <span id="total-time" class="w-12 text-center text-gray-400 text-sm">0:00</span>
-                </div>
-
-                <div id="dj-disk-container" class="bg-black/30 rounded-lg p-4 relative flex flex-col justify-center items-center flex-grow">
-                    <div id="dj-disk" class="relative disk-skin-1">
-                        <div id="disk-handle"></div>
-                    </div>
-                    <p class="text-xs text-gray-500 text-center mt-2">Control de Filtro (↕) y Distorsión (↔)</p>
-                </div>
-
-                <!-- NEW DISK CUSTOMIZATION PANEL -->
-                <div id="disk-customization-panel" class="bg-black/30 rounded-lg p-2 text-xs">
-                    <div class="grid grid-cols-2 gap-2">
-                        <!-- Light Controls -->
-                        <div class="flex flex-col items-center">
-                            <label class="font-bold mb-1">Color de Luz</label>
-                            <div class="flex justify-center items-center gap-2 flex-wrap">
-                                <button data-color="blue" class="color-switcher w-6 h-6 rounded-full bg-blue-500 border-2 border-gray-700 hover:border-white"></button>
-                                <button data-color="white" class="color-switcher w-6 h-6 rounded-full bg-white border-2 border-gray-700 hover:border-white"></button>
-                                <button data-color="gray" class="color-switcher w-6 h-6 rounded-full bg-gray-500 border-2 border-gray-700 hover:border-white"></button>
-                                <button data-color="red" class="color-switcher w-6 h-6 rounded-full bg-red-500 border-2 border-gray-700 hover:border-white"></button>
-                                <button data-color="green" class="color-switcher w-6 h-6 rounded-full bg-green-500 border-2 border-gray-700 hover:border-white"></button>
-                                <button data-color="yellow" class="color-switcher w-6 h-6 rounded-full bg-yellow-500 border-2 border-gray-700 hover:border-white"></button>
-                                <button data-color="purple" class="color-switcher w-6 h-6 rounded-full bg-purple-500 border-2 border-gray-700 hover:border-white"></button>
-                            </div>
+                <!-- TOP SECTION (30%) -->
+                <div class="h-[30%] flex flex-col gap-4">
+                    <div id="waveform-container" class="rounded-lg w-full relative flex-grow">
+                        <canvas id="progress-canvas"></canvas>
+                        <canvas id="waveform-canvas"></canvas>
+                        <div id="placeholder-text" class="absolute inset-0 text-center text-gray-500 h-full flex items-center justify-center">
+                            <p>Abre un archivo o graba para comenzar</p>
                         </div>
-                        <!-- Skin Controls -->
-                        <div class="flex flex-col items-center">
-                            <label class="font-bold mb-1">Apariencia Disco</label>
-                            <div class="flex justify-center items-center gap-2">
-                                <button data-skin="1" class="skin-switcher w-6 h-6 rounded-full bg-gray-800 border-2 border-gray-700 hover:border-white">1</button>
-                                <button data-skin="2" class="skin-switcher w-6 h-6 rounded-full bg-gray-700 border-2 border-gray-700 hover:border-white">2</button>
-                                <button data-skin="3" class="skin-switcher w-6 h-6 rounded-full bg-gray-600 border-2 border-gray-700 hover:border-white">3</button>
-                                <button data-skin="4" class="skin-switcher w-6 h-6 rounded-full bg-gray-500 border-2 border-gray-700 hover:border-white">4</button>
-                            </div>
+                    </div>
+                    <div id="player-controls-bar" class="flex items-center justify-between gap-4 p-2 bg-black/30 rounded-lg flex-shrink-0">
+                        <span id="current-time" class="w-12 text-center text-gray-400 text-sm">0:00</span>
+                        <div class="flex-grow flex items-center justify-center gap-4">
+                            <button id="restart-button" title="Reiniciar" class="w-10 h-10 text-lg text-white rounded-full hover:bg-white/10 transition"><i class="fas fa-undo"></i></button>
+                            <button id="record-btn" title="Grabar" class="w-10 h-10 text-lg text-white bg-red-800 rounded-full hover:bg-red-700 transition"><i class="fas fa-microphone"></i></button>
+                            <button id="play-pause-button" title="Reproducir/Pausar" class="w-14 h-14 text-2xl text-black bg-white rounded-full hover:scale-105 transition flex-shrink-0"><i class="fas fa-play"></i></button>
+                            <button id="loop-button" title="Repetir" class="w-10 h-10 text-lg text-white rounded-full hover:bg-white/10 transition"><i class="fas fa-retweet"></i></button>
                         </div>
-                        <!-- Party Mode Button -->
-                        <div class="col-span-2 mt-2">
-                            <button id="party-mode-btn" class="w-full py-1 bg-purple-600 rounded-md hover:bg-purple-700 transition text-white font-bold text-xs">
-                                <i class="fas fa-magic mr-1"></i>Modo Fiesta
-                            </button>
+                        <span id="total-time" class="w-12 text-center text-gray-400 text-sm">0:00</span>
+                    </div>
+                </div>
+
+                <!-- BOTTOM SECTION (70%) -->
+                <div class="h-[70%] flex flex-col gap-4">
+                    <div id="dj-disk-container" class="bg-black/30 rounded-lg p-4 relative flex flex-col justify-center items-center flex-grow">
+                        <div id="dj-disk" class="relative disk-skin-1">
+                            <div id="disk-handle"></div>
+                        </div>
+                        <p class="text-xs text-gray-500 text-center mt-2">Control de Scratch (↔)</p>
+                    </div>
+                    <div id="disk-customization-panel" class="bg-black/30 rounded-lg p-2 text-xs flex-shrink-0">
+                        <div class="grid grid-cols-2 gap-2">
+                            <!-- Light Controls -->
+                            <div class="flex flex-col items-center">
+                                <label class="font-bold mb-1">Color de Luz</label>
+                                <div class="flex justify-center items-center gap-2 flex-wrap">
+                                    <button data-color="blue" class="color-switcher w-6 h-6 rounded-full bg-blue-500 border-2 border-gray-700 hover:border-white"></button>
+                                    <button data-color="white" class="color-switcher w-6 h-6 rounded-full bg-white border-2 border-gray-700 hover:border-white"></button>
+                                    <button data-color="gray" class="color-switcher w-6 h-6 rounded-full bg-gray-500 border-2 border-gray-700 hover:border-white"></button>
+                                    <button data-color="red" class="color-switcher w-6 h-6 rounded-full bg-red-500 border-2 border-gray-700 hover:border-white"></button>
+                                    <button data-color="green" class="color-switcher w-6 h-6 rounded-full bg-green-500 border-2 border-gray-700 hover:border-white"></button>
+                                    <button data-color="yellow" class="color-switcher w-6 h-6 rounded-full bg-yellow-500 border-2 border-gray-700 hover:border-white"></button>
+                                    <button data-color="purple" class="color-switcher w-6 h-6 rounded-full bg-purple-500 border-2 border-gray-700 hover:border-white"></button>
+                                </div>
+                            </div>
+                            <!-- Skin Controls -->
+                            <div class="flex flex-col items-center">
+                                <label class="font-bold mb-1">Apariencia Disco</label>
+                                <div class="flex justify-center items-center gap-2">
+                                    <button data-skin="1" class="skin-switcher w-6 h-6 rounded-full bg-gray-800 border-2 border-gray-700 hover:border-white">1</button>
+                                    <button data-skin="2" class="skin-switcher w-6 h-6 rounded-full bg-gray-700 border-2 border-gray-700 hover:border-white">2</button>
+                                    <button data-skin="3" class="skin-switcher w-6 h-6 rounded-full bg-gray-600 border-2 border-gray-700 hover:border-white">3</button>
+                                    <button data-skin="4" class="skin-switcher w-6 h-6 rounded-full bg-gray-500 border-2 border-gray-700 hover:border-white">4</button>
+                                </div>
+                            </div>
+                            <!-- Party Mode Button -->
+                            <div class="col-span-2 mt-2">
+                                <button id="party-mode-btn" class="w-full py-1 bg-purple-600 rounded-md hover:bg-purple-700 transition text-white font-bold text-xs">
+                                    <i class="fas fa-magic mr-1"></i>Modo Fiesta
+                                </button>
+                            </div>
                         </div>
                     </div>
                 </div>
