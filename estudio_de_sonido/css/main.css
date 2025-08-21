@@ -108,8 +108,8 @@ input[type="range"][orient="vertical"]::-webkit-slider-thumb {
 #dj-disk-container { display: flex; flex-direction: column; justify-content: center; align-items: center; }
 #dj-disk {
     position: relative;
-    width: 250px;
-    height: 250px;
+    width: 320px;
+    height: 320px;
     background: radial-gradient(circle, #4b5563 0%, #1f2937 70%);
     border-radius: 50%;
     border: 5px solid #374151;
