@@ -13,12 +13,34 @@ body {
     font-family: 'Inter', sans-serif;
     overflow: hidden;
 }
-.main-container {
-    background: var(--bg-panel);
-    border: 1px solid var(--border-color);
-    height: 95vh;
-    width: 95vw;
+
+/* NEW LAYOUT STYLES */
+#container {
+  display: flex;
+  flex-direction: row;
+  height: 100vh;
+  width: 100vw;
+  padding: 1rem;
+  gap: 1rem;
 }
+
+#main-panel {
+  flex: 1;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  padding: 1rem;
+  gap: 1rem;
+}
+
+#right-panel {
+  width: 320px; /* adjusted for padding */
+  overflow-y: auto;
+  max-height: 100vh;
+  padding-right: 10px; /* For scrollbar */
+}
+
+/* Keep old component styles, remove old layout styles */
 .top-bar {
     background: rgba(12, 12, 20, 0.8);
     border-bottom: 1px solid var(--border-color);
