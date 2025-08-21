@@ -78,6 +78,17 @@ function init() {
     // Set initial glow color
     dom.djDisk.dataset.glowColor = 'blue';
 
+    // Disk Skin Switcher
+    document.querySelectorAll('.skin-switcher').forEach(button => {
+        button.addEventListener('click', (e) => {
+            const skin = e.target.dataset.skin;
+            // Remove any existing skin classes
+            dom.djDisk.className = dom.djDisk.className.replace(/disk-skin-\d/g, '');
+            // Add the new skin class
+            dom.djDisk.classList.add(`disk-skin-${skin}`);
+        });
+    });
+
     // Canvas Resizing
     const resizeCanvases = () => {
         const waveContainer = document.getElementById('waveform-container');
