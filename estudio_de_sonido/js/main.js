@@ -126,6 +126,17 @@ function init() {
 
     // Setup the audio pipeline
     setupTonePipeline();
+
+    // Intenta bloquear la orientación a horizontal
+    try {
+        if (screen.orientation && typeof screen.orientation.lock === 'function') {
+            screen.orientation.lock('landscape').catch(err => {
+                console.log("No se pudo bloquear la orientación: ", err);
+            });
+        }
+    } catch (err) {
+        console.error("Error al intentar bloquear la orientación: ", err);
+    }
 }
 
 function stopPartyMode() {
