@@ -14,6 +14,8 @@ const dom = {
     waveformCtx: document.getElementById('waveform-canvas').getContext('2d'),
     progressCanvas: document.getElementById('progress-canvas'),
     progressCtx: document.getElementById('progress-canvas').getContext('2d'),
+    djDisk: document.getElementById('dj-disk'),
+    diskHandle: document.getElementById('disk-handle'),
     currentTime: document.getElementById('current-time'),
     totalTime: document.getElementById('total-time'),
     restartButton: document.getElementById('restart-button'),
@@ -25,7 +27,7 @@ const dom = {
 };
 
 // --- TONE.JS & GLOBAL STATE ---
-let player, compressor, noiseGate, eq, reverb, delay, chorus, distortion;
+let player, compressor, noiseGate, eq, filter, reverb, delay, chorus, distortion;
 let originalBuffer;
 let selection = { start: 0, end: 1 };
 let isPlaying = false, isLooping = false, progressAnimator;
@@ -49,13 +51,31 @@ function init() {
     // FX Controls Listeners
     const fxControls = document.getElementById('fx-controls-container');
     fxControls.querySelectorAll('input[type="range"]').forEach(slider => {
+        updateSliderFill(slider); // Set initial fill
         slider.addEventListener('input', updateFxValue);
     });
 
-    // Waveform interaction
+    // Waveform and Disk interaction
     dom.waveformCanvas.addEventListener('mousedown', handleWaveformMouseDown);
-    window.addEventListener('mousemove', handleWaveformMouseMove);
-    window.addEventListener('mouseup', () => { isSelecting = false; });
+    dom.djDisk.addEventListener('mousedown', handleDiskMouseDown);
+    window.addEventListener('mousemove', (e) => {
+        handleWaveformMouseMove(e);
+        handleDiskMouseMove(e);
+    });
+    window.addEventListener('mouseup', () => {
+        isSelecting = false;
+        handleDiskMouseUp();
+    });
+
+    // DJ Disk Color Switcher
+    document.querySelectorAll('.color-switcher').forEach(button => {
+        button.addEventListener('click', (e) => {
+            const color = e.target.dataset.color;
+            dom.djDisk.dataset.glowColor = color;
+        });
+    });
+    // Set initial glow color
+    dom.djDisk.dataset.glowColor = 'blue';
 
     // Canvas Resizing
     const resizeCanvases = () => {
@@ -123,9 +143,20 @@ async function toggleRecording() {
     }
 }
 
+function updateSliderFill(slider) {
+    const min = slider.min || 0;
+    const max = slider.max || 1;
+    const value = slider.value;
+    const percent = ((value - min) / (max - min)) * 100;
+    slider.style.setProperty('--fill-percent', `${percent}%`);
+}
+
 function updateFxValue(e) {
     const { id, value } = e.target;
     const floatValue = parseFloat(value);
+
+    // Update visual fill
+    updateSliderFill(e.target);
 
     // Update value display span
     const valueSpan = document.getElementById(`${id}-value`);
@@ -185,6 +216,43 @@ function handleWaveformMouseMove(e) {
     drawWaveform();
 }
 
+let isDraggingDisk = false;
+let diskDragStart = { x: 0, y: 0 };
+function handleDiskMouseDown(e) {
+    if (!player || !player.loaded) return;
+    isDraggingDisk = true;
+    diskDragStart.x = e.clientX;
+    diskDragStart.y = e.clientY;
+    dom.djDisk.style.cursor = 'grabbing';
+}
+function handleDiskMouseMove(e) {
+    if (!isDraggingDisk) return;
+    const deltaX = e.clientX - diskDragStart.x;
+    const deltaY = e.clientY - diskDragStart.y;
+
+    // Map X to Distortion Wet (0 to 1)
+    const distortionWet = Math.max(0, Math.min(1, deltaX / 200));
+    distortion.wet.setTargetAtTime(distortionWet, Tone.context.currentTime, 0.01);
+
+    // Map Y to Filter Frequency (logarithmic, 200Hz to 8000Hz)
+    const filterFreq = Math.max(200, Math.min(8000, 8000 * Math.pow(0.025, -deltaY / 100)));
+    filter.frequency.setTargetAtTime(filterFreq, Tone.context.currentTime, 0.01);
+
+    // Update handle position visually
+    const handleX = Math.max(-80, Math.min(80, deltaX));
+    const handleY = Math.max(-80, Math.min(80, deltaY));
+    dom.diskHandle.style.transform = `translate(${handleX}px, ${handleY}px)`;
+}
+function handleDiskMouseUp() {
+    if (!isDraggingDisk) return;
+    isDraggingDisk = false;
+    dom.djDisk.style.cursor = 'grab';
+    // Reset handle to center and effects to default
+    dom.diskHandle.style.transform = `translate(-50%, -50%)`;
+    distortion.wet.setTargetAtTime(0, Tone.context.currentTime, 0.1);
+    filter.frequency.setTargetAtTime(20000, Tone.context.currentTime, 0.1);
+}
+
 
 // --- TONE.JS AUDIO CORE ---
 function setupTonePipeline() {
@@ -194,6 +262,7 @@ function setupTonePipeline() {
     });
     noiseGate = new Tone.Gate(-40);
     eq = new Tone.EQ3(0, 0, 0);
+    filter = new Tone.Filter(20000, 'lowpass');
     reverb = new Tone.Reverb({ decay: 1.5, wet: 0 });
     delay = new Tone.FeedbackDelay({ delayTime: "8n", feedback: 0.5, wet: 0 });
     chorus = new Tone.Chorus({ frequency: 4, depth: 0.5, wet: 0 }).start();
@@ -207,28 +276,33 @@ function loadAudioBuffer(audioBuffer) {
 
     originalBuffer = audioBuffer; // Keep a reference for drawing
 
-    // Dispose of the old player if it exists
-    if (player) {
-        player.dispose();
-    }
+    if (player) player.dispose();
 
-    player = new Tone.Player(originalBuffer, () => {
-        // onloaded callback
-        selection.start = 0;
-        selection.end = player.buffer.duration;
-        dom.totalTime.textContent = formatTime(player.buffer.duration);
-        dom.playerControls.classList.remove('hidden');
-        dom.placeholderText.classList.add('hidden');
-        drawWaveform();
-    }).chain(compressor, noiseGate, eq, reverb, delay, chorus, distortion, Tone.Destination);
+    player = new Tone.Player({
+        url: originalBuffer,
+        onload: () => {
+            selection.start = 0;
+            selection.end = player.buffer.duration;
+            dom.totalTime.textContent = formatTime(player.buffer.duration);
+            dom.playerControls.classList.remove('hidden');
+            dom.placeholderText.classList.add('hidden');
+            drawWaveform();
+        },
+        onstop: () => {
+            // This event handler is called when the player stops for any reason.
+            // We only want to reset the UI if it wasn't stopped by the user clicking the stop button.
+            if (isPlaying) {
+                stop();
+            }
+        }
+    }).chain(compressor, noiseGate, eq, filter, reverb, delay, chorus, distortion, Tone.Destination);
 }
 
-function togglePlayback() {
+async function togglePlayback() {
     if (!player || !player.loaded) return;
-    // Request to start audio context if it's not already running
-    if (Tone.context.state !== 'running') {
-        Tone.context.resume();
-    }
+
+    // Crucially, ensure Tone.js is started by a user gesture.
+    await Tone.start();
 
     if (isPlaying) {
         stop();
@@ -253,34 +327,30 @@ function play() {
     player.loopEnd = selection.end;
     player.loop = isLooping;
 
-    player.start(Tone.now(), selection.start);
+    // The duration is passed only if not looping.
+    player.start(Tone.now(), selection.start, isLooping ? undefined : duration);
 
     isPlaying = true;
     dom.playPauseButton.innerHTML = '<i class="fas fa-pause"></i>';
+    dom.djDisk.classList.add('spinning');
 
-    // Use Tone.Draw.schedule to sync drawing with audio thread
-    let startTime = Tone.now();
+    // Stop any previous loop to avoid multiple running
+    if (progressLoop) progressLoop.dispose();
 
+    // Loop for updating the progress bar
+    const startTime = player.startTime;
     progressLoop = new Tone.Loop(time => {
-        const elapsed = (Tone.now() - startTime);
-        if (elapsed > duration && !isLooping) {
-            stop();
-            return;
-        }
+        const elapsed = Tone.now() - startTime;
         const currentPosition = selection.start + (elapsed % duration);
         const progress = currentPosition / player.buffer.duration;
 
+        // Use Tone.Draw to sync UI updates with the audio thread
         Tone.Draw.schedule(() => {
             dom.currentTime.textContent = formatTime(currentPosition);
             drawProgress(progress);
         }, time);
 
     }, "16n").start(0);
-
-    // Schedule stop if not looping
-    if (!isLooping) {
-        player.stop(`+${duration}`);
-    }
 }
 
 function stop() {
@@ -289,10 +359,13 @@ function stop() {
 
     isPlaying = false;
     dom.playPauseButton.innerHTML = '<i class="fas fa-play"></i>';
+    dom.djDisk.classList.remove('spinning');
 
+    // Reset progress bar to the beginning of the selection
     Tone.Draw.schedule(() => {
+        const duration = player && player.loaded ? player.buffer.duration : 1;
         dom.currentTime.textContent = formatTime(selection.start);
-        drawProgress(selection.start / (player.buffer ? player.buffer.duration : 1));
+        drawProgress(selection.start / duration);
     }, Tone.now());
 }
 
