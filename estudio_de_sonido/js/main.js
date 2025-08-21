@@ -31,7 +31,7 @@ const dom = {
 };
 
 // --- TONE.JS & GLOBAL STATE ---
-let player, compressor, noiseGate, eq, filter, reverb, delay, chorus, distortion, scratchPlayer;
+let player, compressor, noiseGate, eq, filter, reverb, delay, chorus, distortion;
 let originalBuffer;
 let selection = { start: 0, end: 1 };
 let isPlaying = false, isLooping = false, progressAnimator;
@@ -284,47 +284,70 @@ function handleWaveformMouseMove(e) {
     drawWaveform();
 }
 
-let isDraggingDisk = false;
-let diskDragStart = { x: 0, y: 0 };
+let isScratching = false;
+let lastPointerAngle = 0;
+let currentDiskRotation = 0;
+
+// Function to calculate the angle of the pointer relative to the center of the disk
+function getAngle(event) {
+    const rect = dom.djDisk.getBoundingClientRect();
+    const centerX = rect.left + rect.width / 2;
+    const centerY = rect.top + rect.height / 2;
+    const clientX = event.touches ? event.touches[0].clientX : event.clientX;
+    const clientY = event.touches ? event.touches[0].clientY : event.clientY;
+    return Math.atan2(clientY - centerY, clientX - centerX);
+}
+
 function handleDiskMouseDown(e) {
     if (!player || !player.loaded) return;
-    isDraggingDisk = true;
-    diskDragStart.x = e.clientX;
-    diskDragStart.y = e.clientY;
+    isScratching = true;
+    player.mute = false; // Unmute for scratching
+    lastPointerAngle = getAngle(e);
     dom.djDisk.style.cursor = 'grabbing';
-    if (scratchPlayer && scratchPlayer.loaded) {
-        scratchPlayer.start();
-    }
+    dom.djDisk.classList.remove('spinning'); // Stop spinning animation
+    // Disable transition for immediate feedback
+    dom.djDisk.style.transition = 'none';
 }
+
 function handleDiskMouseMove(e) {
-    if (!isDraggingDisk) return;
-    const deltaX = e.clientX - diskDragStart.x;
-    const deltaY = e.clientY - diskDragStart.y;
+    if (!isScratching) return;
 
-    // Map X to Distortion Wet (0 to 1)
-    const distortionWet = Math.max(0, Math.min(1, deltaX / 200));
-    distortion.wet.setTargetAtTime(distortionWet, Tone.context.currentTime, 0.01);
+    const currentAngle = getAngle(e);
+    let deltaAngle = currentAngle - lastPointerAngle;
 
-    // Map Y to Filter Frequency (logarithmic, 200Hz to 8000Hz)
-    const filterFreq = Math.max(200, Math.min(8000, 8000 * Math.pow(0.025, -deltaY / 100)));
-    filter.frequency.setTargetAtTime(filterFreq, Tone.context.currentTime, 0.01);
+    // Normalize the delta to avoid jumps when crossing from -PI to PI
+    if (deltaAngle > Math.PI) deltaAngle -= 2 * Math.PI;
+    if (deltaAngle < -Math.PI) deltaAngle += 2 * Math.PI;
 
-    // Update handle position visually
-    const handleX = Math.max(-80, Math.min(80, deltaX));
-    const handleY = Math.max(-80, Math.min(80, deltaY));
-    dom.diskHandle.style.transform = `translate(${handleX}px, ${handleY}px)`;
+    // Map the angle change to playback speed. The factor '10' can be adjusted.
+    const scratchSpeed = 1 + (deltaAngle * 10);
+    player.playbackRate = scratchSpeed;
+
+    // Visually rotate the disk
+    currentDiskRotation += deltaAngle * (180 / Math.PI); // Convert to degrees
+    dom.djDisk.style.transform = `rotate(${currentDiskRotation}deg)`;
+
+    lastPointerAngle = currentAngle;
 }
+
 function handleDiskMouseUp() {
-    if (!isDraggingDisk) return;
-    isDraggingDisk = false;
+    if (!isScratching) return;
+    isScratching = false;
+
+    // Reset playback rate and mute state based on whether it was playing
+    player.playbackRate = 1;
+    player.mute = !isPlaying;
+
     dom.djDisk.style.cursor = 'grab';
-    // Reset handle to center and effects to default
-    dom.diskHandle.style.transform = `translate(-50%, -50%)`;
-    distortion.wet.setTargetAtTime(0, Tone.context.currentTime, 0.1);
-    filter.frequency.setTargetAtTime(20000, Tone.context.currentTime, 0.1);
-    if (scratchPlayer) {
-        scratchPlayer.stop();
+    // Re-enable transition
+    dom.djDisk.style.transition = 'box-shadow 0.3s ease, transform 0.2s ease-out';
+
+    // Resume spinning if it was playing
+    if (isPlaying) {
+        dom.djDisk.classList.add('spinning');
     }
+    // The visual rotation will stay where it is, and the animation will take over if added.
+    // This can cause a visual jump, but it's a simple and effective implementation.
 }
 
 
@@ -343,109 +366,79 @@ function setupTonePipeline() {
     distortion = new Tone.Distortion({ distortion: 0.8, wet: 0 }); // wet is 0, so it's off by default
 
     // Player will be created when audio is loaded and then chained.
-    scratchPlayer = new Tone.Player({
-        url: "../../formula-1/assets/audios/sfx_tires_skid.mp3",
-        loop: true,
-    }).toDestination();
-}
-
-async function loadAudioBuffer(audioBuffer) {
-    if (isPlaying) stop();
-
-    originalBuffer = audioBuffer; // Keep a reference for drawing
-
-    if (player) player.dispose();
-
-    // Create the player and chain it.
-    player = new Tone.Player(originalBuffer).chain(compressor, noiseGate, eq, filter, reverb, delay, chorus, distortion, Tone.Destination);
-
-    // Assign the onstop handler
-    player.onstop = () => {
-        if (isPlaying) stop();
-    };
-
-    // Wait for Tone.js to confirm all buffers are loaded. This is the crucial fix.
-    await Tone.loaded();
-
-    // Now that the player is ready, update the UI.
-    selection.start = 0;
-    selection.end = player.buffer.duration;
-    dom.totalTime.textContent = formatTime(player.buffer.duration);
-    dom.placeholderText.classList.add('hidden');
-    drawWaveform();
-}
-
-async function togglePlayback() {
-    if (!player || !player.loaded) return;
-
-    // Crucially, ensure Tone.js is started by a user gesture.
-    await Tone.start();
-
-    if (isPlaying) {
-        stop();
-    } else {
-        play();
-    }
-}
-
-function toggleLoop(e) {
-    isLooping = !isLooping;
-    if (player) player.loop = isLooping;
-    e.currentTarget.classList.toggle('glow-blue', isLooping);
 }
 
 let progressLoop;
 
-function play() {
-    if (!player || !player.loaded || selection.start >= selection.end) return;
+async function loadAudioBuffer(audioBuffer) {
+    if (player && player.state === "started") {
+        player.stop();
+    }
+    if (progressLoop) {
+        progressLoop.dispose();
+    }
 
-    const duration = selection.end - selection.start;
-    player.loopStart = selection.start;
-    player.loopEnd = selection.end;
-    player.loop = isLooping;
+    originalBuffer = audioBuffer;
 
-    // The duration is passed only if not looping.
-    player.start(Tone.now(), selection.start, isLooping ? undefined : duration);
+    if (player) player.dispose();
 
-    isPlaying = true;
-    dom.playPauseButton.innerHTML = '<i class="fas fa-pause"></i>';
-    dom.playPauseButton.classList.add('glow-white');
-    dom.djDisk.classList.add('spinning');
+    player = new Tone.Player(originalBuffer).chain(compressor, noiseGate, eq, filter, reverb, delay, chorus, distortion, Tone.Destination);
+    player.loop = true;
 
-    // Stop any previous loop to avoid multiple running
-    if (progressLoop) progressLoop.dispose();
+    await Tone.loaded();
 
-    // Loop for updating the progress bar
-    const startTime = player.startTime;
-    progressLoop = new Tone.Loop(time => {
-        const elapsed = Tone.now() - startTime;
-        const currentPosition = selection.start + (elapsed % duration);
-        const progress = currentPosition / player.buffer.duration;
+    // Start the player muted, it will loop forever until a new file is loaded
+    player.mute = true;
+    player.start();
 
-        // Use Tone.Draw to sync UI updates with the audio thread
-        Tone.Draw.schedule(() => {
-            dom.currentTime.textContent = formatTime(currentPosition);
-            drawProgress(progress);
-        }, time);
-
-    }, "16n").start(0);
-}
-
-function stop() {
-    if (player) player.stop();
-    if (progressLoop) progressLoop.dispose();
-
+    // Reset UI
     isPlaying = false;
     dom.playPauseButton.innerHTML = '<i class="fas fa-play"></i>';
     dom.playPauseButton.classList.remove('glow-white');
     dom.djDisk.classList.remove('spinning');
 
-    // Reset progress bar to the beginning of the selection
-    Tone.Draw.schedule(() => {
-        const duration = player && player.loaded ? player.buffer.duration : 1;
-        dom.currentTime.textContent = formatTime(selection.start);
-        drawProgress(selection.start / duration);
-    }, Tone.now());
+    selection.start = 0;
+    selection.end = player.buffer.duration;
+    dom.totalTime.textContent = formatTime(player.buffer.duration);
+    dom.placeholderText.classList.add('hidden');
+    drawWaveform();
+
+    // Start the progress loop that runs forever
+    progressLoop = new Tone.Loop(time => {
+        const currentPosition = player.progress * player.buffer.duration;
+        Tone.Draw.schedule(() => {
+            dom.currentTime.textContent = formatTime(currentPosition);
+            drawProgress(player.progress);
+        }, time);
+    }, "16n").start(0);
+}
+
+async function togglePlayback() {
+    if (!player || !player.loaded) return;
+
+    await Tone.start();
+
+    isPlaying = !isPlaying;
+    player.mute = !isPlaying;
+
+    if (isPlaying) {
+        dom.playPauseButton.innerHTML = '<i class="fas fa-pause"></i>';
+        dom.playPauseButton.classList.add('glow-white');
+        dom.djDisk.classList.add('spinning');
+    } else {
+        dom.playPauseButton.innerHTML = '<i class="fas fa-play"></i>';
+        dom.playPauseButton.classList.remove('glow-white');
+        dom.djDisk.classList.remove('spinning');
+    }
+}
+
+function toggleLoop(e) {
+    // The main player loop is now always on for scratching.
+    // This button can be repurposed or removed later if desired.
+    // For now, we can just give visual feedback.
+    isLooping = !isLooping; // Keep state for other potential uses
+    e.currentTarget.classList.toggle('glow-blue', isLooping);
+    console.log("Note: Main player is always looping for scratch functionality.");
 }
 
 

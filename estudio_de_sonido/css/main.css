@@ -93,6 +93,7 @@ input[type="range"][orient="vertical"]::-webkit-slider-thumb {
     border: 5px solid #374151;
     cursor: grab;
     user-select: none;
+    transform: rotate(var(--rotation, 0deg));
 }
 #dj-disk:active { cursor: grabbing; }
 #disk-handle {
@@ -175,7 +176,7 @@ input[type="range"].w-full::-webkit-slider-thumb {
 }
 
 #dj-disk {
-    transition: box-shadow 0.3s ease;
+    transition: box-shadow 0.3s ease, transform 0.2s ease-out;
 }
 
 #dj-disk[data-glow-color='blue'] {
