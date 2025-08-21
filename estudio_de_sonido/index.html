@@ -7,6 +7,7 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
     <script src="https://cdn.jsdelivr.net/npm/lamejs@1.2.1/lame.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/tone/14.7.77/Tone.js"></script>
     <link rel="stylesheet" href="css/main.css">
 </head>
 <body class="flex items-center justify-center h-screen">
@@ -24,12 +25,13 @@
 
         <!-- MAIN CONTENT GRID -->
         <div class="flex-grow p-4 grid grid-cols-12 gap-4 overflow-hidden">
-            <!-- LEFT PANEL: EQ -->
+            <!-- LEFT PANEL: EMPTY (Future Use) -->
             <div class="col-span-12 md:col-span-3 bg-black/20 rounded-lg p-4 flex flex-col">
-                <h3 class="font-bold text-center mb-4">Ecualizador Paramétrico</h3>
-                <div class="flex-grow min-h-0">
-                    <canvas id="eq-canvas"></canvas>
-                </div>
+                <!-- This panel is now free for future additions. -->
+                 <h3 class="font-bold text-center mb-4">Visualizador</h3>
+                 <div id="visualizer-container" class="flex-grow min-h-0 bg-black/20 rounded-lg">
+                    <!-- A new visualizer could go here, e.g., Tone.Analyser -->
+                 </div>
             </div>
 
             <!-- CENTER PANEL: TRACK & DECK -->
@@ -57,49 +59,113 @@
             </div>
 
             <!-- RIGHT PANEL: MIXER -->
-            <div class="col-span-12 md:col-span-3 bg-black/20 rounded-lg p-4 overflow-y-auto">
+            <div id="mixer-panel" class="col-span-12 md:col-span-3 bg-black/20 rounded-lg p-4 overflow-y-auto">
                  <h3 class="font-bold text-center mb-4">Mesa de Mezclas</h3>
-                 <div class="grid grid-cols-3 gap-y-6 gap-x-4">
-                    <div class="fader-container">
-                        <label class="text-xs font-bold text-center">VOLUMEN</label>
-                        <div class="fader-track">
-                            <div class="level-meter" id="volume-meter"></div>
-                            <input id="volume-slider" type="range" orient="vertical" min="0" max="1.5" step="0.01" value="1">
+                 <!-- FX CONTROLS WILL BE ADDED HERE -->
+                 <div id="fx-controls-container" class="space-y-4">
+                    <!-- Dinámica -->
+                    <div>
+                        <h4 class="font-bold text-sm text-gray-400 mb-2 border-b border-gray-700 pb-1">Dinámica</h4>
+                        <div class="space-y-3 text-xs p-2">
+                            <div class="control-group">
+                                <label for="compressor-threshold">Compresor: Umbral <span id="compressor-threshold-value">-24</span> dB</label>
+                                <input type="range" id="compressor-threshold" min="-100" max="0" value="-24" step="1" class="w-full h-2 bg-gray-700 rounded-lg appearance-none cursor-pointer">
+                            </div>
+                            <div class="control-group">
+                                <label for="compressor-ratio">Compresor: Ratio <span id="compressor-ratio-value">12</span>:1</label>
+                                <input type="range" id="compressor-ratio" min="1" max="20" value="12" step="1" class="w-full h-2 bg-gray-700 rounded-lg appearance-none cursor-pointer">
+                            </div>
+                            <div class="control-group">
+                                <label for="compressor-attack">Compresor: Ataque <span id="compressor-attack-value">0.003</span>s</label>
+                                <input type="range" id="compressor-attack" min="0.001" max="1" value="0.003" step="0.001" class="w-full h-2 bg-gray-700 rounded-lg appearance-none cursor-pointer">
+                            </div>
+                             <div class="control-group">
+                                <label for="compressor-release">Compresor: Relajación <span id="compressor-release-value">0.25</span>s</label>
+                                <input type="range" id="compressor-release" min="0.01" max="1" value="0.25" step="0.01" class="w-full h-2 bg-gray-700 rounded-lg appearance-none cursor-pointer">
+                            </div>
+                            <div class="control-group">
+                                <label for="gate-threshold">Puerta de Ruido: Umbral <span id="gate-threshold-value">-40</span> dB</label>
+                                <input type="range" id="gate-threshold" min="-100" max="0" value="-40" step="1" class="w-full h-2 bg-gray-700 rounded-lg appearance-none cursor-pointer">
+                            </div>
                         </div>
                     </div>
-                    <div class="fader-container">
-                        <label class="text-xs font-bold text-center">PITCH</label>
-                        <div class="fader-track">
-                             <div class="level-meter" id="pitch-meter"></div>
-                            <input id="pitch-slider" type="range" orient="vertical" min="0.5" max="2" step="0.01" value="1">
+                    <!-- Ecualizador -->
+                    <div>
+                        <h4 class="font-bold text-sm text-gray-400 mb-2 border-b border-gray-700 pb-1">Ecualizador (3-Band)</h4>
+                         <div class="space-y-3 text-xs p-2">
+                            <div class="control-group">
+                                <label for="eq-low">Graves <span id="eq-low-value">0</span> dB</label>
+                                <input type="range" id="eq-low" min="-24" max="12" value="0" step="1" class="w-full h-2 bg-gray-700 rounded-lg appearance-none cursor-pointer">
+                            </div>
+                            <div class="control-group">
+                                <label for="eq-mid">Medios <span id="eq-mid-value">0</span> dB</label>
+                                <input type="range" id="eq-mid" min="-24" max="12" value="0" step="1" class="w-full h-2 bg-gray-700 rounded-lg appearance-none cursor-pointer">
+                            </div>
+                            <div class="control-group">
+                                <label for="eq-high">Agudos <span id="eq-high-value">0</span> dB</label>
+                                <input type="range" id="eq-high" min="-24" max="12" value="0" step="1" class="w-full h-2 bg-gray-700 rounded-lg appearance-none cursor-pointer">
+                            </div>
                         </div>
                     </div>
-                    <div class="fader-container">
-                        <label class="text-xs font-bold text-center">REVERB</label>
-                        <div class="fader-track">
-                            <div class="level-meter" id="reverb-meter"></div>
-                            <input id="reverb-slider" type="range" orient="vertical" min="0" max="1" step="0.01" value="0">
+                    <!-- Tiempo y Espacio -->
+                    <div>
+                        <h4 class="font-bold text-sm text-gray-400 mb-2 border-b border-gray-700 pb-1">Tiempo y Espacio</h4>
+                         <div class="space-y-3 text-xs p-2">
+                            <div class="control-group">
+                                <label for="reverb-decay">Reverb: Duración <span id="reverb-decay-value">1.5</span>s</label>
+                                <input type="range" id="reverb-decay" min="0.1" max="10" value="1.5" step="0.1" class="w-full h-2 bg-gray-700 rounded-lg appearance-none cursor-pointer">
+                            </div>
+                            <div class="control-group">
+                                <label for="reverb-wet">Reverb: Mezcla <span id="reverb-wet-value">0</span></label>
+                                <input type="range" id="reverb-wet" min="0" max="1" value="0" step="0.01" class="w-full h-2 bg-gray-700 rounded-lg appearance-none cursor-pointer">
+                            </div>
+                            <div class="control-group">
+                                <label for="delay-time">Delay: Tiempo <span id="delay-time-value">0.5</span>s</label>
+                                <input type="range" id="delay-time" min="0" max="1" value="0.5" step="0.01" class="w-full h-2 bg-gray-700 rounded-lg appearance-none cursor-pointer">
+                            </div>
+                            <div class="control-group">
+                                <label for="delay-feedback">Delay: Repeticiones <span id="delay-feedback-value">0.5</span></label>
+                                <input type="range" id="delay-feedback" min="0" max="0.9" value="0.5" step="0.01" class="w-full h-2 bg-gray-700 rounded-lg appearance-none cursor-pointer">
+                            </div>
+                            <div class="control-group">
+                                <label for="delay-wet">Delay: Mezcla <span id="delay-wet-value">0</span></label>
+                                <input type="range" id="delay-wet" min="0" max="1" value="0" step="0.01" class="w-full h-2 bg-gray-700 rounded-lg appearance-none cursor-pointer">
+                            </div>
                         </div>
                     </div>
-                     <div class="fader-container">
-                        <label class="text-xs font-bold text-center">DELAY MIX</label>
-                        <div class="fader-track">
-                            <div class="level-meter" id="delayMix-meter"></div>
-                            <input id="delayMix-slider" type="range" orient="vertical" min="0" max="1" step="0.01" value="0">
+                    <!-- Modulación -->
+                    <div>
+                        <h4 class="font-bold text-sm text-gray-400 mb-2 border-b border-gray-700 pb-1">Modulación</h4>
+                        <div class="space-y-3 text-xs p-2">
+                            <div class="control-group">
+                                <label for="chorus-frequency">Chorus: Frecuencia <span id="chorus-frequency-value">4</span> Hz</label>
+                                <input type="range" id="chorus-frequency" min="0.1" max="10" value="4" step="0.1" class="w-full h-2 bg-gray-700 rounded-lg appearance-none cursor-pointer">
+                            </div>
+                            <div class="control-group">
+                                <label for="chorus-depth">Chorus: Profundidad <span id="chorus-depth-value">0.5</span></label>
+                                <input type="range" id="chorus-depth" min="0" max="1" value="0.5" step="0.01" class="w-full h-2 bg-gray-700 rounded-lg appearance-none cursor-pointer">
+                            </div>
+                            <div class="control-group">
+                                <label for="chorus-wet">Chorus: Mezcla <span id="chorus-wet-value">0</span></label>
+                                <input type="range" id="chorus-wet" min="0" max="1" value="0" step="0.01" class="w-full h-2 bg-gray-700 rounded-lg appearance-none cursor-pointer">
+                            </div>
                         </div>
                     </div>
-                     <div class="fader-container">
-                        <label class="text-xs font-bold text-center">CHORUS</label>
-                        <div class="fader-track">
-                            <div class="level-meter" id="chorus-meter"></div>
-                            <input id="chorus-slider" type="range" orient="vertical" min="0" max="1" step="0.01" value="0">
+                    <!-- Saturación -->
+                    <div>
+                        <h4 class="font-bold text-sm text-gray-400 mb-2 border-b border-gray-700 pb-1">Saturación</h4>
+                        <div class="space-y-3 text-xs p-2">
+                            <div class="control-group">
+                                <label for="distortion-amount">Distorsión <span id="distortion-amount-value">0</span></label>
+                                <input type="range" id="distortion-amount" min="0" max="1" value="0" step="0.01" class="w-full h-2 bg-gray-700 rounded-lg appearance-none cursor-pointer">
+                            </div>
                         </div>
-                    </div>
-                    <div class="col-span-3 flex flex-col items-center gap-2 pt-4 border-t border-gray-700">
-                        <label for="repeats-input" class="text-sm font-bold">REPETICIONES (AL GUARDAR)</label>
-                        <input id="repeats-input" type="number" min="1" max="10" value="1" class="bg-gray-900 text-white text-center rounded-md p-2 w-24 border border-gray-600">
                     </div>
                  </div>
+                 <div class="col-span-3 flex flex-col items-center gap-2 pt-4 border-t border-gray-700 mt-4">
+                    <label for="repeats-input" class="text-sm font-bold">REPETICIONES (AL GUARDAR)</label>
+                    <input id="repeats-input" type="number" min="1" max="10" value="1" class="bg-gray-900 text-white text-center rounded-md p-2 w-24 border border-gray-600">
+                </div>
             </div>
         </div>
     </div>
