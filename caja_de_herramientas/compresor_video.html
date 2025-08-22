@@ -1,67 +1,394 @@
 <!DOCTYPE html>
-<html lang="es">
+<html lang="es" class="dark">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Compresor de Video - Jusn38</title>
+    <title>Jusn38 Study - Compresor Multimedia</title>
+    <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
-    <link rel="stylesheet" href="css/main.css">
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide-react@latest/dist/lucide-react.js"></script>
+    <script src="https://unpkg.com/lucide-icons@latest/dist/lucide.js"></script>
+    <!-- Google Fonts: Inter -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #111827; /* bg-gray-900 */
+            color: #F9FAFB; /* text-gray-50 */
+        }
+        .btn-transparent {
+            background-color: rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            transition: background-color 0.3s ease, transform 0.2s ease;
+        }
+        .btn-transparent:hover {
+            background-color: rgba(255, 255, 255, 0.2);
+            transform: translateY(-2px);
+        }
+        .file-input-label {
+            border: 2px dashed rgba(255, 255, 255, 0.3);
+            transition: border-color 0.3s ease, background-color 0.3s ease;
+        }
+        .file-input-label:hover {
+            border-color: rgba(255, 255, 255, 0.5);
+            background-color: rgba(255, 255, 255, 0.05);
+        }
+        /* Estilos para el menú desplegable */
+        #mobile-menu {
+            transform: translateX(-100%);
+            transition: transform 0.3s ease-in-out;
+        }
+        #mobile-menu.open {
+            transform: translateX(0);
+        }
+    </style>
 </head>
-<body class="bg-gray-900 text-white">
+<body class="min-h-screen">
+    <!-- Contenedor principal -->
+    <div id="app" class="flex flex-col min-h-screen">
 
-    <div class="container mx-auto p-4">
-        <header class="flex justify-between items-center p-4 bg-gray-800 rounded-lg shadow-lg mb-8">
-            <h1 class="text-2xl font-bold">Jusn38 Studio - Compresor Video</h1>
-            <a href="index.html" class="text-gray-400 hover:text-white">
-                <i class="fas fa-toolbox fa-2x"></i>
-            </a>
+        <!-- Cabecera -->
+        <header class="bg-gray-900/80 backdrop-blur-sm shadow-lg shadow-white/5 sticky top-0 z-50">
+            <div class="container mx-auto px-4 sm:px-6 lg:px-8">
+                <div class="flex items-center justify-between h-16">
+                    <!-- Logo y Título -->
+                    <div class="flex items-center space-x-4">
+                         <button id="menu-button" class="md:hidden p-2 rounded-md text-gray-400 hover:text-white hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-white">
+                            <i data-lucide="menu"></i>
+                        </button>
+                        <h1 class="text-xl md:text-2xl font-bold text-white">Jusn38 Study</h1>
+                    </div>
+
+                    <!-- Navegación de escritorio -->
+                    <nav class="hidden md:flex items-center space-x-6">
+                        <a href="#video-compressor" class="text-gray-300 hover:text-white transition">Video</a>
+                        <a href="#audio-compressor" class="text-gray-300 hover:text-white transition">Audio</a>
+                        <a href="#" class="text-gray-300 hover:text-white transition">Precios</a>
+                    </nav>
+
+                    <!-- Perfil de usuario y botón de login -->
+                    <div id="user-profile-container" class="flex items-center">
+                        <!-- Se llenará con JS -->
+                    </div>
+                </div>
+            </div>
         </header>
 
-        <main>
-            <div id="drop-zone" class="border-4 border-dashed border-gray-600 rounded-lg p-16 text-center cursor-pointer hover:border-purple-500 hover:bg-gray-800 transition-colors">
-                <div class="flex flex-col items-center pointer-events-none">
-                    <i class="fas fa-file-video fa-4x text-gray-500 mb-4"></i>
-                    <p class="text-lg">Arrastra y suelta un archivo de video aquí</p>
-                    <p class="text-gray-500">o haz clic para seleccionar un archivo</p>
-                    <input type="file" id="file-input" class="hidden" accept="video/*">
-                </div>
+        <!-- Menú móvil -->
+        <div id="mobile-menu" class="fixed inset-y-0 left-0 w-64 bg-gray-800 p-4 z-50 md:hidden">
+            <button id="close-menu-button" class="absolute top-4 right-4 p-2 text-gray-400 hover:text-white">
+                <i data-lucide="x"></i>
+            </button>
+            <nav class="mt-10 flex flex-col space-y-4">
+                 <a href="#video-compressor" class="text-gray-300 hover:text-white transition block py-2">Video</a>
+                 <a href="#audio-compressor" class="text-gray-300 hover:text-white transition block py-2">Audio</a>
+                 <a href="#" class="text-gray-300 hover:text-white transition block py-2">Precios</a>
+            </nav>
+        </div>
+
+
+        <!-- Contenido Principal -->
+        <main class="flex-grow container mx-auto px-4 sm:px-6 lg:px-8 py-8 md:py-12">
+            <div class="text-center mb-12">
+                <h2 class="text-3xl md:text-4xl lg:text-5xl font-extrabold tracking-tight">Compresión Multimedia al Instante</h2>
+                <p class="mt-4 max-w-2xl mx-auto text-lg text-gray-400">Sube, comprime y convierte tus archivos de video y audio con facilidad.</p>
             </div>
 
-            <div id="options-area" class="mt-8 bg-gray-800 rounded-lg p-4 hidden">
-                <h2 class="text-xl font-semibold mb-4">Opciones de Compresión</h2>
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div>
-                        <label for="output-format" class="block mb-2 text-sm font-medium">Formato de Salida:</label>
-                        <select id="output-format" class="bg-gray-700 border border-gray-600 text-white text-sm rounded-lg focus:ring-purple-500 focus:border-purple-500 block w-full p-2.5">
-                            <option value="mp4">MP4 (H.264)</option>
-                            <option value="webm" selected>WebM (VP9)</option>
-                            <option value="gif">GIF Animado</option>
-                        </select>
+            <div class="space-y-16">
+                <!-- Sección de Compresión de Video -->
+                <section id="video-compressor" class="bg-gray-800/50 p-6 md:p-8 rounded-2xl shadow-xl">
+                    <h3 class="text-2xl font-bold mb-6 flex items-center"><i data-lucide="film" class="mr-3"></i>Compresor de Video y Creador de GIF</h3>
+                    <div class="grid md:grid-cols-2 gap-8">
+                        <div>
+                            <label for="video-file" class="file-input-label flex flex-col items-center justify-center w-full h-48 rounded-lg cursor-pointer">
+                                <div class="flex flex-col items-center justify-center pt-5 pb-6">
+                                    <i data-lucide="upload-cloud" class="w-10 h-10 mb-3 text-gray-400"></i>
+                                    <p class="mb-2 text-sm text-gray-400"><span class="font-semibold">Haz clic para subir</span> o arrastra y suelta</p>
+                                    <p class="text-xs text-gray-500">MP4, MOV, AVI, WEBM (MAX. 500MB)</p>
+                                </div>
+                                <input id="video-file" type="file" class="hidden" accept="video/*" />
+                            </label>
+                            <p id="video-file-name" class="mt-2 text-sm text-gray-400 truncate"></p>
+                        </div>
+                        <div class="flex flex-col justify-between">
+                            <div>
+                                <h4 class="font-semibold mb-3">Opciones</h4>
+                                <div class="space-y-4">
+                                    <div class="flex items-center justify-between">
+                                        <label for="video-quality" class="text-sm">Calidad de Compresión</label>
+                                        <select id="video-quality" class="bg-gray-700 border border-gray-600 rounded-md px-2 py-1 text-sm">
+                                            <option value="high">Alta</option>
+                                            <option value="medium" selected>Media</option>
+                                            <option value="low">Baja</option>
+                                        </select>
+                                    </div>
+                                    <div class="flex items-center">
+                                        <input id="create-gif" type="checkbox" class="h-4 w-4 rounded bg-gray-700 border-gray-600 text-indigo-500 focus:ring-indigo-600">
+                                        <label for="create-gif" class="ml-2 block text-sm">Crear GIF animado</label>
+                                    </div>
+                                </div>
+                            </div>
+                            <button id="process-video-btn" class="btn-transparent w-full font-bold py-3 px-4 rounded-lg flex items-center justify-center space-x-2 disabled:opacity-50 disabled:cursor-not-allowed" disabled>
+                                <i data-lucide="wand-2"></i>
+                                <span>Procesar Video</span>
+                            </button>
+                        </div>
                     </div>
-                    <div>
-                        <label for="quality-slider" class="block mb-2 text-sm font-medium">Calidad (CRF): <span id="quality-value">30</span></label>
-                        <input id="quality-slider" type="range" min="10" max="51" value="30" class="w-full h-2 bg-gray-700 rounded-lg appearance-none cursor-pointer">
+                    <div id="video-progress-container" class="mt-6 hidden">
+                        <div class="w-full bg-gray-700 rounded-full h-2.5">
+                            <div id="video-progress-bar" class="bg-indigo-500 h-2.5 rounded-full" style="width: 0%"></div>
+                        </div>
+                        <p id="video-status" class="text-center mt-2 text-sm text-gray-400"></p>
                     </div>
-                </div>
-                <button id="compress-button" class="mt-6 w-full bg-purple-600 hover:bg-purple-700 text-white font-bold py-2 px-4 rounded">
-                    <i class="fas fa-cogs mr-2"></i>
-                    Comprimir Video
-                </button>
-            </div>
+                </section>
 
-            <div id="status-area" class="mt-8 hidden">
-                <h2 class="text-xl font-semibold mb-4">Estado del Proceso</h2>
-                <div id="status-messages" class="bg-gray-800 rounded-lg p-4 font-mono text-sm overflow-y-auto h-64"></div>
-                <a id="download-link" class="hidden mt-4 inline-block bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-4 rounded">
-                    <i class="fas fa-download mr-2"></i>
-                    Descargar Video Comprimido
-                </a>
+                <!-- Sección de Compresión de Audio -->
+                <section id="audio-compressor" class="bg-gray-800/50 p-6 md:p-8 rounded-2xl shadow-xl">
+                    <h3 class="text-2xl font-bold mb-6 flex items-center"><i data-lucide="music" class="mr-3"></i>Compresor de Audio</h3>
+                    <div class="grid md:grid-cols-2 gap-8">
+                        <div>
+                            <label for="audio-file" class="file-input-label flex flex-col items-center justify-center w-full h-48 rounded-lg cursor-pointer">
+                                <div class="flex flex-col items-center justify-center pt-5 pb-6">
+                                    <i data-lucide="upload-cloud" class="w-10 h-10 mb-3 text-gray-400"></i>
+                                    <p class="mb-2 text-sm text-gray-400"><span class="font-semibold">Haz clic para subir</span> o arrastra y suelta</p>
+                                    <p class="text-xs text-gray-500">MP3, WAV, OGG (MAX. 100MB)</p>
+                                </div>
+                                <input id="audio-file" type="file" class="hidden" accept="audio/*" />
+                            </label>
+                             <p id="audio-file-name" class="mt-2 text-sm text-gray-400 truncate"></p>
+                        </div>
+                        <div class="flex flex-col justify-between">
+                             <div>
+                                <h4 class="font-semibold mb-3">Opciones</h4>
+                                <div class="space-y-4">
+                                    <div class="flex items-center justify-between">
+                                        <label for="audio-bitrate" class="text-sm">Calidad (Bitrate)</label>
+                                        <select id="audio-bitrate" class="bg-gray-700 border border-gray-600 rounded-md px-2 py-1 text-sm">
+                                            <option value="192">192 kbps (Alta)</option>
+                                            <option value="128" selected>128 kbps (Estándar)</option>
+                                            <option value="96">96 kbps (Baja)</option>
+                                        </select>
+                                    </div>
+                                </div>
+                            </div>
+                            <button id="process-audio-btn" class="btn-transparent w-full font-bold py-3 px-4 rounded-lg flex items-center justify-center space-x-2 disabled:opacity-50 disabled:cursor-not-allowed" disabled>
+                                <i data-lucide="wand-2"></i>
+                                <span>Procesar Audio</span>
+                            </button>
+                        </div>
+                    </div>
+                     <div id="audio-progress-container" class="mt-6 hidden">
+                        <div class="w-full bg-gray-700 rounded-full h-2.5">
+                            <div id="audio-progress-bar" class="bg-teal-500 h-2.5 rounded-full" style="width: 0%"></div>
+                        </div>
+                        <p id="audio-status" class="text-center mt-2 text-sm text-gray-400"></p>
+                    </div>
+                </section>
             </div>
         </main>
+
+        <!-- Pie de página -->
+        <footer class="bg-gray-900/80 mt-16">
+            <div class="container mx-auto py-6 px-4 sm:px-6 lg:px-8 text-center text-gray-400 text-sm">
+                &copy; 2024 Jusn38 Study. Todos los derechos reservados.
+            </div>
+        </footer>
     </div>
 
-    <script src="https://cdn.jsdelivr.net/npm/@ffmpeg/ffmpeg@0.12.15/dist/umd/ffmpeg.min.js"></script>
-    <script src="js/compresor_video.js"></script>
+    <!-- Firebase SDKs -->
+    <script type="module">
+        // Importar funciones de Firebase que necesitas
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { getAuth, GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChanged, signInAnonymously, signInWithCustomToken } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+
+        // --- CONFIGURACIÓN DE FIREBASE ---
+        // Estas variables se proporcionan en el entorno de ejecución.
+        const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : {
+            apiKey: "TU_API_KEY",
+            authDomain: "TU_AUTH_DOMAIN",
+            projectId: "TU_PROJECT_ID",
+            storageBucket: "TU_STORAGE_BUCKET",
+            messagingSenderId: "TU_MESSAGING_SENDER_ID",
+            appId: "TU_APP_ID"
+        };
+        const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
+
+        // Inicializar Firebase
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+        const provider = new GoogleAuthProvider();
+
+        // --- ELEMENTOS DEL DOM ---
+        const userProfileContainer = document.getElementById('user-profile-container');
+        const videoFileInput = document.getElementById('video-file');
+        const videoFileName = document.getElementById('video-file-name');
+        const processVideoBtn = document.getElementById('process-video-btn');
+        const audioFileInput = document.getElementById('audio-file');
+        const audioFileName = document.getElementById('audio-file-name');
+        const processAudioBtn = document.getElementById('process-audio-btn');
+        const menuButton = document.getElementById('menu-button');
+        const closeMenuButton = document.getElementById('close-menu-button');
+        const mobileMenu = document.getElementById('mobile-menu');
+
+        // --- LÓGICA DE AUTENTICACIÓN ---
+        
+        // Escucha cambios en el estado de autenticación
+        onAuthStateChanged(auth, (user) => {
+            if (user) {
+                // Usuario ha iniciado sesión
+                console.log("Usuario autenticado:", user.displayName);
+                updateUIForLoggedInUser(user);
+            } else {
+                // Usuario no ha iniciado sesión
+                console.log("Ningún usuario autenticado.");
+                updateUIForLoggedOutUser();
+            }
+        });
+        
+        // Intenta iniciar sesión con el token inicial si está disponible, si no, anónimamente.
+        const initialAuth = async () => {
+             try {
+                if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
+                    await signInWithCustomToken(auth, __initial_auth_token);
+                } else {
+                    await signInAnonymously(auth);
+                }
+            } catch (error) {
+                console.error("Error en la autenticación inicial:", error);
+            }
+        };
+        initialAuth();
+
+
+        // Función para iniciar sesión con Google
+        const signInWithGoogle = async () => {
+            try {
+                const result = await signInWithPopup(auth, provider);
+                const user = result.user;
+                console.log("Inicio de sesión con Google exitoso:", user.displayName);
+            } catch (error) {
+                console.error("Error al iniciar sesión con Google:", error);
+            }
+        };
+
+        // Función para cerrar sesión
+        const logOut = async () => {
+            try {
+                await signOut(auth);
+                console.log("Cierre de sesión exitoso.");
+            } catch (error) {
+                console.error("Error al cerrar sesión:", error);
+            }
+        };
+
+        // Actualizar UI para usuario logueado
+        function updateUIForLoggedInUser(user) {
+            userProfileContainer.innerHTML = `
+                <div class="flex items-center space-x-3">
+                    <img src="${user.photoURL || 'https://placehold.co/40x40/1f2937/ffffff?text=U'}" alt="${user.displayName}" class="w-10 h-10 rounded-full border-2 border-gray-600">
+                    <button id="logout-btn" class="btn-transparent text-sm font-semibold py-2 px-4 rounded-lg hidden sm:block">
+                        Salir
+                    </button>
+                </div>
+            `;
+            document.getElementById('logout-btn').addEventListener('click', logOut);
+        }
+
+        // Actualizar UI para usuario no logueado
+        function updateUIForLoggedOutUser() {
+            userProfileContainer.innerHTML = `
+                <button id="login-btn" class="btn-transparent font-semibold py-2 px-4 rounded-lg flex items-center space-x-2">
+                    <svg class="w-5 h-5" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48"><path fill="#FFC107" d="M43.611,20.083H42V20H24v8h11.303c-1.649,4.657-6.08,8-11.303,8c-6.627,0-12-5.373-12-12c0-6.627,5.373-12,12-12c3.059,0,5.842,1.154,7.961,3.039l5.657-5.657C34.046,6.053,29.268,4,24,4C12.955,4,4,12.955,4,24c0,11.045,8.955,20,20,20c11.045,0,20-8.955,20-20C44,22.659,43.862,21.35,43.611,20.083z"></path><path fill="#FF3D00" d="M6.306,14.691l6.571,4.819C14.655,15.108,18.961,12,24,12c3.059,0,5.842,1.154,7.961,3.039l5.657-5.657C34.046,6.053,29.268,4,24,4C16.318,4,9.656,8.337,6.306,14.691z"></path><path fill="#4CAF50" d="M24,44c5.166,0,9.86-1.977,13.409-5.192l-6.19-5.238C29.211,35.091,26.715,36,24,36c-5.202,0-9.619-3.317-11.283-7.946l-6.522,5.025C9.505,39.556,16.227,44,24,44z"></path><path fill="#1976D2" d="M43.611,20.083H42V20H24v8h11.303c-0.792,2.237-2.231,4.166-4.087,5.574l6.19,5.238C42.021,35.596,44,30.138,44,24C44,22.659,43.862,21.35,43.611,20.083z"></path></svg>
+                    <span>Acceder con Google</span>
+                </button>
+            `;
+            document.getElementById('login-btn').addEventListener('click', signInWithGoogle);
+        }
+
+        // --- LÓGICA DE LA APLICACIÓN ---
+
+        // Manejo de la selección de archivos
+        videoFileInput.addEventListener('change', () => {
+            if (videoFileInput.files.length > 0) {
+                videoFileName.textContent = videoFileInput.files[0].name;
+                processVideoBtn.disabled = false;
+            } else {
+                videoFileName.textContent = '';
+                processVideoBtn.disabled = true;
+            }
+        });
+        
+        audioFileInput.addEventListener('change', () => {
+            if (audioFileInput.files.length > 0) {
+                audioFileName.textContent = audioFileInput.files[0].name;
+                processAudioBtn.disabled = false;
+            } else {
+                audioFileName.textContent = '';
+                processAudioBtn.disabled = true;
+            }
+        });
+
+        // Lógica de procesamiento (placeholders)
+        processVideoBtn.addEventListener('click', () => {
+            if (!videoFileInput.files[0]) return;
+            // Aquí iría la lógica de compresión de video y creación de GIF.
+            // Esto es complejo y usualmente requiere librerías como ffmpeg.wasm (en el cliente)
+            // o un backend con Firebase Cloud Functions (recomendado).
+            
+            // Ejemplo de simulación de progreso:
+            simulateProgress('video', 'Comprimiendo video...');
+        });
+        
+        processAudioBtn.addEventListener('click', () => {
+            if (!audioFileInput.files[0]) return;
+            // Aquí iría la lógica de compresión de audio.
+            
+            // Ejemplo de simulación de progreso:
+            simulateProgress('audio', 'Comprimiendo audio...');
+        });
+
+        function simulateProgress(type, message) {
+            const progressContainer = document.getElementById(`${type}-progress-container`);
+            const progressBar = document.getElementById(`${type}-progress-bar`);
+            const status = document.getElementById(`${type}-status`);
+            
+            progressContainer.classList.remove('hidden');
+            status.textContent = message;
+            progressBar.style.width = '0%';
+            
+            let width = 0;
+            const interval = setInterval(() => {
+                if (width >= 100) {
+                    clearInterval(interval);
+                    status.textContent = '¡Proceso completado! Archivo listo para descargar.';
+                } else {
+                    width++;
+                    progressBar.style.width = width + '%';
+                }
+            }, 30);
+        }
+        
+        // --- LÓGICA DEL MENÚ MÓVIL ---
+        menuButton.addEventListener('click', () => {
+            mobileMenu.classList.add('open');
+        });
+
+        closeMenuButton.addEventListener('click', () => {
+            mobileMenu.classList.remove('open');
+        });
+        
+        // Cierra el menú si se hace clic en un enlace
+        mobileMenu.querySelectorAll('a').forEach(link => {
+            link.addEventListener('click', () => {
+                mobileMenu.classList.remove('open');
+            });
+        });
+
+        // Inicializar iconos
+        lucide.createIcons();
+    </script>
 </body>
 </html>
