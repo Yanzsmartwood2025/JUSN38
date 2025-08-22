@@ -175,15 +175,9 @@
             <!-- Image Section -->
             <div id="image-section">
                  <h2 class="section-title">Crear desde Imágenes</h2>
-                 <div class="upload-prompt space-y-4">
+                 <div class="upload-prompt">
                     <label for="image-upload" class="btn btn-primary"><i class="fas fa-upload mr-2"></i> Subir Imágenes</label>
-                    <div class="w-full max-w-xs">
-                        <label for="resize-height" class="text-sm font-semibold">Ajustar Altura (opcional):</label>
-                        <div class="flex items-center gap-2 mt-1">
-                            <input type="number" id="resize-height" placeholder="Ej: 64" class="w-full p-2 rounded bg-gray-900 border border-gray-600 text-center">
-                            <button id="apply-resize-btn" class="btn btn-secondary px-3" title="Aplicar altura a todos los frames"><i class="fas fa-check"></i></button>
-                        </div>
-                    </div>
+                    <p class="text-sm text-gray-400 mt-2">Selecciona una o varias imágenes para añadirlas a la línea de tiempo.</p>
                  </div>
             </div>
 
@@ -204,6 +198,32 @@
     <input type="file" id="image-upload" class="hidden" accept="image/*" multiple>
     
     <!-- Modals -->
+    <div id="edit-frame-modal" class="modal">
+        <div class="modal-content">
+            <h2 class="text-2xl font-bold text-center mb-4">Editar Frame</h2>
+            <div class="mb-4 p-2 rounded-lg flex items-center justify-center" style="background-image: linear-gradient(45deg, #444 25%, transparent 25%), linear-gradient(-45deg, #444 25%, transparent 25%), linear-gradient(45deg, transparent 75%, #444 75%), linear-gradient(-45deg, transparent 75%, #444 75%); background-size: 20px 20px; background-position: 0 0, 0 10px, 10px -10px, -10px 0px;">
+                <img id="edit-frame-preview" class="max-w-full max-h-48 object-contain" src="">
+            </div>
+            <div class="grid grid-cols-2 gap-4">
+                <div>
+                    <label for="edit-frame-width" class="block font-semibold text-sm mb-1">Ancho:</label>
+                    <input type="number" id="edit-frame-width" class="w-full p-2 rounded bg-gray-800 border border-gray-600">
+                </div>
+                <div>
+                    <label for="edit-frame-height" class="block font-semibold text-sm mb-1">Alto:</label>
+                    <input type="number" id="edit-frame-height" class="w-full p-2 rounded bg-gray-800 border border-gray-600">
+                </div>
+            </div>
+            <div class="mt-4 flex items-center">
+                <input type="checkbox" id="edit-frame-aspect" class="h-4 w-4 rounded bg-gray-700 border-gray-600 text-blue-600 focus:ring-blue-500" checked>
+                <label for="edit-frame-aspect" class="ml-2 text-sm">Mantener proporción</label>
+            </div>
+            <div class="flex justify-center gap-4 mt-6">
+                <button id="cancel-edit-frame-btn" class="btn btn-secondary">Cancelar</button>
+                <button id="save-edit-frame-btn" class="btn btn-primary">Guardar Cambios</button>
+            </div>
+        </div>
+    </div>
     <div id="export-modal" class="modal">
         <div class="modal-content max-w-3xl">
             <h2 class="text-2xl font-bold text-center mb-6">Opciones de Exportación</h2>
@@ -278,8 +298,6 @@
         const colorPreview = document.getElementById('color-preview');
         const chromaToleranceSlider = document.getElementById('chroma-tolerance');
         const toleranceValueEl = document.getElementById('tolerance-value');
-        const resizeHeightInput = document.getElementById('resize-height');
-        const applyResizeBtn = document.getElementById('apply-resize-btn');
 
         const exportBtn = document.getElementById('export-btn');
         const exportModal = document.getElementById('export-modal');
@@ -299,6 +317,15 @@
         const cancelDownloadFrameBtn = document.getElementById('cancel-download-frame-btn');
         const confirmDownloadFrameBtn = document.getElementById('confirm-download-frame-btn');
 
+        const editFrameModal = document.getElementById('edit-frame-modal');
+        const editFramePreview = document.getElementById('edit-frame-preview');
+        const editFrameWidthInput = document.getElementById('edit-frame-width');
+        const editFrameHeightInput = document.getElementById('edit-frame-height');
+        const editFrameAspectCheckbox = document.getElementById('edit-frame-aspect');
+        const cancelEditFrameBtn = document.getElementById('cancel-edit-frame-btn');
+        const saveEditFrameBtn = document.getElementById('save-edit-frame-btn');
+
+
         // --- App State ---
         let capturedFrames = [];
         const FRAME_STEP = 1 / 60; 
@@ -308,46 +335,10 @@
         let chromaColor = null;
 
         // --- Frame Processing Utility ---
-        function resizeCanvas(canvas, height) {
-            const aspectRatio = canvas.width / canvas.height;
-            const newWidth = Math.round(height * aspectRatio);
-
-            const resizedCanvas = document.createElement('canvas');
-            resizedCanvas.width = newWidth;
-            resizedCanvas.height = height;
-
-            const ctx = resizedCanvas.getContext('2d');
-            ctx.drawImage(canvas, 0, 0, newWidth, height);
-            return resizedCanvas;
-        }
-
         function processAndAddFrame(canvas) {
-            const resizeHeight = parseInt(resizeHeightInput.value, 10);
-            let finalCanvas = canvas;
-
-            if (!isNaN(resizeHeight) && resizeHeight > 0) {
-                finalCanvas = resizeCanvas(canvas, resizeHeight);
-            }
-
-            capturedFrames.push({ id: `frame-${Date.now()}-${Math.random()}`, canvas: finalCanvas });
+            capturedFrames.push({ id: `frame-${Date.now()}-${Math.random()}`, canvas: canvas });
             renderFramesTimeline();
         }
-
-        applyResizeBtn.addEventListener('click', () => {
-            const targetHeight = parseInt(resizeHeightInput.value, 10);
-            if (isNaN(targetHeight) || targetHeight <= 0) {
-                alert('Por favor, introduce una altura válida.');
-                return;
-            }
-
-            // This is a destructive operation. We are resizing the canvases in the array.
-            capturedFrames.forEach((frameData, index) => {
-                const resized = resizeCanvas(frameData.canvas, targetHeight);
-                capturedFrames[index].canvas = resized;
-            });
-
-            renderFramesTimeline(); // Re-render to show the new sizes.
-        });
 
 
         // --- Video Loading & Controls ---
@@ -551,7 +542,7 @@
                 useHeightBtn.innerHTML = '<i class="fas fa-ruler-vertical"></i>';
                 useHeightBtn.onclick = (e) => {
                     e.stopPropagation();
-                    resizeHeightInput.value = frameData.canvas.height;
+                    openEditModal(frameData.id);
                 };
                 actions.appendChild(useHeightBtn);
 
@@ -631,6 +622,68 @@
             document.body.removeChild(link);
 
             downloadFrameModal.classList.remove('active');
+        });
+
+        // --- Per-Frame Editing ---
+        let currentEditingFrame = null;
+
+        function openEditModal(frameId) {
+            currentEditingFrame = capturedFrames.find(f => f.id === frameId);
+            if (!currentEditingFrame) return;
+
+            editFramePreview.src = currentEditingFrame.canvas.toDataURL();
+            editFrameWidthInput.value = currentEditingFrame.canvas.width;
+            editFrameHeightInput.value = currentEditingFrame.canvas.height;
+            editFrameAspectCheckbox.checked = true;
+            editFrameModal.classList.add('active');
+        }
+
+        function closeEditModal() {
+            editFrameModal.classList.remove('active');
+            currentEditingFrame = null;
+        }
+
+        cancelEditFrameBtn.addEventListener('click', closeEditModal);
+
+        editFrameWidthInput.addEventListener('input', () => {
+            if (!editFrameAspectCheckbox.checked || !currentEditingFrame) return;
+            const originalCanvas = currentEditingFrame.canvas;
+            const aspectRatio = originalCanvas.height / originalCanvas.width;
+            const newWidth = parseInt(editFrameWidthInput.value, 10);
+            if (!isNaN(newWidth) && newWidth > 0) {
+                editFrameHeightInput.value = Math.round(newWidth * aspectRatio);
+            }
+        });
+
+        editFrameHeightInput.addEventListener('input', () => {
+            if (!editFrameAspectCheckbox.checked || !currentEditingFrame) return;
+            const originalCanvas = currentEditingFrame.canvas;
+            const aspectRatio = originalCanvas.width / originalCanvas.height;
+            const newHeight = parseInt(editFrameHeightInput.value, 10);
+            if (!isNaN(newHeight) && newHeight > 0) {
+                editFrameWidthInput.value = Math.round(newHeight * aspectRatio);
+            }
+        });
+
+        saveEditFrameBtn.addEventListener('click', () => {
+            if (!currentEditingFrame) return;
+
+            const newWidth = parseInt(editFrameWidthInput.value, 10);
+            const newHeight = parseInt(editFrameHeightInput.value, 10);
+
+            if (isNaN(newWidth) || isNaN(newHeight) || newWidth <= 0 || newHeight <= 0) {
+                alert('Por favor, introduce un ancho y alto válidos.');
+                return;
+            }
+
+            const resizedCanvas = document.createElement('canvas');
+            resizedCanvas.width = newWidth;
+            resizedCanvas.height = newHeight;
+            resizedCanvas.getContext('2d').drawImage(currentEditingFrame.canvas, 0, 0, newWidth, newHeight);
+
+            currentEditingFrame.canvas = resizedCanvas;
+            closeEditModal();
+            renderFramesTimeline();
         });
 
         // --- Spritesheet Export ---
