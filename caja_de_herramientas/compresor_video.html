@@ -47,6 +47,10 @@
             border-radius: 0.5rem;
             width: 100%;
         }
+        .modal {
+            background-color: rgba(17, 24, 39, 0.8);
+            backdrop-filter: blur(10px);
+        }
     </style>
 </head>
 <body class="min-h-screen">
@@ -88,7 +92,6 @@
                 <!-- Sección de Compresión de Video -->
                 <section id="video-compressor" class="bg-gray-800/50 p-6 md:p-8 rounded-2xl shadow-xl">
                     <h3 class="text-2xl font-bold mb-6 flex items-center"><i data-lucide="film" class="mr-3"></i>Compresor de Video y Creador de GIF</h3>
-                    <!-- NUEVO: Contenedor de Previsualización y Info -->
                     <div id="video-preview-container" class="mb-6 hidden">
                         <video id="video-preview" controls></video>
                         <div class="mt-4 flex justify-between text-sm bg-gray-900/50 p-3 rounded-lg">
@@ -98,24 +101,13 @@
                     </div>
                     <div class="grid md:grid-cols-2 gap-8">
                         <div>
-                            <label for="video-file" class="file-input-label flex flex-col items-center justify-center w-full h-48 rounded-lg cursor-pointer">
-                                <div class="flex flex-col items-center justify-center pt-5 pb-6">
-                                    <i data-lucide="upload-cloud" class="w-10 h-10 mb-3 text-gray-400"></i>
-                                    <p class="mb-2 text-sm text-gray-400"><span class="font-semibold">Haz clic para subir</span> o arrastra y suelta</p>
-                                    <p class="text-xs text-gray-500">MP4, MOV, AVI, WEBM (MAX. 500MB)</p>
-                                </div>
-                                <input id="video-file" type="file" class="hidden" accept="video/*" />
-                            </label>
+                            <label for="video-file" class="file-input-label flex flex-col items-center justify-center w-full h-48 rounded-lg cursor-pointer"><div class="flex flex-col items-center justify-center pt-5 pb-6"><i data-lucide="upload-cloud" class="w-10 h-10 mb-3 text-gray-400"></i><p class="mb-2 text-sm text-gray-400"><span class="font-semibold">Haz clic para subir</span> o arrastra y suelta</p><p class="text-xs text-gray-500">MP4, MOV, AVI, WEBM (MAX. 500MB)</p></div><input id="video-file" type="file" class="hidden" accept="video/*" /></label>
                             <p id="video-file-name" class="mt-2 text-sm text-gray-400 truncate"></p>
                         </div>
                         <div class="flex flex-col justify-between">
                             <div>
                                 <h4 class="font-semibold mb-3">Opciones</h4>
-                                <div class="space-y-4">
-                                    <div class="flex items-center justify-between"><label for="video-quality" class="text-sm">Calidad</label><select id="video-quality" class="bg-gray-700 border border-gray-600 rounded-md px-2 py-1 text-sm"><option value="high">Alta</option><option value="medium" selected>Media</option><option value="low">Baja</option></select></div>
-                                    <div class="flex items-center justify-between"><label for="video-format" class="text-sm">Formato</label><select id="video-format" class="bg-gray-700 border border-gray-600 rounded-md px-2 py-1 text-sm"><option value="mp4" selected>MP4</option><option value="webm">WEBM</option><option value="mov">MOV</option></select></div>
-                                    <div class="flex items-center"><input id="create-gif" type="checkbox" class="h-4 w-4 rounded bg-gray-700 border-gray-600 text-indigo-500 focus:ring-indigo-600"><label for="create-gif" class="ml-2 block text-sm">Crear GIF animado</label></div>
-                                </div>
+                                <div class="space-y-4"><div class="flex items-center justify-between"><label for="video-quality" class="text-sm">Calidad</label><select id="video-quality" class="bg-gray-700 border border-gray-600 rounded-md px-2 py-1 text-sm"><option value="high">Alta</option><option value="medium" selected>Media</option><option value="low">Baja</option></select></div><div class="flex items-center justify-between"><label for="video-format" class="text-sm">Formato</label><select id="video-format" class="bg-gray-700 border border-gray-600 rounded-md px-2 py-1 text-sm"><option value="webm" selected>WEBM</option><option value="mp4">MP4</option><option value="mov">MOV</option></select></div><div class="flex items-center"><input id="create-gif" type="checkbox" class="h-4 w-4 rounded bg-gray-700 border-gray-600 text-indigo-500 focus:ring-indigo-600"><label for="create-gif" class="ml-2 block text-sm">Crear GIF animado</label></div></div>
                             </div>
                             <button id="process-video-btn" class="btn-transparent w-full font-bold py-3 px-4 rounded-lg flex items-center justify-center space-x-2 disabled:opacity-50 disabled:cursor-not-allowed mt-4" disabled><i data-lucide="wand-2"></i><span>Procesar Video</span></button>
                         </div>
@@ -126,14 +118,7 @@
                 <!-- Sección de Compresión de Audio -->
                 <section id="audio-compressor" class="bg-gray-800/50 p-6 md:p-8 rounded-2xl shadow-xl">
                     <h3 class="text-2xl font-bold mb-6 flex items-center"><i data-lucide="music" class="mr-3"></i>Compresor de Audio</h3>
-                     <!-- NUEVO: Contenedor de Previsualización y Info -->
-                    <div id="audio-preview-container" class="mb-6 hidden">
-                        <audio id="audio-preview" controls></audio>
-                        <div class="mt-4 flex justify-between text-sm bg-gray-900/50 p-3 rounded-lg">
-                            <p>Tamaño Original: <span id="audio-original-size" class="font-semibold"></span></p>
-                            <p>Tamaño Comprimido: <span id="audio-compressed-size" class="font-semibold text-green-400"></span></p>
-                        </div>
-                    </div>
+                    <div id="audio-preview-container" class="mb-6 hidden"><audio id="audio-preview" controls></audio><div class="mt-4 flex justify-between text-sm bg-gray-900/50 p-3 rounded-lg"><p>Tamaño Original: <span id="audio-original-size" class="font-semibold"></span></p><p>Tamaño Comprimido: <span id="audio-compressed-size" class="font-semibold text-green-400"></span></p></div></div>
                     <div class="grid md:grid-cols-2 gap-8">
                         <div>
                             <label for="audio-file" class="file-input-label flex flex-col items-center justify-center w-full h-48 rounded-lg cursor-pointer"><div class="flex flex-col items-center justify-center pt-5 pb-6"><i data-lucide="upload-cloud" class="w-10 h-10 mb-3 text-gray-400"></i><p class="mb-2 text-sm text-gray-400"><span class="font-semibold">Haz clic para subir</span> o arrastra y suelta</p><p class="text-xs text-gray-500">MP3, WAV, OGG (MAX. 100MB)</p></div><input id="audio-file" type="file" class="hidden" accept="audio/*" /></label>
@@ -142,10 +127,7 @@
                         <div class="flex flex-col justify-between">
                              <div>
                                 <h4 class="font-semibold mb-3">Opciones</h4>
-                                <div class="space-y-4">
-                                    <div class="flex items-center justify-between"><label for="audio-bitrate" class="text-sm">Calidad (Bitrate)</label><select id="audio-bitrate" class="bg-gray-700 border border-gray-600 rounded-md px-2 py-1 text-sm"><option value="192">192 kbps (Alta)</option><option value="128" selected>128 kbps (Estándar)</option><option value="96">96 kbps (Baja)</option></select></div>
-                                    <div class="flex items-center justify-between"><label for="audio-format" class="text-sm">Formato</label><select id="audio-format" class="bg-gray-700 border border-gray-600 rounded-md px-2 py-1 text-sm"><option value="mp3" selected>MP3</option><option value="aac">AAC</option><option value="ogg">OGG</option></select></div>
-                                </div>
+                                <div class="space-y-4"><div class="flex items-center justify-between"><label for="audio-bitrate" class="text-sm">Calidad (Bitrate)</label><select id="audio-bitrate" class="bg-gray-700 border border-gray-600 rounded-md px-2 py-1 text-sm"><option value="192">192 kbps (Alta)</option><option value="128" selected>128 kbps (Estándar)</option><option value="96">96 kbps (Baja)</option></select></div><div class="flex items-center justify-between"><label for="audio-format" class="text-sm">Formato</label><select id="audio-format" class="bg-gray-700 border border-gray-600 rounded-md px-2 py-1 text-sm"><option value="mp3" selected>MP3</option><option value="aac">AAC</option><option value="ogg">OGG</option></select></div></div>
                             </div>
                             <button id="process-audio-btn" class="btn-transparent w-full font-bold py-3 px-4 rounded-lg flex items-center justify-center space-x-2 disabled:opacity-50 disabled:cursor-not-allowed mt-4" disabled><i data-lucide="wand-2"></i><span>Procesar Audio</span></button>
                         </div>
@@ -157,9 +139,25 @@
         </main>
         <footer class="bg-gray-900/80 mt-16">
             <div class="container mx-auto py-6 px-4 sm:px-6 lg:px-8 text-center text-gray-400 text-sm">
+                <div class="flex justify-center space-x-4 md:space-x-6 mb-4">
+                    <a href="#" id="about-link" class="hover:text-white transition">Acerca de</a>
+                    <a href="#" id="contact-link" class="hover:text-white transition">Contacto</a>
+                    <a href="#" id="privacy-link" class="hover:text-white transition">Política de Privacidad</a>
+                </div>
                 &copy; 2025 Jusn38 Study. Todos los derechos reservados.
             </div>
         </footer>
+    </div>
+
+    <!-- MODALS -->
+    <div id="about-modal" class="modal fixed inset-0 z-50 flex items-center justify-center p-4 hidden">
+        <div class="bg-gray-800 rounded-2xl shadow-xl max-w-2xl w-full p-6 md:p-8 relative border border-gray-700"><button class="close-modal-btn absolute top-4 right-4 p-2 text-gray-400 hover:text-white rounded-full hover:bg-gray-700"><i data-lucide="x"></i></button><h2 class="text-2xl font-bold mb-4">Acerca de Jusn38 Study</h2><div class="text-gray-300 space-y-4"><p>Jusn38 Study es una herramienta web diseñada para simplificar la compresión y conversión de archivos multimedia. Nuestra misión es proporcionar una solución rápida, gratuita y fácil de usar para optimizar videos y audios para su uso en la web y otros proyectos.</p><p>Ya sea que necesites reducir el tamaño de un video para tu sitio web o convertir un archivo de audio a un formato más compatible, nuestra herramienta está aquí para ayudarte.</p></div></div>
+    </div>
+    <div id="contact-modal" class="modal fixed inset-0 z-50 flex items-center justify-center p-4 hidden">
+         <div class="bg-gray-800 rounded-2xl shadow-xl max-w-2xl w-full p-6 md:p-8 relative border border-gray-700"><button class="close-modal-btn absolute top-4 right-4 p-2 text-gray-400 hover:text-white rounded-full hover:bg-gray-700"><i data-lucide="x"></i></button><h2 class="text-2xl font-bold mb-4">Contacto</h2><div class="text-gray-300 space-y-4"><p>Si tienes alguna pregunta, sugerencia o necesitas reportar un problema, no dudes en contactarnos. La mejor manera de hacerlo es a través de nuestro correo electrónico:</p><a href="mailto:jyanez3890@gmail.com" class="text-indigo-400 hover:underline">jyanez3890@gmail.com</a><p>Haremos todo lo posible por responderte a la brevedad.</p></div></div>
+    </div>
+    <div id="privacy-modal" class="modal fixed inset-0 z-50 flex items-center justify-center p-4 hidden">
+         <div class="bg-gray-800 rounded-2xl shadow-xl max-w-2xl w-full p-6 md:p-8 relative border border-gray-700 overflow-y-auto max-h-[90vh]"><button class="close-modal-btn absolute top-4 right-4 p-2 text-gray-400 hover:text-white rounded-full hover:bg-gray-700"><i data-lucide="x"></i></button><h2 class="text-2xl font-bold mb-4">Política de Privacidad</h2><div class="text-gray-300 space-y-4 text-sm"><p><strong>Última actualización: 21 de agosto de 2025</strong></p><p>En Jusn38 Study, respetamos tu privacidad. Esta política explica qué información recopilamos y cómo la usamos.</p><h3 class="font-semibold text-lg pt-2">Información que Recopilamos</h3><p><strong>- Datos de Autenticación:</strong> Si eliges iniciar sesión con Google, recibimos la información básica de tu perfil público (nombre, dirección de correo electrónico y foto de perfil) para personalizar tu experiencia. No almacenamos tu contraseña.</p><p><strong>- Archivos Subidos:</strong> Los archivos de video y audio que subes para su procesamiento se manejan de forma segura. Los archivos se procesan en el momento y **no se almacenan en nuestros servidores** después de que se completa la conversión. Se eliminan automáticamente para proteger tu privacidad.</p><h3 class="font-semibold text-lg pt-2">Cómo Usamos tu Información</h3><p>Utilizamos la información de tu perfil de Google únicamente para mostrarla en la interfaz de usuario mientras estás conectado. No compartimos esta información con terceros.</p><h3 class="font-semibold text-lg pt-2">Cookies</h3><p>Utilizamos cookies esenciales para mantener tu sesión de inicio de sesión. No utilizamos cookies de seguimiento de terceros para publicidad.</p><h3 class="font-semibold text-lg pt-2">Cambios en esta Política</h3><p>Podemos actualizar esta política de privacidad de vez en cuando. Te notificaremos de cualquier cambio publicando la nueva política en esta página.</p></div></div>
     </div>
 
     <script type="module">
@@ -167,17 +165,15 @@
         import { getAuth, GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChanged, signInAnonymously, signInWithCustomToken } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
 
         const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : { apiKey: "TU_API_KEY", authDomain: "TU_AUTH_DOMAIN", projectId: "TU_PROJECT_ID", storageBucket: "TU_STORAGE_BUCKET", messagingSenderId: "TU_MESSAGING_SENDER_ID", appId: "TU_APP_ID" };
-        const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
-
         const app = initializeApp(firebaseConfig);
         const auth = getAuth(app);
         const provider = new GoogleAuthProvider();
 
+        // --- DOM ELEMENTS ---
         const userProfileContainer = document.getElementById('user-profile-container');
         const menuButton = document.getElementById('menu-button');
         const closeMenuButton = document.getElementById('close-menu-button');
         const mobileMenu = document.getElementById('mobile-menu');
-        
         const videoFileInput = document.getElementById('video-file');
         const videoFileName = document.getElementById('video-file-name');
         const processVideoBtn = document.getElementById('process-video-btn');
@@ -188,7 +184,6 @@
         const videoPreview = document.getElementById('video-preview');
         const videoOriginalSize = document.getElementById('video-original-size');
         const videoCompressedSize = document.getElementById('video-compressed-size');
-
         const audioFileInput = document.getElementById('audio-file');
         const audioFileName = document.getElementById('audio-file-name');
         const processAudioBtn = document.getElementById('process-audio-btn');
@@ -200,180 +195,66 @@
         const audioOriginalSize = document.getElementById('audio-original-size');
         const audioCompressedSize = document.getElementById('audio-compressed-size');
 
+        // --- AUTHENTICATION LOGIC ---
         onAuthStateChanged(auth, (user) => {
-            if (user && !user.isAnonymous) {
-                updateUIForLoggedInUser(user);
-            } else {
-                updateUIForLoggedOutUser();
-            }
+            if (user && !user.isAnonymous) { updateUIForLoggedInUser(user); } 
+            else { updateUIForLoggedOutUser(); }
         });
-        
-        const initialAuth = async () => {
-             try {
-                if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
-                    await signInWithCustomToken(auth, __initial_auth_token);
-                } else {
-                    await signInAnonymously(auth);
-                }
-            } catch (error) {
-                console.error("Error en la autenticación inicial:", error);
-            }
-        };
+        const initialAuth = async () => { try { if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) { await signInWithCustomToken(auth, __initial_auth_token); } else { await signInAnonymously(auth); } } catch (error) { console.error("Error en la autenticación inicial:", error); } };
         initialAuth();
-
         const signInWithGoogle = async () => { try { await signInWithPopup(auth, provider); } catch (error) { console.error("Error al iniciar sesión con Google:", error); } };
         const logOut = async () => { try { await signOut(auth); } catch (error) { console.error("Error al cerrar sesión:", error); } };
+        function updateUIForLoggedInUser(user) { userProfileContainer.innerHTML = `<div class="flex items-center space-x-3"><img src="${user.photoURL || 'https://placehold.co/40x40/1f2937/ffffff?text=U'}" alt="${user.displayName}" class="w-10 h-10 rounded-full border-2 border-gray-600"><button id="logout-btn" class="btn-transparent text-sm font-semibold py-2 px-4 rounded-lg hidden sm:block">Salir</button></div>`; document.getElementById('logout-btn').addEventListener('click', logOut); }
+        function updateUIForLoggedOutUser() { userProfileContainer.innerHTML = `<button id="login-btn" class="btn-transparent font-semibold py-2 px-4 rounded-lg flex items-center space-x-2"><svg class="w-5 h-5" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48"><path fill="#FFC107" d="M43.611,20.083H42V20H24v8h11.303c-1.649,4.657-6.08,8-11.303,8c-6.627,0-12-5.373-12-12c0-6.627,5.373-12,12-12c3.059,0,5.842,1.154,7.961,3.039l5.657-5.657C34.046,6.053,29.268,4,24,4C12.955,4,4,12.955,4,24c0,11.045,8.955,20,20,20c11.045,0,20-8.955,20-20C44,22.659,43.862,21.35,43.611,20.083z"></path><path fill="#FF3D00" d="M6.306,14.691l6.571,4.819C14.655,15.108,18.961,12,24,12c3.059,0,5.842,1.154,7.961,3.039l5.657-5.657C34.046,6.053,29.268,4,24,4C16.318,4,9.656,8.337,6.306,14.691z"></path><path fill="#4CAF50" d="M24,44c5.166,0,9.86-1.977,13.409-5.192l-6.19-5.238C29.211,35.091,26.715,36,24,36c-5.202,0-9.619-3.317-11.283-7.946l-6.522,5.025C9.505,39.556,16.227,44,24,44z"></path><path fill="#1976D2" d="M43.611,20.083H42V20H24v8h11.303c-0.792,2.237-2.231,4.166-4.087,5.574l6.19,5.238C42.021,35.596,44,30.138,44,24C44,22.659,43.862,21.35,43.611,20.083z"></path></svg><span>Acceder con Google</span></button>`; document.getElementById('login-btn').addEventListener('click', signInWithGoogle); }
 
-        function updateUIForLoggedInUser(user) {
-            userProfileContainer.innerHTML = `<div class="flex items-center space-x-3"><img src="${user.photoURL || 'https://placehold.co/40x40/1f2937/ffffff?text=U'}" alt="${user.displayName}" class="w-10 h-10 rounded-full border-2 border-gray-600"><button id="logout-btn" class="btn-transparent text-sm font-semibold py-2 px-4 rounded-lg hidden sm:block">Salir</button></div>`;
-            document.getElementById('logout-btn').addEventListener('click', logOut);
-        }
-
-        function updateUIForLoggedOutUser() {
-            userProfileContainer.innerHTML = `<button id="login-btn" class="btn-transparent font-semibold py-2 px-4 rounded-lg flex items-center space-x-2"><svg class="w-5 h-5" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48"><path fill="#FFC107" d="M43.611,20.083H42V20H24v8h11.303c-1.649,4.657-6.08,8-11.303,8c-6.627,0-12-5.373-12-12c0-6.627,5.373-12,12-12c3.059,0,5.842,1.154,7.961,3.039l5.657-5.657C34.046,6.053,29.268,4,24,4C12.955,4,4,12.955,4,24c0,11.045,8.955,20,20,20c11.045,0,20-8.955,20-20C44,22.659,43.862,21.35,43.611,20.083z"></path><path fill="#FF3D00" d="M6.306,14.691l6.571,4.819C14.655,15.108,18.961,12,24,12c3.059,0,5.842,1.154,7.961,3.039l5.657-5.657C34.046,6.053,29.268,4,24,4C16.318,4,9.656,8.337,6.306,14.691z"></path><path fill="#4CAF50" d="M24,44c5.166,0,9.86-1.977,13.409-5.192l-6.19-5.238C29.211,35.091,26.715,36,24,36c-5.202,0-9.619-3.317-11.283-7.946l-6.522,5.025C9.505,39.556,16.227,44,24,44z"></path><path fill="#1976D2" d="M43.611,20.083H42V20H24v8h11.303c-0.792,2.237-2.231,4.166-4.087,5.574l6.19,5.238C42.021,35.596,44,30.138,44,24C44,22.659,43.862,21.35,43.611,20.083z"></path></svg><span>Acceder con Google</span></button>`;
-            document.getElementById('login-btn').addEventListener('click', signInWithGoogle);
-        }
-
-        function formatBytes(bytes, decimals = 2) {
-            if (bytes === 0) return '0 Bytes';
-            const k = 1024;
-            const dm = decimals < 0 ? 0 : decimals;
-            const sizes = ['Bytes', 'KB', 'MB', 'GB', 'TB'];
-            const i = Math.floor(Math.log(bytes) / Math.log(k));
-            return parseFloat((bytes / Math.pow(k, i)).toFixed(dm)) + ' ' + sizes[i];
-        }
-
-        function resetUI(type) {
-            document.getElementById(`${type}-progress-container`).classList.add('hidden');
-            document.getElementById(`${type}-result-container`).classList.add('hidden');
-            document.getElementById(`${type}-preview-container`).classList.add('hidden');
-            document.getElementById(`${type}-compressed-size`).textContent = '';
-
-            const previewEl = document.getElementById(`${type}-preview`);
-            if(previewEl.src) { URL.revokeObjectURL(previewEl.src); }
-            previewEl.src = '';
-
-            const errorEl = document.getElementById(`${type}-filename-error`);
-            if(errorEl) errorEl.textContent = '';
-            const inputEl = document.getElementById(`${type}-filename-input`);
-            if(inputEl) inputEl.classList.remove('border-red-500');
-            document.getElementById(`${type}-progress-bar`).style.width = '0%';
-        }
-        
-        videoFileInput.addEventListener('change', (event) => {
-            const file = event.target.files[0];
-            if (file) {
-                videoFileName.textContent = file.name;
-                processVideoBtn.disabled = false;
-                resetUI('video');
-                
-                videoPreviewContainer.classList.remove('hidden');
-                const url = URL.createObjectURL(file);
-                videoPreview.src = url;
-                videoOriginalSize.textContent = formatBytes(file.size);
-            } else {
-                videoFileName.textContent = '';
-                processVideoBtn.disabled = true;
-            }
-        });
-        
-        audioFileInput.addEventListener('change', (event) => {
-            const file = event.target.files[0];
-            if (file) {
-                audioFileName.textContent = file.name;
-                processAudioBtn.disabled = false;
-                resetUI('audio');
-
-                audioPreviewContainer.classList.remove('hidden');
-                const url = URL.createObjectURL(file);
-                audioPreview.src = url;
-                audioOriginalSize.textContent = formatBytes(file.size);
-            } else {
-                audioFileName.textContent = '';
-                processAudioBtn.disabled = true;
-            }
-        });
-
+        // --- APP LOGIC ---
+        function formatBytes(bytes, decimals = 2) { if (bytes === 0) return '0 Bytes'; const k = 1024; const dm = decimals < 0 ? 0 : decimals; const sizes = ['Bytes', 'KB', 'MB', 'GB', 'TB']; const i = Math.floor(Math.log(bytes) / Math.log(k)); return parseFloat((bytes / Math.pow(k, i)).toFixed(dm)) + ' ' + sizes[i]; }
+        function resetUI(type) { document.getElementById(`${type}-progress-container`).classList.add('hidden'); document.getElementById(`${type}-result-container`).classList.add('hidden'); document.getElementById(`${type}-preview-container`).classList.add('hidden'); document.getElementById(`${type}-compressed-size`).textContent = ''; const previewEl = document.getElementById(`${type}-preview`); if(previewEl.src) { URL.revokeObjectURL(previewEl.src); } previewEl.src = ''; const errorEl = document.getElementById(`${type}-filename-error`); if(errorEl) errorEl.textContent = ''; const inputEl = document.getElementById(`${type}-filename-input`); if(inputEl) inputEl.classList.remove('border-red-500'); document.getElementById(`${type}-progress-bar`).style.width = '0%'; }
+        videoFileInput.addEventListener('change', (event) => { const file = event.target.files[0]; if (file) { videoFileName.textContent = file.name; processVideoBtn.disabled = false; resetUI('video'); videoPreviewContainer.classList.remove('hidden'); const url = URL.createObjectURL(file); videoPreview.src = url; videoOriginalSize.textContent = formatBytes(file.size); } else { videoFileName.textContent = ''; processVideoBtn.disabled = true; } });
+        audioFileInput.addEventListener('change', (event) => { const file = event.target.files[0]; if (file) { audioFileName.textContent = file.name; processAudioBtn.disabled = false; resetUI('audio'); audioPreviewContainer.classList.remove('hidden'); const url = URL.createObjectURL(file); audioPreview.src = url; audioOriginalSize.textContent = formatBytes(file.size); } else { audioFileName.textContent = ''; processAudioBtn.disabled = true; } });
         processVideoBtn.addEventListener('click', () => { if (!videoFileInput.files[0]) return; simulateProgress('video', 'Comprimiendo video...'); });
         processAudioBtn.addEventListener('click', () => { if (!audioFileInput.files[0]) return; simulateProgress('audio', 'Comprimiendo audio...'); });
-
-        function simulateProgress(type, message) {
-            const progressContainer = document.getElementById(`${type}-progress-container`);
-            const progressBar = document.getElementById(`${type}-progress-bar`);
-            const status = document.getElementById(`${type}-status`);
-            const resultContainer = document.getElementById(`${type}-result-container`);
-            const filenameInput = document.getElementById(`${type}-filename-input`);
-            const originalFile = document.getElementById(`${type}-file`).files[0];
-            const formatSelect = document.getElementById(`${type}-format`);
-            const compressedSizeEl = document.getElementById(`${type}-compressed-size`);
-
-            progressContainer.classList.remove('hidden');
-            resultContainer.classList.add('hidden');
-            status.textContent = message;
-            progressBar.style.width = '0%';
-            
-            let width = 0;
-            const interval = setInterval(() => {
-                if (width >= 100) {
-                    clearInterval(interval);
-                    progressContainer.classList.add('hidden');
-                    resultContainer.classList.remove('hidden');
-                    
-                    const originalName = originalFile.name.split('.').slice(0, -1).join('.');
-                    const extension = formatSelect.value;
-                    filenameInput.value = `${originalName}-comprimido.${extension}`;
-                    
-                    // Simular un tamaño comprimido (ej. 40% del original para video)
-                    const simulatedCompressedSize = originalFile.size * (type === 'video' ? 0.4 : 0.6);
-                    compressedSizeEl.textContent = formatBytes(simulatedCompressedSize);
-
-                    lucide.createIcons();
-                } else {
-                    width++;
-                    progressBar.style.width = width + '%';
-                }
-            }, 30);
-        }
-
-        function handleDownload(type) {
-            const filenameInput = document.getElementById(`${type}-filename-input`);
-            const errorElement = document.getElementById(`${type}-filename-error`);
-            const formatSelect = document.getElementById(`${type}-format`);
-            let filename = filenameInput.value.trim();
-            
-            errorElement.textContent = '';
-            filenameInput.classList.remove('border-red-500');
-
-            if (!filename) {
-                errorElement.textContent = "Por favor, introduce un nombre para el archivo.";
-                filenameInput.classList.add('border-red-500');
-                return;
-            }
-
-            const mimeTypes = { mp4: 'video/mp4', webm: 'video/webm', mov: 'video/quicktime', mp3: 'audio/mpeg', aac: 'audio/aac', ogg: 'audio/ogg' };
-            const selectedFormat = formatSelect.value;
-            const mimeType = mimeTypes[selectedFormat] || 'application/octet-stream';
-            
-            const dummyContent = `Contenido simulado para ${filename}`;
-            const blob = new Blob([dummyContent], { type: mimeType });
-            const url = URL.createObjectURL(blob);
-            const a = document.createElement('a');
-            a.style.display = 'none';
-            a.href = url;
-            a.download = filename;
-            document.body.appendChild(a);
-            a.click();
-            window.URL.revokeObjectURL(url);
-            document.body.removeChild(a);
-        }
-
+        function simulateProgress(type, message) { const progressContainer = document.getElementById(`${type}-progress-container`); const progressBar = document.getElementById(`${type}-progress-bar`); const status = document.getElementById(`${type}-status`); const resultContainer = document.getElementById(`${type}-result-container`); const filenameInput = document.getElementById(`${type}-filename-input`); const originalFile = document.getElementById(`${type}-file`).files[0]; const formatSelect = document.getElementById(`${type}-format`); const compressedSizeEl = document.getElementById(`${type}-compressed-size`); progressContainer.classList.remove('hidden'); resultContainer.classList.add('hidden'); status.textContent = message; progressBar.style.width = '0%'; let width = 0; const interval = setInterval(() => { if (width >= 100) { clearInterval(interval); progressContainer.classList.add('hidden'); resultContainer.classList.remove('hidden'); const originalName = originalFile.name.split('.').slice(0, -1).join('.'); const extension = formatSelect.value; filenameInput.value = `${originalName}-comprimido.${extension}`; const simulatedCompressedSize = originalFile.size * (type === 'video' ? 0.4 : 0.6); compressedSizeEl.textContent = formatBytes(simulatedCompressedSize); lucide.createIcons(); } else { width++; progressBar.style.width = width + '%'; } }, 30); }
+        function handleDownload(type) { const filenameInput = document.getElementById(`${type}-filename-input`); const errorElement = document.getElementById(`${type}-filename-error`); const formatSelect = document.getElementById(`${type}-format`); let filename = filenameInput.value.trim(); errorElement.textContent = ''; filenameInput.classList.remove('border-red-500'); if (!filename) { errorElement.textContent = "Por favor, introduce un nombre para el archivo."; filenameInput.classList.add('border-red-500'); return; } const mimeTypes = { mp4: 'video/mp4', webm: 'video/webm', mov: 'video/quicktime', mp3: 'audio/mpeg', aac: 'audio/aac', ogg: 'audio/ogg' }; const selectedFormat = formatSelect.value; const mimeType = mimeTypes[selectedFormat] || 'application/octet-stream'; const dummyContent = `Contenido simulado para ${filename}`; const blob = new Blob([dummyContent], { type: mimeType }); const url = URL.createObjectURL(blob); const a = document.createElement('a'); a.style.display = 'none'; a.href = url; a.download = filename; document.body.appendChild(a); a.click(); window.URL.revokeObjectURL(url); document.body.removeChild(a); }
         downloadVideoBtn.addEventListener('click', () => handleDownload('video'));
         downloadAudioBtn.addEventListener('click', () => handleDownload('audio'));
-        
         menuButton.addEventListener('click', () => mobileMenu.classList.add('open'));
         closeMenuButton.addEventListener('click', () => mobileMenu.classList.remove('open'));
-        mobileMenu.querySelectorAll('a').forEach(link => {
-            link.addEventListener('click', () => mobileMenu.classList.remove('open'));
+        mobileMenu.querySelectorAll('a').forEach(link => { link.addEventListener('click', () => mobileMenu.classList.remove('open')); });
+
+        // --- MODAL LOGIC (IMPROVED) ---
+        const allModals = document.querySelectorAll('.modal');
+        const modalTriggers = { 'about-link': 'about-modal', 'contact-link': 'contact-modal', 'privacy-link': 'privacy-modal' };
+
+        function closeAllModals() {
+            allModals.forEach(modal => modal.classList.add('hidden'));
+        }
+
+        Object.entries(modalTriggers).forEach(([linkId, modalId]) => {
+            document.getElementById(linkId).addEventListener('click', (e) => {
+                e.preventDefault();
+                closeAllModals(); // Close any open modals first
+                document.getElementById(modalId).classList.remove('hidden');
+                lucide.createIcons();
+            });
+        });
+
+        document.querySelectorAll('.close-modal-btn').forEach(btn => {
+            btn.addEventListener('click', closeAllModals);
+        });
+        
+        allModals.forEach(modal => {
+            modal.addEventListener('click', (e) => {
+                if (e.target === e.currentTarget) {
+                    closeAllModals();
+                }
+            });
+        });
+
+        document.addEventListener('keydown', (e) => {
+            if (e.key === "Escape") {
+                closeAllModals();
+            }
         });
 
         lucide.createIcons();
