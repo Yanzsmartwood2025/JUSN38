@@ -68,6 +68,18 @@
         .frame-action-btn:hover { background-color: var(--primary); }
         .frame-action-btn i { font-size: 12px; }
 
+        .frame-dimensions {
+            position: absolute;
+            bottom: 2px;
+            left: 2px;
+            background-color: rgba(0,0,0,0.7);
+            color: white;
+            padding: 1px 4px;
+            border-radius: 3px;
+            font-size: 10px;
+            font-family: monospace;
+        }
+
         .modal { position: fixed; inset: 0; z-index: 50; background-color: rgba(0,0,0,0.8); display: none; align-items: center; justify-content: center; padding: 1rem; }
         .modal.active { display: flex; }
         .modal-content { background-color: var(--secondary); border: 1px solid var(--border-color); border-radius: 1rem; padding: 1.5rem; width: 100%; max-width: 500px; max-height: 95vh; overflow-y: auto; }
@@ -167,7 +179,10 @@
                     <label for="image-upload" class="btn btn-primary"><i class="fas fa-upload mr-2"></i> Subir Imágenes</label>
                     <div class="w-full max-w-xs">
                         <label for="resize-height" class="text-sm font-semibold">Ajustar Altura (opcional):</label>
-                        <input type="number" id="resize-height" placeholder="Ej: 64 (en píxeles)" class="w-full p-2 mt-1 rounded bg-gray-900 border border-gray-600 text-center">
+                        <div class="flex items-center gap-2 mt-1">
+                            <input type="number" id="resize-height" placeholder="Ej: 64" class="w-full p-2 rounded bg-gray-900 border border-gray-600 text-center">
+                            <button id="apply-resize-btn" class="btn btn-secondary px-3" title="Aplicar altura a todos los frames"><i class="fas fa-check"></i></button>
+                        </div>
                     </div>
                  </div>
             </div>
@@ -264,6 +279,7 @@
         const chromaToleranceSlider = document.getElementById('chroma-tolerance');
         const toleranceValueEl = document.getElementById('tolerance-value');
         const resizeHeightInput = document.getElementById('resize-height');
+        const applyResizeBtn = document.getElementById('apply-resize-btn');
 
         const exportBtn = document.getElementById('export-btn');
         const exportModal = document.getElementById('export-modal');
@@ -292,25 +308,46 @@
         let chromaColor = null;
 
         // --- Frame Processing Utility ---
+        function resizeCanvas(canvas, height) {
+            const aspectRatio = canvas.width / canvas.height;
+            const newWidth = Math.round(height * aspectRatio);
+
+            const resizedCanvas = document.createElement('canvas');
+            resizedCanvas.width = newWidth;
+            resizedCanvas.height = height;
+
+            const ctx = resizedCanvas.getContext('2d');
+            ctx.drawImage(canvas, 0, 0, newWidth, height);
+            return resizedCanvas;
+        }
+
         function processAndAddFrame(canvas) {
             const resizeHeight = parseInt(resizeHeightInput.value, 10);
             let finalCanvas = canvas;
 
             if (!isNaN(resizeHeight) && resizeHeight > 0) {
-                const aspectRatio = canvas.width / canvas.height;
-                const newWidth = Math.round(resizeHeight * aspectRatio);
-
-                finalCanvas = document.createElement('canvas');
-                finalCanvas.width = newWidth;
-                finalCanvas.height = resizeHeight;
-
-                const ctx = finalCanvas.getContext('2d');
-                ctx.drawImage(canvas, 0, 0, newWidth, resizeHeight);
+                finalCanvas = resizeCanvas(canvas, resizeHeight);
             }
 
             capturedFrames.push({ id: `frame-${Date.now()}-${Math.random()}`, canvas: finalCanvas });
             renderFramesTimeline();
         }
+
+        applyResizeBtn.addEventListener('click', () => {
+            const targetHeight = parseInt(resizeHeightInput.value, 10);
+            if (isNaN(targetHeight) || targetHeight <= 0) {
+                alert('Por favor, introduce una altura válida.');
+                return;
+            }
+
+            // This is a destructive operation. We are resizing the canvases in the array.
+            capturedFrames.forEach((frameData, index) => {
+                const resized = resizeCanvas(frameData.canvas, targetHeight);
+                capturedFrames[index].canvas = resized;
+            });
+
+            renderFramesTimeline(); // Re-render to show the new sizes.
+        });
 
 
         // --- Video Loading & Controls ---
@@ -508,6 +545,16 @@
                 downloadBtn.onclick = () => openDownloadModal(frameData.id);
                 actions.appendChild(downloadBtn);
 
+                const useHeightBtn = document.createElement('button');
+                useHeightBtn.className = 'frame-action-btn';
+                useHeightBtn.title = 'Usar esta altura para todos';
+                useHeightBtn.innerHTML = '<i class="fas fa-ruler-vertical"></i>';
+                useHeightBtn.onclick = (e) => {
+                    e.stopPropagation();
+                    resizeHeightInput.value = frameData.canvas.height;
+                };
+                actions.appendChild(useHeightBtn);
+
                 const deleteBtn = document.createElement('button');
                 deleteBtn.className = 'frame-action-btn';
                 deleteBtn.title = 'Eliminar Frame';
@@ -517,8 +564,13 @@
                     deleteFrame(frameData.id);
                 };
                 actions.appendChild(deleteBtn);
-                
                 thumb.appendChild(actions);
+
+                const dims = document.createElement('div');
+                dims.className = 'frame-dimensions';
+                dims.textContent = `${frameData.canvas.width}x${frameData.canvas.height}`;
+                thumb.appendChild(dims);
+
                 framesTimeline.appendChild(thumb);
             });
         }
