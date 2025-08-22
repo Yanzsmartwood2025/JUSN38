@@ -118,11 +118,20 @@
                                 <h4 class="font-semibold mb-3">Opciones</h4>
                                 <div class="space-y-4">
                                     <div class="flex items-center justify-between">
-                                        <label for="video-quality" class="text-sm">Calidad de Compresión</label>
+                                        <label for="video-quality" class="text-sm">Calidad</label>
                                         <select id="video-quality" class="bg-gray-700 border border-gray-600 rounded-md px-2 py-1 text-sm">
                                             <option value="high">Alta</option>
                                             <option value="medium" selected>Media</option>
                                             <option value="low">Baja</option>
+                                        </select>
+                                    </div>
+                                    <!-- NUEVO: Selector de formato de video -->
+                                    <div class="flex items-center justify-between">
+                                        <label for="video-format" class="text-sm">Formato</label>
+                                        <select id="video-format" class="bg-gray-700 border border-gray-600 rounded-md px-2 py-1 text-sm">
+                                            <option value="mp4" selected>MP4</option>
+                                            <option value="webm">WEBM</option>
+                                            <option value="mov">MOV</option>
                                         </select>
                                     </div>
                                     <div class="flex items-center">
@@ -131,17 +140,30 @@
                                     </div>
                                 </div>
                             </div>
-                            <button id="process-video-btn" class="btn-transparent w-full font-bold py-3 px-4 rounded-lg flex items-center justify-center space-x-2 disabled:opacity-50 disabled:cursor-not-allowed" disabled>
+                            <button id="process-video-btn" class="btn-transparent w-full font-bold py-3 px-4 rounded-lg flex items-center justify-center space-x-2 disabled:opacity-50 disabled:cursor-not-allowed mt-4" disabled>
                                 <i data-lucide="wand-2"></i>
                                 <span>Procesar Video</span>
                             </button>
                         </div>
                     </div>
+                    <!-- Progreso -->
                     <div id="video-progress-container" class="mt-6 hidden">
                         <div class="w-full bg-gray-700 rounded-full h-2.5">
                             <div id="video-progress-bar" class="bg-indigo-500 h-2.5 rounded-full" style="width: 0%"></div>
                         </div>
                         <p id="video-status" class="text-center mt-2 text-sm text-gray-400"></p>
+                    </div>
+                    <!-- Resultado y Descarga -->
+                    <div id="video-result-container" class="mt-6 hidden">
+                        <p class="text-center text-lg font-medium text-green-400 mb-4">¡Proceso completado!</p>
+                        <div class="flex flex-col sm:flex-row items-center justify-center gap-4">
+                            <input type="text" id="video-filename-input" placeholder="Nombre del archivo..." class="bg-gray-700 border border-gray-600 rounded-md px-3 py-2 text-white w-full sm:w-auto flex-grow focus:ring-2 focus:ring-indigo-500 outline-none">
+                            <button id="download-video-btn" class="btn-transparent w-full sm:w-auto font-bold py-2 px-6 rounded-lg flex items-center justify-center space-x-2">
+                                <i data-lucide="download"></i>
+                                <span>Descargar</span>
+                            </button>
+                        </div>
+                        <p id="video-filename-error" class="text-red-500 text-sm text-center mt-2 h-4"></p>
                     </div>
                 </section>
 
@@ -172,19 +194,41 @@
                                             <option value="96">96 kbps (Baja)</option>
                                         </select>
                                     </div>
+                                    <!-- NUEVO: Selector de formato de audio -->
+                                    <div class="flex items-center justify-between">
+                                        <label for="audio-format" class="text-sm">Formato</label>
+                                        <select id="audio-format" class="bg-gray-700 border border-gray-600 rounded-md px-2 py-1 text-sm">
+                                            <option value="mp3" selected>MP3</option>
+                                            <option value="aac">AAC</option>
+                                            <option value="ogg">OGG</option>
+                                        </select>
+                                    </div>
                                 </div>
                             </div>
-                            <button id="process-audio-btn" class="btn-transparent w-full font-bold py-3 px-4 rounded-lg flex items-center justify-center space-x-2 disabled:opacity-50 disabled:cursor-not-allowed" disabled>
+                            <button id="process-audio-btn" class="btn-transparent w-full font-bold py-3 px-4 rounded-lg flex items-center justify-center space-x-2 disabled:opacity-50 disabled:cursor-not-allowed mt-4" disabled>
                                 <i data-lucide="wand-2"></i>
                                 <span>Procesar Audio</span>
                             </button>
                         </div>
                     </div>
+                    <!-- Progreso -->
                      <div id="audio-progress-container" class="mt-6 hidden">
                         <div class="w-full bg-gray-700 rounded-full h-2.5">
                             <div id="audio-progress-bar" class="bg-teal-500 h-2.5 rounded-full" style="width: 0%"></div>
                         </div>
                         <p id="audio-status" class="text-center mt-2 text-sm text-gray-400"></p>
+                    </div>
+                    <!-- Resultado y Descarga -->
+                    <div id="audio-result-container" class="mt-6 hidden">
+                        <p class="text-center text-lg font-medium text-green-400 mb-4">¡Proceso completado!</p>
+                        <div class="flex flex-col sm:flex-row items-center justify-center gap-4">
+                            <input type="text" id="audio-filename-input" placeholder="Nombre del archivo..." class="bg-gray-700 border border-gray-600 rounded-md px-3 py-2 text-white w-full sm:w-auto flex-grow focus:ring-2 focus:ring-teal-500 outline-none">
+                            <button id="download-audio-btn" class="btn-transparent w-full sm:w-auto font-bold py-2 px-6 rounded-lg flex items-center justify-center space-x-2">
+                                <i data-lucide="download"></i>
+                                <span>Descargar</span>
+                            </button>
+                        </div>
+                        <p id="audio-filename-error" class="text-red-500 text-sm text-center mt-2 h-4"></p>
                     </div>
                 </section>
             </div>
@@ -205,7 +249,6 @@
         import { getAuth, GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChanged, signInAnonymously, signInWithCustomToken } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
 
         // --- CONFIGURACIÓN DE FIREBASE ---
-        // Estas variables se proporcionan en el entorno de ejecución.
         const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : {
             apiKey: "TU_API_KEY",
             authDomain: "TU_AUTH_DOMAIN",
@@ -223,32 +266,36 @@
 
         // --- ELEMENTOS DEL DOM ---
         const userProfileContainer = document.getElementById('user-profile-container');
-        const videoFileInput = document.getElementById('video-file');
-        const videoFileName = document.getElementById('video-file-name');
-        const processVideoBtn = document.getElementById('process-video-btn');
-        const audioFileInput = document.getElementById('audio-file');
-        const audioFileName = document.getElementById('audio-file-name');
-        const processAudioBtn = document.getElementById('process-audio-btn');
         const menuButton = document.getElementById('menu-button');
         const closeMenuButton = document.getElementById('close-menu-button');
         const mobileMenu = document.getElementById('mobile-menu');
+        
+        // Elementos de Video
+        const videoFileInput = document.getElementById('video-file');
+        const videoFileName = document.getElementById('video-file-name');
+        const processVideoBtn = document.getElementById('process-video-btn');
+        const videoResultContainer = document.getElementById('video-result-container');
+        const downloadVideoBtn = document.getElementById('download-video-btn');
+        const videoFormatSelect = document.getElementById('video-format');
+
+        // Elementos de Audio
+        const audioFileInput = document.getElementById('audio-file');
+        const audioFileName = document.getElementById('audio-file-name');
+        const processAudioBtn = document.getElementById('process-audio-btn');
+        const audioResultContainer = document.getElementById('audio-result-container');
+        const downloadAudioBtn = document.getElementById('download-audio-btn');
+        const audioFormatSelect = document.getElementById('audio-format');
+
 
         // --- LÓGICA DE AUTENTICACIÓN ---
-        
-        // Escucha cambios en el estado de autenticación
         onAuthStateChanged(auth, (user) => {
-            if (user) {
-                // Usuario ha iniciado sesión
-                console.log("Usuario autenticado:", user.displayName);
+            if (user && !user.isAnonymous) {
                 updateUIForLoggedInUser(user);
             } else {
-                // Usuario no ha iniciado sesión
-                console.log("Ningún usuario autenticado.");
                 updateUIForLoggedOutUser();
             }
         });
         
-        // Intenta iniciar sesión con el token inicial si está disponible, si no, anónimamente.
         const initialAuth = async () => {
              try {
                 if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
@@ -262,29 +309,22 @@
         };
         initialAuth();
 
-
-        // Función para iniciar sesión con Google
         const signInWithGoogle = async () => {
             try {
-                const result = await signInWithPopup(auth, provider);
-                const user = result.user;
-                console.log("Inicio de sesión con Google exitoso:", user.displayName);
+                await signInWithPopup(auth, provider);
             } catch (error) {
                 console.error("Error al iniciar sesión con Google:", error);
             }
         };
 
-        // Función para cerrar sesión
         const logOut = async () => {
             try {
                 await signOut(auth);
-                console.log("Cierre de sesión exitoso.");
             } catch (error) {
                 console.error("Error al cerrar sesión:", error);
             }
         };
 
-        // Actualizar UI para usuario logueado
         function updateUIForLoggedInUser(user) {
             userProfileContainer.innerHTML = `
                 <div class="flex items-center space-x-3">
@@ -297,7 +337,6 @@
             document.getElementById('logout-btn').addEventListener('click', logOut);
         }
 
-        // Actualizar UI para usuario no logueado
         function updateUIForLoggedOutUser() {
             userProfileContainer.innerHTML = `
                 <button id="login-btn" class="btn-transparent font-semibold py-2 px-4 rounded-lg flex items-center space-x-2">
@@ -310,11 +349,21 @@
 
         // --- LÓGICA DE LA APLICACIÓN ---
 
-        // Manejo de la selección de archivos
+        function resetUI(type) {
+            document.getElementById(`${type}-progress-container`).classList.add('hidden');
+            document.getElementById(`${type}-result-container`).classList.add('hidden');
+            const errorEl = document.getElementById(`${type}-filename-error`);
+            if(errorEl) errorEl.textContent = '';
+            const inputEl = document.getElementById(`${type}-filename-input`);
+            if(inputEl) inputEl.classList.remove('border-red-500');
+            document.getElementById(`${type}-progress-bar`).style.width = '0%';
+        }
+        
         videoFileInput.addEventListener('change', () => {
             if (videoFileInput.files.length > 0) {
                 videoFileName.textContent = videoFileInput.files[0].name;
                 processVideoBtn.disabled = false;
+                resetUI('video');
             } else {
                 videoFileName.textContent = '';
                 processVideoBtn.disabled = true;
@@ -325,28 +374,20 @@
             if (audioFileInput.files.length > 0) {
                 audioFileName.textContent = audioFileInput.files[0].name;
                 processAudioBtn.disabled = false;
+                resetUI('audio');
             } else {
                 audioFileName.textContent = '';
                 processAudioBtn.disabled = true;
             }
         });
 
-        // Lógica de procesamiento (placeholders)
         processVideoBtn.addEventListener('click', () => {
             if (!videoFileInput.files[0]) return;
-            // Aquí iría la lógica de compresión de video y creación de GIF.
-            // Esto es complejo y usualmente requiere librerías como ffmpeg.wasm (en el cliente)
-            // o un backend con Firebase Cloud Functions (recomendado).
-            
-            // Ejemplo de simulación de progreso:
             simulateProgress('video', 'Comprimiendo video...');
         });
         
         processAudioBtn.addEventListener('click', () => {
             if (!audioFileInput.files[0]) return;
-            // Aquí iría la lógica de compresión de audio.
-            
-            // Ejemplo de simulación de progreso:
             simulateProgress('audio', 'Comprimiendo audio...');
         });
 
@@ -354,8 +395,13 @@
             const progressContainer = document.getElementById(`${type}-progress-container`);
             const progressBar = document.getElementById(`${type}-progress-bar`);
             const status = document.getElementById(`${type}-status`);
-            
+            const resultContainer = document.getElementById(`${type}-result-container`);
+            const filenameInput = document.getElementById(`${type}-filename-input`);
+            const originalFile = document.getElementById(`${type}-file`).files[0];
+            const formatSelect = document.getElementById(`${type}-format`);
+
             progressContainer.classList.remove('hidden');
+            resultContainer.classList.add('hidden');
             status.textContent = message;
             progressBar.style.width = '0%';
             
@@ -363,28 +409,72 @@
             const interval = setInterval(() => {
                 if (width >= 100) {
                     clearInterval(interval);
-                    status.textContent = '¡Proceso completado! Archivo listo para descargar.';
+                    progressContainer.classList.add('hidden');
+                    resultContainer.classList.remove('hidden');
+                    
+                    const originalName = originalFile.name.split('.').slice(0, -1).join('.');
+                    const extension = formatSelect.value; // Obtener la extensión del selector
+                    filenameInput.value = `${originalName}-comprimido.${extension}`;
+                    
+                    lucide.createIcons();
                 } else {
                     width++;
                     progressBar.style.width = width + '%';
                 }
             }, 30);
         }
+
+        function handleDownload(type) {
+            const filenameInput = document.getElementById(`${type}-filename-input`);
+            const errorElement = document.getElementById(`${type}-filename-error`);
+            const formatSelect = document.getElementById(`${type}-format`);
+            let filename = filenameInput.value.trim();
+            
+            errorElement.textContent = '';
+            filenameInput.classList.remove('border-red-500');
+
+            if (!filename) {
+                errorElement.textContent = "Por favor, introduce un nombre para el archivo.";
+                filenameInput.classList.add('border-red-500');
+                return;
+            }
+
+            // Mapeo de extensiones a tipos MIME
+            const mimeTypes = {
+                mp4: 'video/mp4',
+                webm: 'video/webm',
+                mov: 'video/quicktime',
+                mp3: 'audio/mpeg',
+                aac: 'audio/aac',
+                ogg: 'audio/ogg'
+            };
+            
+            const selectedFormat = formatSelect.value;
+            const mimeType = mimeTypes[selectedFormat] || 'application/octet-stream';
+            
+            const dummyContent = `Contenido simulado para ${filename}`;
+            const blob = new Blob([dummyContent], { type: mimeType });
+            const url = URL.createObjectURL(blob);
+
+            const a = document.createElement('a');
+            a.style.display = 'none';
+            a.href = url;
+            a.download = filename;
+            document.body.appendChild(a);
+            a.click();
+
+            window.URL.revokeObjectURL(url);
+            document.body.removeChild(a);
+        }
+
+        downloadVideoBtn.addEventListener('click', () => handleDownload('video'));
+        downloadAudioBtn.addEventListener('click', () => handleDownload('audio'));
         
         // --- LÓGICA DEL MENÚ MÓVIL ---
-        menuButton.addEventListener('click', () => {
-            mobileMenu.classList.add('open');
-        });
-
-        closeMenuButton.addEventListener('click', () => {
-            mobileMenu.classList.remove('open');
-        });
-        
-        // Cierra el menú si se hace clic en un enlace
+        menuButton.addEventListener('click', () => mobileMenu.classList.add('open'));
+        closeMenuButton.addEventListener('click', () => mobileMenu.classList.remove('open'));
         mobileMenu.querySelectorAll('a').forEach(link => {
-            link.addEventListener('click', () => {
-                mobileMenu.classList.remove('open');
-            });
+            link.addEventListener('click', () => mobileMenu.classList.remove('open'));
         });
 
         // Inicializar iconos
@@ -392,3 +482,4 @@
     </script>
 </body>
 </html>
+                                    
