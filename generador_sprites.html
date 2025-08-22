@@ -861,8 +861,7 @@
             spritesheetCropBox.style.height = `${spritesheetCrop.height}px`;
         }
 
-        exportPreviewContainer.addEventListener('mousedown', (e) => {
-            if (!isSpritesheetCropMode || e.target === exportPreviewCanvas) return;
+        spritesheetCropBox.addEventListener('mousedown', (e) => {
             e.preventDefault();
             spritesheetCropAction.active = true;
             spritesheetCropAction.startX = e.clientX;
