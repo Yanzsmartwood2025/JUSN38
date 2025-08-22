@@ -250,9 +250,16 @@
                         <label for="export-filename" class="text-sm font-semibold">Nombre del archivo:</label>
                         <input type="text" id="export-filename" value="spritesheet" class="w-full p-2 mt-1 rounded bg-gray-900 border border-gray-600">
                     </div>
+                    <div class="pt-2">
+                        <button id="toggle-spritesheet-crop-btn" class="btn btn-secondary w-full"><i class="fas fa-crop-alt mr-2"></i>Recortar Spritesheet</button>
+                    </div>
                 </div>
-                <div class="bg-black p-2 rounded-lg flex items-center justify-center min-h-[200px]" style="background-image: linear-gradient(45deg, #444 25%, transparent 25%), linear-gradient(-45deg, #444 25%, transparent 25%), linear-gradient(45deg, transparent 75%, #444 75%), linear-gradient(-45deg, transparent 75%, #444 75%); background-size: 20px 20px; background-position: 0 0, 0 10px, 10px -10px, -10px 0px;">
+                <div id="export-preview-container" class="relative bg-black p-2 rounded-lg flex items-center justify-center min-h-[200px]" style="background-image: linear-gradient(45deg, #444 25%, transparent 25%), linear-gradient(-45deg, #444 25%, transparent 25%), linear-gradient(45deg, transparent 75%, #444 75%), linear-gradient(-45deg, transparent 75%, #444 75%); background-size: 20px 20px; background-position: 0 0, 0 10px, 10px -10px, -10px 0px;">
                     <canvas id="export-preview-canvas" class="max-w-full max-h-full"></canvas>
+                    <div id="spritesheet-crop-box" style="display: none; position: absolute; border: 2px dashed var(--primary); box-shadow: 0 0 0 9999px rgba(0,0,0,0.5); cursor: move;">
+                        <div class="video-crop-handle nw"></div><div class="video-crop-handle ne"></div>
+                        <div class="video-crop-handle sw"></div><div class="video-crop-handle se"></div>
+                    </div>
                 </div>
             </div>
             <div class="flex justify-center gap-4 mt-6">
@@ -315,6 +322,9 @@
         const exportFormatSelect = document.getElementById('export-format');
         const exportFilenameInput = document.getElementById('export-filename');
         const exportPreviewCanvas = document.getElementById('export-preview-canvas');
+        const toggleSpritesheetCropBtn = document.getElementById('toggle-spritesheet-crop-btn');
+        const spritesheetCropBox = document.getElementById('spritesheet-crop-box');
+        const exportPreviewContainer = document.getElementById('export-preview-container');
 
         const downloadFrameModal = document.getElementById('download-frame-modal');
         const downloadFramePreview = document.getElementById('download-frame-preview');
@@ -337,6 +347,10 @@
         let isVideoCropMode = false;
         let cropAction = { active: false, type: null, startX: 0, startY: 0, initialCrop: {} };
         let chromaColor = null;
+        let isSpritesheetCropMode = false;
+        let spritesheetCrop = { x: 0, y: 0, width: 0, height: 0 };
+        let spritesheetCropAction = { active: false, type: null, startX: 0, startY: 0, initialCrop: {} };
+        let fullSheetCanvas = null;
 
         // --- Frame Processing Utility ---
         function processAndAddFrame(canvas) {
@@ -533,6 +547,13 @@
                 const actions = document.createElement('div');
                 actions.className = 'frame-actions';
                 
+                const editBtn = document.createElement('button');
+                editBtn.className = 'frame-action-btn';
+                editBtn.title = 'Editar Frame';
+                editBtn.innerHTML = '<i class="fas fa-edit"></i>';
+                editBtn.onclick = () => openEditModal(frameData.id);
+                actions.appendChild(editBtn);
+
                 const downloadBtn = document.createElement('button');
                 downloadBtn.className = 'frame-action-btn';
                 downloadBtn.title = 'Descargar Frame';
@@ -567,6 +588,85 @@
                 renderFramesTimeline();
             }
         }
+
+        // --- Frame Editing ---
+        let currentFrameAspectRatio = 1;
+
+        function openEditModal(frameId) {
+            const frameData = capturedFrames.find(f => f.id === frameId);
+            if (!frameData) return;
+
+            editFramePreview.src = frameData.canvas.toDataURL();
+            editFrameWidthInput.value = frameData.canvas.width;
+            editFrameHeightInput.value = frameData.canvas.height;
+            currentFrameAspectRatio = frameData.canvas.width / frameData.canvas.height;
+            editFrameAspectCheckbox.checked = true;
+
+            editFrameModal.dataset.frameId = frameId;
+            editFrameModal.classList.add('active');
+        }
+
+        editFrameWidthInput.addEventListener('input', () => {
+            if (editFrameAspectCheckbox.checked) {
+                const newWidth = parseInt(editFrameWidthInput.value);
+                if (!isNaN(newWidth) && newWidth > 0) {
+                    editFrameHeightInput.value = Math.round(newWidth / currentFrameAspectRatio);
+                }
+            }
+        });
+
+        editFrameHeightInput.addEventListener('input', () => {
+            if (editFrameAspectCheckbox.checked) {
+                const newHeight = parseInt(editFrameHeightInput.value);
+                if (!isNaN(newHeight) && newHeight > 0) {
+                    editFrameWidthInput.value = Math.round(newHeight * currentFrameAspectRatio);
+                }
+            }
+        });
+
+        editFrameAspectCheckbox.addEventListener('change', () => {
+            if (editFrameAspectCheckbox.checked) {
+                const width = parseInt(editFrameWidthInput.value);
+                const height = parseInt(editFrameHeightInput.value);
+                if (width > 0 && height > 0) {
+                   currentFrameAspectRatio = width / height;
+                }
+            }
+        });
+
+        cancelEditFrameBtn.addEventListener('click', () => {
+            editFrameModal.classList.remove('active');
+        });
+
+        saveEditFrameBtn.addEventListener('click', () => {
+            const frameId = editFrameModal.dataset.frameId;
+            const frameIndex = capturedFrames.findIndex(f => f.id === frameId);
+            if (frameIndex === -1) return;
+
+            const originalCanvas = capturedFrames[frameIndex].canvas;
+            const newWidth = parseInt(editFrameWidthInput.value);
+            const newHeight = parseInt(editFrameHeightInput.value);
+
+            if (isNaN(newWidth) || isNaN(newHeight) || newWidth <= 0 || newHeight <= 0) {
+                alert("Dimensiones inválidas.");
+                return;
+            }
+
+            const newCanvas = document.createElement('canvas');
+            newCanvas.width = newWidth;
+            newCanvas.height = newHeight;
+            const ctx = newCanvas.getContext('2d');
+            ctx.drawImage(originalCanvas, 0, 0, newWidth, newHeight);
+
+            capturedFrames[frameIndex].canvas = newCanvas;
+
+            editFrameModal.classList.remove('active');
+            renderFramesTimeline();
+
+            if(exportModal.classList.contains('active')) {
+                generateSpritesheetPreview();
+            }
+        });
 
         // --- Drag and Drop Reordering ---
         new Sortable(framesTimeline, {
@@ -620,7 +720,13 @@
             generateSpritesheetPreview();
         });
 
-        cancelExportBtn.addEventListener('click', () => exportModal.classList.remove('active'));
+        cancelExportBtn.addEventListener('click', () => {
+            exportModal.classList.remove('active');
+            isSpritesheetCropMode = false;
+            spritesheetCropBox.style.display = 'none';
+            toggleSpritesheetCropBtn.classList.remove('btn-primary', 'btn-secondary');
+            toggleSpritesheetCropBtn.classList.add('btn-secondary');
+        });
 
         const allExportInputs = [exportCountInput, exportPaddingInput, exportPresetSelect, exportLayoutSelect];
         allExportInputs.forEach(el => el.addEventListener('input', generateSpritesheetPreview));
@@ -704,29 +810,138 @@
             return sheetCanvas;
         }
         function generateSpritesheetPreview() {
-            const sheetCanvas = generateSpritesheet();
-            if (!sheetCanvas) return;
+            fullSheetCanvas = generateSpritesheet(); // Store the full-res canvas
+            if (!fullSheetCanvas) return;
+
             const previewCtx = exportPreviewCanvas.getContext('2d');
-            const container = exportPreviewCanvas.parentElement;
-            const aspect = sheetCanvas.width / sheetCanvas.height;
-            let newWidth = container.clientWidth;
+            const container = exportPreviewContainer;
+            const aspect = fullSheetCanvas.width / fullSheetCanvas.height;
+
+            let newWidth = container.clientWidth - 4; // -4 for padding
             let newHeight = newWidth / aspect;
-            if (newHeight > container.clientHeight) {
-                newHeight = container.clientHeight;
+            if (newHeight > container.clientHeight - 4) {
+                newHeight = container.clientHeight - 4;
                 newWidth = newHeight * aspect;
             }
             exportPreviewCanvas.width = newWidth;
             exportPreviewCanvas.height = newHeight;
+
             previewCtx.clearRect(0, 0, newWidth, newHeight);
-            previewCtx.drawImage(sheetCanvas, 0, 0, newWidth, newHeight);
+            previewCtx.drawImage(fullSheetCanvas, 0, 0, newWidth, newHeight);
+
+            if (isSpritesheetCropMode) {
+                const previewRect = exportPreviewCanvas.getBoundingClientRect();
+                spritesheetCrop = { x: 0, y: 0, width: previewRect.width, height: previewRect.height };
+                updateSpritesheetCropBoxDisplay();
+            }
         }
+
+        // --- Spritesheet Cropping Logic ---
+        toggleSpritesheetCropBtn.addEventListener('click', () => {
+            isSpritesheetCropMode = !isSpritesheetCropMode;
+            spritesheetCropBox.style.display = isSpritesheetCropMode ? 'block' : 'none';
+            toggleSpritesheetCropBtn.classList.toggle('btn-primary', isSpritesheetCropMode);
+            toggleSpritesheetCropBtn.classList.toggle('btn-secondary', !isSpritesheetCropMode);
+            if (isSpritesheetCropMode) {
+                const previewRect = exportPreviewCanvas.getBoundingClientRect();
+                const containerRect = exportPreviewContainer.getBoundingClientRect();
+                const offsetX = (containerRect.width - previewRect.width) / 2;
+                const offsetY = (containerRect.height - previewRect.height) / 2;
+
+                spritesheetCrop = { x: offsetX, y: offsetY, width: previewRect.width, height: previewRect.height };
+                updateSpritesheetCropBoxDisplay();
+            }
+        });
+
+        function updateSpritesheetCropBoxDisplay() {
+            if (!isSpritesheetCropMode) return;
+            spritesheetCropBox.style.left = `${spritesheetCrop.x}px`;
+            spritesheetCropBox.style.top = `${spritesheetCrop.y}px`;
+            spritesheetCropBox.style.width = `${spritesheetCrop.width}px`;
+            spritesheetCropBox.style.height = `${spritesheetCrop.height}px`;
+        }
+
+        exportPreviewContainer.addEventListener('mousedown', (e) => {
+            if (!isSpritesheetCropMode || e.target === exportPreviewCanvas) return;
+            e.preventDefault();
+            spritesheetCropAction.active = true;
+            spritesheetCropAction.startX = e.clientX;
+            spritesheetCropAction.startY = e.clientY;
+            spritesheetCropAction.initialCrop = { ...spritesheetCrop };
+            spritesheetCropAction.type = e.target.classList.contains('video-crop-handle') ? e.target.className.split(' ')[1] : 'move';
+        });
+
+        window.addEventListener('mousemove', (e) => {
+            if (!spritesheetCropAction.active) return;
+            const dx = e.clientX - spritesheetCropAction.startX;
+            const dy = e.clientY - spritesheetCropAction.startY;
+            let { x, y, width, height } = spritesheetCropAction.initialCrop;
+
+            switch (spritesheetCropAction.type) {
+                case 'move': x += dx; y += dy; break;
+                case 'nw': x += dx; y += dy; width -= dx; height -= dy; break;
+                case 'ne': y += dy; width += dx; height -= dy; break;
+                case 'sw': x += dx; width -= dx; height += dy; break;
+                case 'se': width += dx; height += dy; break;
+            }
+
+            const previewRect = exportPreviewCanvas.getBoundingClientRect();
+            const containerRect = exportPreviewContainer.getBoundingClientRect();
+            const offsetX = (containerRect.width - previewRect.width) / 2;
+            const offsetY = (containerRect.height - previewRect.height) / 2;
+
+            const newX = Math.max(offsetX, x);
+            const newY = Math.max(offsetY, y);
+            spritesheetCrop.x = newX;
+            spritesheetCrop.y = newY;
+            spritesheetCrop.width = Math.min(offsetX + previewRect.width - newX, width);
+            spritesheetCrop.height = Math.min(offsetY + previewRect.height - newY, height);
+
+            updateSpritesheetCropBoxDisplay();
+        });
+
+        window.addEventListener('mouseup', () => {
+            if (spritesheetCropAction.active) {
+                spritesheetCropAction.active = false;
+            }
+        });
+
         downloadSpritesheetBtn.addEventListener('click', () => {
-            const sheetCanvas = generateSpritesheet();
+            let canvasToDownload = fullSheetCanvas;
+            if (isSpritesheetCropMode && fullSheetCanvas) {
+                const scaleX = fullSheetCanvas.width / exportPreviewCanvas.width;
+                const scaleY = fullSheetCanvas.height / exportPreviewCanvas.height;
+
+                const containerRect = exportPreviewContainer.getBoundingClientRect();
+                const previewRect = exportPreviewCanvas.getBoundingClientRect();
+                const offsetX = (containerRect.width - previewRect.width) / 2;
+                const offsetY = (containerRect.height - previewRect.height) / 2;
+
+                const sourceX = (spritesheetCrop.x - offsetX) * scaleX;
+                const sourceY = (spritesheetCrop.y - offsetY) * scaleY;
+                const sourceWidth = spritesheetCrop.width * scaleX;
+                const sourceHeight = spritesheetCrop.height * scaleY;
+
+                if (sourceWidth > 0 && sourceHeight > 0) {
+                    const croppedCanvas = document.createElement('canvas');
+                    croppedCanvas.width = Math.round(sourceWidth);
+                    croppedCanvas.height = Math.round(sourceHeight);
+                    const ctx = croppedCanvas.getContext('2d');
+                    ctx.drawImage(fullSheetCanvas, sourceX, sourceY, sourceWidth, sourceHeight, 0, 0, croppedCanvas.width, croppedCanvas.height);
+                    canvasToDownload = croppedCanvas;
+                }
+            }
+
+            if (!canvasToDownload) {
+                alert("Error al generar el spritesheet. Inténtalo de nuevo.");
+                return;
+            }
+
             const format = exportFormatSelect.value;
             const quality = format === 'image/jpeg' ? 0.9 : 1.0;
             const filename = (exportFilenameInput.value || 'spritesheet') + '.' + format.split('/')[1];
 
-            const dataUrl = sheetCanvas.toDataURL(format, quality);
+            const dataUrl = canvasToDownload.toDataURL(format, quality);
             const link = document.createElement('a');
             link.href = dataUrl;
             link.download = filename;
