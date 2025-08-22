@@ -614,7 +614,6 @@
             editFrameWidthInput.value = frameData.canvas.width;
             editFrameHeightInput.value = frameData.canvas.height;
             currentFrameAspectRatio = frameData.canvas.width / frameData.canvas.height;
-            editFrameAspectCheckbox.checked = true;
 
             editFrameModal.dataset.frameId = frameId;
             editFrameModal.classList.add('active');
@@ -736,10 +735,6 @@
 
         cancelExportBtn.addEventListener('click', () => {
             exportModal.classList.remove('active');
-            isSpritesheetCropMode = false;
-            spritesheetCropBox.style.display = 'none';
-            toggleSpritesheetCropBtn.classList.remove('btn-primary', 'btn-secondary');
-            toggleSpritesheetCropBtn.classList.add('btn-secondary');
         });
 
         const allExportInputs = [exportCountInput, exportPaddingInput, exportPresetSelect, exportLayoutSelect];
