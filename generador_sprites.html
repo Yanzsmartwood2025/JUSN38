@@ -731,6 +731,7 @@
             }
             exportModal.classList.add('active');
             generateSpritesheetPreview();
+            updateCropButtonTexts(isSpritesheetCropMode);
         });
 
         cancelExportBtn.addEventListener('click', () => {
@@ -845,12 +846,25 @@
             }
         }
 
+        function updateCropButtonTexts(isCropping) {
+            if (isCropping) {
+                toggleSpritesheetCropBtn.innerHTML = `<i class="fas fa-times mr-2"></i>Cancelar Recorte`;
+                downloadSpritesheetBtn.innerHTML = `<i class="fas fa-crop-alt mr-2"></i>Descargar con Recorte`;
+            } else {
+                toggleSpritesheetCropBtn.innerHTML = `<i class="fas fa-crop-alt mr-2"></i>Recortar Spritesheet`;
+                downloadSpritesheetBtn.innerHTML = `<i class="fas fa-download mr-2"></i>Descargar Spritesheet`;
+            }
+        }
+
         // --- Spritesheet Cropping Logic ---
         toggleSpritesheetCropBtn.addEventListener('click', () => {
             isSpritesheetCropMode = !isSpritesheetCropMode;
             spritesheetCropBox.style.display = isSpritesheetCropMode ? 'block' : 'none';
             toggleSpritesheetCropBtn.classList.toggle('btn-primary', isSpritesheetCropMode);
             toggleSpritesheetCropBtn.classList.toggle('btn-secondary', !isSpritesheetCropMode);
+
+            updateCropButtonTexts(isSpritesheetCropMode);
+
             if (isSpritesheetCropMode) {
                 const previewRect = exportPreviewCanvas.getBoundingClientRect();
                 const containerRect = exportPreviewContainer.getBoundingClientRect();
