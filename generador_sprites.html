@@ -6,6 +6,7 @@
     <title>SpriteSheet Studio v15 (Direct Access)</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Sortable/1.15.2/Sortable.min.js"></script>
     <style>
         :root {
             --primary: #3b82f6; --secondary: #1f2937; --background: #111827;
@@ -162,9 +163,12 @@
             <!-- Image Section -->
             <div id="image-section">
                  <h2 class="section-title">Crear desde Imágenes</h2>
-                 <div class="upload-prompt">
+                 <div class="upload-prompt space-y-4">
                     <label for="image-upload" class="btn btn-primary"><i class="fas fa-upload mr-2"></i> Subir Imágenes</label>
-                    <p class="text-sm text-gray-400 mt-2">Selecciona una o varias imágenes para añadirlas a la línea de tiempo.</p>
+                    <div class="w-full max-w-xs">
+                        <label for="resize-height" class="text-sm font-semibold">Ajustar Altura (opcional):</label>
+                        <input type="number" id="resize-height" placeholder="Ej: 64 (en píxeles)" class="w-full p-2 mt-1 rounded bg-gray-900 border border-gray-600 text-center">
+                    </div>
                  </div>
             </div>
 
@@ -259,6 +263,7 @@
         const colorPreview = document.getElementById('color-preview');
         const chromaToleranceSlider = document.getElementById('chroma-tolerance');
         const toleranceValueEl = document.getElementById('tolerance-value');
+        const resizeHeightInput = document.getElementById('resize-height');
 
         const exportBtn = document.getElementById('export-btn');
         const exportModal = document.getElementById('export-modal');
@@ -285,6 +290,28 @@
         let isVideoCropMode = false;
         let cropAction = { active: false, type: null, startX: 0, startY: 0, initialCrop: {} };
         let chromaColor = null;
+
+        // --- Frame Processing Utility ---
+        function processAndAddFrame(canvas) {
+            const resizeHeight = parseInt(resizeHeightInput.value, 10);
+            let finalCanvas = canvas;
+
+            if (!isNaN(resizeHeight) && resizeHeight > 0) {
+                const aspectRatio = canvas.width / canvas.height;
+                const newWidth = Math.round(resizeHeight * aspectRatio);
+
+                finalCanvas = document.createElement('canvas');
+                finalCanvas.width = newWidth;
+                finalCanvas.height = resizeHeight;
+
+                const ctx = finalCanvas.getContext('2d');
+                ctx.drawImage(canvas, 0, 0, newWidth, resizeHeight);
+            }
+
+            capturedFrames.push({ id: `frame-${Date.now()}-${Math.random()}`, canvas: finalCanvas });
+            renderFramesTimeline();
+        }
+
 
         // --- Video Loading & Controls ---
         videoUpload.addEventListener('change', (event) => {
@@ -335,8 +362,7 @@
                         canvas.width = img.width;
                         canvas.height = img.height;
                         canvas.getContext('2d').drawImage(img, 0, 0);
-                        capturedFrames.push({ id: `frame-${Date.now()}-${Math.random()}`, canvas });
-                        renderFramesTimeline();
+                        processAndAddFrame(canvas); // Use the new function
                     };
                     img.src = e.target.result;
                 };
@@ -460,8 +486,7 @@
             
             canvas = applyChromaKey(canvas);
 
-            capturedFrames.push({ id: `frame-${Date.now()}`, canvas });
-            renderFramesTimeline();
+            processAndAddFrame(canvas); // Use the new function
         });
         function renderFramesTimeline() {
             framesTimeline.innerHTML = '';
@@ -482,11 +507,47 @@
                 downloadBtn.innerHTML = '<i class="fas fa-download"></i>';
                 downloadBtn.onclick = () => openDownloadModal(frameData.id);
                 actions.appendChild(downloadBtn);
+
+                const deleteBtn = document.createElement('button');
+                deleteBtn.className = 'frame-action-btn';
+                deleteBtn.title = 'Eliminar Frame';
+                deleteBtn.innerHTML = '<i class="fas fa-trash-alt"></i>';
+                deleteBtn.onclick = (e) => {
+                    e.stopPropagation(); // Evita que se dispare el click del thumbnail
+                    deleteFrame(frameData.id);
+                };
+                actions.appendChild(deleteBtn);
                 
                 thumb.appendChild(actions);
                 framesTimeline.appendChild(thumb);
             });
         }
+
+        function deleteFrame(frameId) {
+            const frameIndex = capturedFrames.findIndex(f => f.id === frameId);
+            if (frameIndex > -1) {
+                capturedFrames.splice(frameIndex, 1);
+                renderFramesTimeline();
+            }
+        }
+
+        // --- Drag and Drop Reordering ---
+        new Sortable(framesTimeline, {
+            animation: 150,
+            ghostClass: 'opacity-50',
+            onEnd: (evt) => {
+                const itemEl = evt.item; // dragged HTMLElement
+                const oldIndex = evt.oldIndex;
+                const newIndex = evt.newIndex;
+
+                // Reorder the actual data array
+                const [movedItem] = capturedFrames.splice(oldIndex, 1);
+                capturedFrames.splice(newIndex, 0, movedItem);
+
+                // No need to re-render, SortableJS handles the DOM
+                console.log('Frames reordered:', capturedFrames.map(f => f.id));
+            }
+        });
         
         // --- Single Frame Download ---
         function openDownloadModal(frameId) {
