@@ -438,21 +438,25 @@
             videoCropBox.style.height = `${videoCrop.height * scaleY}px`;
         }
         window.addEventListener('resize', updateVideoCropBoxDisplay);
-        videoCropBox.addEventListener('mousedown', (e) => {
+
+        function startVideoCrop(e) {
             e.preventDefault();
+            const touch = e.touches ? e.touches[0] : e;
             cropAction.active = true;
-            cropAction.startX = e.clientX;
-            cropAction.startY = e.clientY;
+            cropAction.startX = touch.clientX;
+            cropAction.startY = touch.clientY;
             cropAction.initialCrop = { ...videoCrop };
             cropAction.type = e.target.classList.contains('video-crop-handle') ? e.target.className.split(' ')[1] : 'move';
-        });
-        window.addEventListener('mousemove', (e) => {
+        }
+
+        function dragVideoCrop(e) {
             if (!cropAction.active) return;
+            const touch = e.touches ? e.touches[0] : e;
             const videoRect = videoPlayer.getBoundingClientRect();
             const scaleX = videoPlayer.videoWidth / videoRect.width;
             const scaleY = videoPlayer.videoHeight / videoRect.height;
-            const dx = (e.clientX - cropAction.startX) * scaleX;
-            const dy = (e.clientY - cropAction.startY) * scaleY;
+            const dx = (touch.clientX - cropAction.startX) * scaleX;
+            const dy = (touch.clientY - cropAction.startY) * scaleY;
             let { x, y, width, height } = cropAction.initialCrop;
             switch (cropAction.type) {
                 case 'move': x += dx; y += dy; break;
@@ -466,8 +470,18 @@
             videoCrop.width = Math.min(videoPlayer.videoWidth - videoCrop.x, width);
             videoCrop.height = Math.min(videoPlayer.videoHeight - videoCrop.y, height);
             updateVideoCropBoxDisplay();
-        });
-        window.addEventListener('mouseup', () => cropAction.active = false);
+        }
+
+        function endVideoCrop() {
+            cropAction.active = false;
+        }
+
+        videoCropBox.addEventListener('mousedown', startVideoCrop);
+        window.addEventListener('mousemove', dragVideoCrop);
+        window.addEventListener('mouseup', endVideoCrop);
+        videoCropBox.addEventListener('touchstart', startVideoCrop, { passive: false });
+        window.addEventListener('touchmove', dragVideoCrop, { passive: false });
+        window.addEventListener('touchend', endVideoCrop);
 
         // --- Chroma Key ---
         eyedropperBtn.addEventListener('click', () => {
@@ -861,19 +875,21 @@
             spritesheetCropBox.style.height = `${spritesheetCrop.height}px`;
         }
 
-        spritesheetCropBox.addEventListener('mousedown', (e) => {
+        function startSpritesheetCrop(e) {
             e.preventDefault();
+            const touch = e.touches ? e.touches[0] : e;
             spritesheetCropAction.active = true;
-            spritesheetCropAction.startX = e.clientX;
-            spritesheetCropAction.startY = e.clientY;
+            spritesheetCropAction.startX = touch.clientX;
+            spritesheetCropAction.startY = touch.clientY;
             spritesheetCropAction.initialCrop = { ...spritesheetCrop };
             spritesheetCropAction.type = e.target.classList.contains('video-crop-handle') ? e.target.className.split(' ')[1] : 'move';
-        });
+        }
 
-        window.addEventListener('mousemove', (e) => {
+        function dragSpritesheetCrop(e) {
             if (!spritesheetCropAction.active) return;
-            const dx = e.clientX - spritesheetCropAction.startX;
-            const dy = e.clientY - spritesheetCropAction.startY;
+            const touch = e.touches ? e.touches[0] : e;
+            const dx = touch.clientX - spritesheetCropAction.startX;
+            const dy = touch.clientY - spritesheetCropAction.startY;
             let { x, y, width, height } = spritesheetCropAction.initialCrop;
 
             switch (spritesheetCropAction.type) {
@@ -897,13 +913,18 @@
             spritesheetCrop.height = Math.min(offsetY + previewRect.height - newY, height);
 
             updateSpritesheetCropBoxDisplay();
-        });
+        }
 
-        window.addEventListener('mouseup', () => {
-            if (spritesheetCropAction.active) {
-                spritesheetCropAction.active = false;
-            }
-        });
+        function endSpritesheetCrop() {
+            spritesheetCropAction.active = false;
+        }
+
+        spritesheetCropBox.addEventListener('mousedown', startSpritesheetCrop);
+        window.addEventListener('mousemove', dragSpritesheetCrop);
+        window.addEventListener('mouseup', endSpritesheetCrop);
+        spritesheetCropBox.addEventListener('touchstart', startSpritesheetCrop, { passive: false });
+        window.addEventListener('touchmove', dragSpritesheetCrop, { passive: false });
+        window.addEventListener('touchend', endSpritesheetCrop);
 
         downloadSpritesheetBtn.addEventListener('click', () => {
             let canvasToDownload = fullSheetCanvas;
