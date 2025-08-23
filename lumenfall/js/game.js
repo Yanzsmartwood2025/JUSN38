@@ -964,8 +964,10 @@
 
                 // Camera follow logic
                 camera.position.x = this.mesh.position.x;
-                const targetCameraY = this.mesh.position.y + 1.9; // Maintain initial offset
-                camera.position.y += (targetCameraY - camera.position.y) * 0.05; // Smoothly interpolate
+                const baseCameraY = this.mesh.position.y + 3; // Aumentar la altura base de la cámara
+                const velocityOffset = this.velocity.y * 5; // El multiplicador ajusta la sensibilidad
+                const targetCameraY = baseCameraY + velocityOffset;
+                camera.position.y += (targetCameraY - camera.position.y) * 0.08; // Aumentar para una respuesta más rápida
 
                 this.playerLight.position.set(this.mesh.position.x, this.mesh.position.y + 1, this.mesh.position.z + 2);
 
