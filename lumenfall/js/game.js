@@ -1,20 +1,20 @@
 // --- src/game.js (Lógica Principal) ---
 
         const assetUrls = {
-            runningSprite: 'assets/imagenes/LumenFall.png',
-            attackSprite: 'assets/imagenes/hoja_de_sprites (2).png',
+            runningSprite: 'assets/sprites/characters/LumenFall.png',
+            attackSprite: 'assets/sprites/characters/attack_sprite_sheet.png',
             jumpSprite: 'assets/imagenes/saltando.png',
-            flameParticle: 'assets/imagenes/fuego.png',
-            wallTexture: 'assets/imagenes/pared-calabozo.png',
-            doorTexture: 'assets/imagenes/puerta-calabozo.png',
-            floorTexture: 'assets/imagenes/piso-calabozo.png',
-            torchTexture: 'assets/imagenes/antorcha.png',
-            specterTexture: 'assets/imagenes/fantasma.png',
-            introImage: 'assets/imagenes/Intro.jpg',
-            menuBackgroundImage: 'assets/imagenes/menu-principal.jpg',
-            animatedEnergyBar: 'assets/imagenes/barra-de-energia.png',
-            halleyStatueTexture: 'assets/imagenes/Halley-piedra.png',
-            enemySprite: 'assets/sprites/enemigo-1.png'
+            flameParticle: 'assets/sprites/effects/fuego.png',
+            wallTexture: 'assets/environment/tiles/pared-calabozo.png',
+            doorTexture: 'assets/environment/objects/puerta-calabozo.png',
+            floorTexture: 'assets/environment/tiles/piso-calabozo.png',
+            torchTexture: 'assets/environment/objects/antorcha.png',
+            specterTexture: 'assets/sprites/enemies/fantasma.png',
+            introImage: 'assets/ui/Intro.jpg',
+            menuBackgroundImage: 'assets/ui/menu-principal.jpg',
+            animatedEnergyBar: 'assets/ui/barra-de-energia.png',
+            halleyStatueTexture: 'assets/sprites/characters/Halley-piedra.png',
+            enemySprite: 'assets/sprites/enemies/enemigo-1.png'
         };
 
         const totalRunningFrames = 8;
