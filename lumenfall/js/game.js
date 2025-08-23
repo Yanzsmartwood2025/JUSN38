@@ -1005,9 +1005,7 @@
         const wallMaterial = new THREE.MeshStandardMaterial({ map: wallTexture, color: 0x454555 });
         const doorTexture = textureLoader.load(assetUrls.doorTexture);
         const doorMaterial = new THREE.MeshStandardMaterial({ map: doorTexture, transparent: true, alphaTest: 0.5 });
-        const floorTexture = textureLoader.load(assetUrls.wallTexture);
-        floorTexture.wrapS = floorTexture.wrapT = THREE.RepeatWrapping;
-        floorTexture.repeat.set(playableAreaWidth / 4, roomDepth / 5);
+        const floorTexture = textureLoader.load(assetUrls.floorTexture);
         const floorMaterial = new THREE.MeshStandardMaterial({ map: floorTexture });
         const torchTexture = textureLoader.load(assetUrls.torchTexture);
         const torchMaterial = new THREE.MeshStandardMaterial({ map: torchTexture, transparent: true, alphaTest: 0.5, side: THREE.DoubleSide });
