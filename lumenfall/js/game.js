@@ -742,8 +742,8 @@
                 this.attackTexture.repeat.x = 1 / totalAttackFrames;
                 this.jumpTexture.repeat.x = 1 / totalJumpFrames;
 
-                const playerHeight = 2.8;
-                const playerWidth = 2.8;
+                const playerHeight = 4.2;
+                const playerWidth = 4.2;
 
                 const playerGeometry = new THREE.PlaneGeometry(playerWidth, playerHeight);
                 const playerMaterial = new THREE.MeshStandardMaterial({ map: this.runningTexture, transparent: true, side: THREE.DoubleSide, alphaTest: 0.1 });
@@ -763,7 +763,7 @@
                 this.isFacingLeft = false;
                 this.isGrounded = true;
                 this.velocity = new THREE.Vector3();
-                this.jumpPower = 0.35;
+                this.jumpPower = 0.5;
                 this.gravity = -0.025;
                 this.isJumping = false;
                 this.minPlayerX = -playableAreaWidth/2 + 1.5;
@@ -961,7 +961,12 @@
 
                 this.mesh.position.x = Math.max(this.minPlayerX, Math.min(this.maxPlayerX, this.mesh.position.x));
                 this.mesh.rotation.y = this.isFacingLeft ? Math.PI : 0;
+
+                // Camera follow logic
                 camera.position.x = this.mesh.position.x;
+                const targetCameraY = this.mesh.position.y + 1.9; // Maintain initial offset
+                camera.position.y += (targetCameraY - camera.position.y) * 0.05; // Smoothly interpolate
+
                 this.playerLight.position.set(this.mesh.position.x, this.mesh.position.y + 1, this.mesh.position.z + 2);
 
                 if (this.currentState !== previousState) this.currentFrame = 0;
