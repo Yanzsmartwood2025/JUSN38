@@ -222,11 +222,7 @@
             }
 
             interactPressed = false;
-            for (let i = allFlames.length - 1; i >= 0; i--) {
-                if (!allFlames[i].update(deltaTime)) {
-                    allFlames.splice(i, 1);
-                }
-            }
+            allFlames.forEach(flame => flame.update(deltaTime));
             allSpecters.forEach(specter => specter.update(deltaTime, player));
             allSimpleEnemies.forEach(enemy => enemy.update(deltaTime));
             allPuzzles.forEach(puzzle => puzzle.update(deltaTime));
@@ -750,7 +746,7 @@
                 const playerWidth = 4.2;
 
                 const playerGeometry = new THREE.PlaneGeometry(playerWidth, playerHeight);
-                const playerMaterial = new THREE.MeshBasicMaterial({ map: this.runningTexture, transparent: true, side: THREE.DoubleSide, alphaTest: 0.5 });
+                const playerMaterial = new THREE.MeshStandardMaterial({ map: this.runningTexture, transparent: true, side: THREE.DoubleSide, alphaTest: 0.1 });
                 this.mesh = new THREE.Mesh(playerGeometry, playerMaterial);
                 this.mesh.position.y = playerHeight / 2;
                 this.mesh.castShadow = true;
@@ -968,10 +964,8 @@
 
                 // Camera follow logic
                 camera.position.x = this.mesh.position.x;
-                const baseCameraY = this.mesh.position.y + 3; // Aumentar la altura base de la cámara
-                const velocityOffset = this.velocity.y * 5; // El multiplicador ajusta la sensibilidad
-                const targetCameraY = baseCameraY + velocityOffset;
-                camera.position.y += (targetCameraY - camera.position.y) * 0.08; // Aumentar para una respuesta más rápida
+                const targetCameraY = this.mesh.position.y + 1.9; // Maintain initial offset
+                camera.position.y += (targetCameraY - camera.position.y) * 0.05; // Smoothly interpolate
 
                 this.playerLight.position.set(this.mesh.position.x, this.mesh.position.y + 1, this.mesh.position.z + 2);
 
@@ -1005,7 +999,9 @@
         const wallMaterial = new THREE.MeshStandardMaterial({ map: wallTexture, color: 0x454555 });
         const doorTexture = textureLoader.load(assetUrls.doorTexture);
         const doorMaterial = new THREE.MeshStandardMaterial({ map: doorTexture, transparent: true, alphaTest: 0.5 });
-        const floorTexture = textureLoader.load(assetUrls.floorTexture);
+        const floorTexture = textureLoader.load(assetUrls.wallTexture);
+        floorTexture.wrapS = floorTexture.wrapT = THREE.RepeatWrapping;
+        floorTexture.repeat.set(30, 2);
         const floorMaterial = new THREE.MeshStandardMaterial({ map: floorTexture });
         const torchTexture = textureLoader.load(assetUrls.torchTexture);
         const torchMaterial = new THREE.MeshStandardMaterial({ map: torchTexture, transparent: true, alphaTest: 0.5, side: THREE.DoubleSide });
@@ -1175,13 +1171,11 @@
         };
 
         class RealisticFlame {
-            constructor(scene, position, lifetime = -1) {
+            constructor(scene, position) {
                 this.scene = scene;
                 this.position = position;
                 this.particleCount = 20;
                 this.velocities = [];
-                this.lifetime = lifetime; // -1 para vida infinita (antorchas)
-                this.initialLifetime = lifetime;
                 this.init();
             }
 
@@ -1205,21 +1199,6 @@
             }
 
             update(deltaTime) {
-                if (this.lifetime > 0) {
-                    this.lifetime -= deltaTime;
-                    if (this.lifetime <= 0) {
-                        this.scene.remove(this.particles);
-                        this.scene.remove(this.light);
-                        return false; // Indicar que la llama ha expirado
-                    }
-                    // Desvanecimiento
-                    const fade = this.lifetime / this.initialLifetime;
-                    this.particles.material.opacity = fade;
-                    this.light.intensity = (1.0 + Math.sin(Date.now() * 0.01 + this.position.x) * 0.5) * fade;
-                } else {
-                     this.light.intensity = 1.0 + Math.sin(Date.now() * 0.01 + this.position.x) * 0.5;
-                }
-
                 const positions = this.particles.geometry.attributes.position.array;
                 for (let i = 0; i < this.particleCount; i++) {
                     const vel = this.velocities[i];
@@ -1236,7 +1215,7 @@
                     positions[i * 3 + 2] += vel.z;
                 }
                 this.particles.geometry.attributes.position.needsUpdate = true;
-                return true; // La llama sigue activa
+                this.light.intensity = 1.0 + Math.sin(Date.now() * 0.01 + this.position.x) * 0.5;
             }
         }
 
@@ -1584,7 +1563,7 @@
                     transparent: true,
                     blending: THREE.AdditiveBlending,
                 });
-                const geometry = new THREE.PlaneGeometry(1.0, 1.0); // Duplicado del tamaño original
+                const geometry = new THREE.PlaneGeometry(0.5, 0.5);
                 this.mesh = new THREE.Mesh(geometry, material);
                 this.mesh.position.copy(startPosition);
 
@@ -1596,24 +1575,15 @@
             update(deltaTime) {
                 this.lifetime -= deltaTime;
                 if (this.lifetime <= 0) {
-                    allFlames.push(new RealisticFlame(this.scene, this.mesh.position, 3));
                     return false;
                 }
                 this.mesh.position.x += this.velocity.x;
                 this.mesh.position.y += this.velocity.y;
 
-                // Wall collision
-                if (this.mesh.position.x < player.minPlayerX || this.mesh.position.x > player.maxPlayerX) {
-                    allFlames.push(new RealisticFlame(this.scene, this.mesh.position, 3));
-                    this.lifetime = 0;
-                    return false;
-                }
-
                 // Collision with simple enemies
                 for (const enemy of allSimpleEnemies) {
                     if (this.mesh.position.distanceTo(enemy.mesh.position) < (enemy.mesh.geometry.parameters.height / 2)) {
                         enemy.takeHit();
-                        allFlames.push(new RealisticFlame(this.scene, this.mesh.position, 3));
                         this.lifetime = 0; // Mark for removal
                         return false; // Projectile disappears
                     }
