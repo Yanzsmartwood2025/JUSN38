@@ -746,7 +746,7 @@
                 const playerWidth = 2.8;
 
                 const playerGeometry = new THREE.PlaneGeometry(playerWidth, playerHeight);
-                const playerMaterial = new THREE.MeshStandardMaterial({ map: this.runningTexture, transparent: true, side: THREE.DoubleSide, alphaTest: 0.5 });
+                const playerMaterial = new THREE.MeshStandardMaterial({ map: this.runningTexture, transparent: true, side: THREE.DoubleSide, alphaTest: 0.1 });
                 this.mesh = new THREE.Mesh(playerGeometry, playerMaterial);
                 this.mesh.position.y = playerHeight / 2;
                 this.mesh.castShadow = true;
@@ -1349,7 +1349,7 @@
                 const enemyMaterial = new THREE.MeshStandardMaterial({
                     map: this.texture,
                     transparent: true,
-                    alphaTest: 0.5,
+                    alphaTest: 0.1,
                     side: THREE.DoubleSide
                 });
                 const enemyGeometry = new THREE.PlaneGeometry(enemyWidth, enemyHeight);
