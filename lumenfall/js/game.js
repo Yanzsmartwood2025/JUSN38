@@ -1,19 +1,19 @@
 // --- src/game.js (Lógica Principal) ---
 
         const assetUrls = {
-            runningSprite: '../assets/images/LumenFall.png',
-            attackSprite: '../assets/images/hoja_de_sprites (2).png',
-            jumpSprite: '../assets/images/saltando.png',
-            flameParticle: '../assets/images/fuego.png',
-            wallTexture: '../assets/images/pared-calabozo.png',
-            doorTexture: '../assets/images/puerta-calabozo.png',
-            floorTexture: '../assets/images/piso-calabozo.png',
-            torchTexture: '../assets/images/antorcha.png',
-            specterTexture: '../assets/images/fantasma.png',
-            introImage: '../assets/images/Intro.jpg',
-            menuBackgroundImage: '../assets/images/menu-principal.jpg',
-            animatedEnergyBar: '../assets/images/barra-de-energia.png',
-            halleyStatueTexture: '../assets/images/Halley-piedra.png',
+            runningSprite: 'assets/imagenes/LumenFall.png',
+            attackSprite: 'assets/imagenes/hoja_de_sprites (2).png',
+            jumpSprite: 'assets/imagenes/saltando.png',
+            flameParticle: 'assets/imagenes/fuego.png',
+            wallTexture: 'assets/imagenes/pared-calabozo.png',
+            doorTexture: 'assets/imagenes/puerta-calabozo.png',
+            floorTexture: 'assets/imagenes/piso-calabozo.png',
+            torchTexture: 'assets/imagenes/antorcha.png',
+            specterTexture: 'assets/imagenes/fantasma.png',
+            introImage: 'assets/imagenes/Intro.jpg',
+            menuBackgroundImage: 'assets/imagenes/menu-principal.jpg',
+            animatedEnergyBar: 'assets/imagenes/barra-de-energia.png',
+            halleyStatueTexture: 'assets/imagenes/Halley-piedra.png',
             enemySprite: 'assets/sprites/enemigo-1.png'
         };
 
@@ -612,6 +612,18 @@
             if (audioContext.state === 'suspended') {
                 audioContext.resume();
             }
+
+            // Lock orientation to landscape
+            (async () => {
+                try {
+                    if (screen.orientation && typeof screen.orientation.lock === 'function') {
+                        await screen.orientation.lock('landscape');
+                    }
+                } catch (err) {
+                    console.error('Could not lock orientation:', err);
+                }
+            })();
+
             startButtonContainer.style.display = 'none';
             introImage.src = assetUrls.introImage;
             introScreen.style.opacity = 0;
