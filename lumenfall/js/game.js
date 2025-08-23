@@ -90,7 +90,6 @@
         const allPuzzles = [];
         const allProjectiles = [];
         const allPowerUps = [];
-        const allExplosions = [];
 
         let currentLevelId = 'dungeon_1';
         let isPaused = false;
@@ -228,11 +227,6 @@
             allSimpleEnemies.forEach(enemy => enemy.update(deltaTime));
             allPuzzles.forEach(puzzle => puzzle.update(deltaTime));
             allPowerUps.forEach(powerUp => powerUp.update(deltaTime));
-            allExplosions.forEach((explosion, index) => {
-                if (!explosion.update(deltaTime)) {
-                    allExplosions.splice(index, 1);
-                }
-            });
 
             for (let i = allProjectiles.length - 1; i >= 0; i--) {
                 if (!allProjectiles[i].update(deltaTime)) {
@@ -1559,61 +1553,6 @@
             }
         }
 
-        class Explosion {
-            constructor(scene, position) {
-                this.scene = scene;
-                this.position = position;
-                this.particleCount = 25; // Reducido para un efecto más de chispa
-                this.velocities = [];
-                this.lifetime = 0.4; // Más corto para un destello rápido
-
-                const particleMaterial = new THREE.PointsMaterial({
-                    color: 0x00aaff, // Color azul como las antorchas
-                    size: 0.4, // Más pequeño
-                    map: textureLoader.load(assetUrls.flameParticle),
-                    blending: THREE.AdditiveBlending,
-                    transparent: true,
-                    depthWrite: false,
-                });
-                const particleGeometry = new THREE.BufferGeometry();
-                const positions = new Float32Array(this.particleCount * 3);
-
-                for (let i = 0; i < this.particleCount; i++) {
-                    positions[i * 3] = this.position.x;
-                    positions[i * 3 + 1] = this.position.y;
-                    positions[i * 3 + 2] = this.position.z;
-                    const angle = Math.random() * 2 * Math.PI;
-                    const speed = Math.random() * 0.8 + 0.3; // Más rápido y energético
-                    this.velocities.push({
-                        x: Math.cos(angle) * speed,
-                        y: Math.sin(angle) * speed,
-                        z: (Math.random() - 0.5) * 0.3
-                    });
-                }
-                particleGeometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
-                this.particles = new THREE.Points(particleGeometry, particleMaterial);
-                this.scene.add(this.particles);
-            }
-
-            update(deltaTime) {
-                this.lifetime -= deltaTime;
-                if (this.lifetime <= 0) {
-                    this.scene.remove(this.particles);
-                    return false;
-                }
-
-                const positions = this.particles.geometry.attributes.position.array;
-                for (let i = 0; i < this.particleCount; i++) {
-                    positions[i * 3] += this.velocities[i].x * deltaTime * 15; // Movimiento más rápido
-                    positions[i * 3 + 1] += this.velocities[i].y * deltaTime * 15;
-                    positions[i * 3 + 2] += this.velocities[i].z * deltaTime * 15;
-                }
-                this.particles.material.opacity = this.lifetime / 0.4;
-                this.particles.geometry.attributes.position.needsUpdate = true;
-                return true;
-            }
-        }
-
         class Projectile {
             constructor(scene, startPosition, direction) {
                 this.scene = scene;
@@ -1638,7 +1577,7 @@
             update(deltaTime) {
                 this.lifetime -= deltaTime;
                 if (this.lifetime <= 0) {
-                    allExplosions.push(new Explosion(this.scene, this.mesh.position));
+                    allFlames.push(new RealisticFlame(this.scene, this.mesh.position));
                     return false;
                 }
                 this.mesh.position.x += this.velocity.x;
@@ -1646,7 +1585,7 @@
 
                 // Wall collision
                 if (this.mesh.position.x < player.minPlayerX || this.mesh.position.x > player.maxPlayerX) {
-                    allExplosions.push(new Explosion(this.scene, this.mesh.position));
+                    allFlames.push(new RealisticFlame(this.scene, this.mesh.position));
                     this.lifetime = 0;
                     return false;
                 }
@@ -1655,7 +1594,7 @@
                 for (const enemy of allSimpleEnemies) {
                     if (this.mesh.position.distanceTo(enemy.mesh.position) < (enemy.mesh.geometry.parameters.height / 2)) {
                         enemy.takeHit();
-                        allExplosions.push(new Explosion(this.scene, this.mesh.position));
+                        allFlames.push(new RealisticFlame(this.scene, this.mesh.position));
                         this.lifetime = 0; // Mark for removal
                         return false; // Projectile disappears
                     }
