@@ -411,18 +411,45 @@ html, body {
             background-color: rgba(0, 0, 0, 0.8);
             display: none;
             flex-direction: column;
-            justify-content: center;
+            justify-content: space-around; /* Changed from center */
             align-items: center;
             z-index: 102;
             color: white;
             opacity: 0;
             transition: opacity 0.3s ease-in;
             text-align: center;
+            padding: 5vh 0; /* Added padding */
+            box-sizing: border-box; /* Added for better padding behavior */
         }
 
         #pause-menu.active {
             display: flex;
             opacity: 1;
+        }
+
+        .pause-menu-content {
+            overflow-y: auto;
+            /* max-height: 70vh; */ /* Let's let the flexbox handle the height */
+            width: 100%;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 20px 0;
+            scrollbar-width: thin;
+            scrollbar-color: #3498db rgba(0,0,0,0.5);
+        }
+
+        /* For Webkit browsers */
+        .pause-menu-content::-webkit-scrollbar {
+            width: 8px;
+        }
+        .pause-menu-content::-webkit-scrollbar-track {
+            background: rgba(0,0,0,0.5);
+            border-radius: 4px;
+        }
+        .pause-menu-content::-webkit-scrollbar-thumb {
+            background-color: #3498db;
+            border-radius: 4px;
         }
 
         .menu-item {
