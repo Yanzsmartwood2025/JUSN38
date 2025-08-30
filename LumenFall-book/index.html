@@ -85,7 +85,7 @@
             visibility: hidden;
             opacity: 0;
             transition: opacity 0.5s ease-in-out;
-            padding-top: var(--header-height); /* CORRECCIÓN: Se añade padding para que el libro no quede debajo del header */
+            padding-top: var(--header-height);
             box-sizing: border-box;
         }
         .flipbook-viewport.ready {
@@ -95,7 +95,6 @@
         
         .flipbook-container { 
             width: 95vw; 
-            /* CORRECCIÓN: Se ajusta la altura para considerar el padding del viewport */
             height: calc(95vh - var(--header-height));
             max-width: 1400px; /* Se establece un max-width para pantallas muy grandes */
             position: relative;
@@ -107,17 +106,19 @@
 
         .flipbook .page { box-shadow: 0 4px 10px rgba(0,0,0,0.3); transition: background-color 0.3s ease, color 0.3s ease; position: relative; overflow: hidden; }
         .flipbook .hard { background-color: #101010; box-shadow: inset 0 0 5px #000; }
+        
+        /* CORRECCIÓN: Se cambió background-size de 'cover' a 'contain' para que la imagen se vea completa. */
         .cover-page { 
             background-color: #101010 !important;
             background-image: url(https://raw.githubusercontent.com/Yanzsmartwood2025/JUSN38/872aa43a0894e69917f178d71fbc0d7ac1eac8fb/LumenFall-book/assets/imagenes/Portada-libro.jpg);
-            background-size: cover !important;
+            background-size: contain !important;
             background-repeat: no-repeat !important;
             background-position: center !important;
         }
         .back-cover-page { 
             background-color: #101010 !important;
             background-image: url(https://raw.githubusercontent.com/Yanzsmartwood2025/JUSN38/32acf737002f499e83f4e3fb63d27b0dd4d44827/LumenFall-book/assets/imagenes/Contraportada-libro.jpg);
-            background-size: cover !important;
+            background-size: contain !important;
             background-repeat: no-repeat !important;
             background-position: center !important;
         }
@@ -180,18 +181,17 @@
     <nav class="container mx-auto px-4 sm:px-6 py-2 flex justify-between items-center h-20">
         <div class="flex-1 flex justify-start items-center space-x-2 sm:space-x-4">
              <button id="theme-toggle" class="p-2 rounded-full text-white" aria-label="Change color theme">
-                <svg id="theme-icon-sun" class="h-6 w-6 hidden" fill="currentColor" viewBox="0 0 20 20"><path d="M10 2a1 1 0 011 1v1a1 1 0 11-2 0V3a1 1 0 011-1zm4 8a4 4 0 11-8 0 4 4 0 018 0zm-.464 4.95l.707.707a1 1 0 001.414-1.414l-.707-.707a1 1 0 00-1.414 1.414zm2.12-10.607a1 1 0 010 1.414l-.707.707a1 1 0 11-1.414-1.414l.707-.707a1 1 0 011.414 0zM17 11a1 1 0 100-2h-1a1 1 0 100 2h1zm-7 4a1 1 0 011 1v1a1 1 0 11-2 0v-1a1 1 0 011-1zM5.05 6.464A1 1 0 106.465 5.05l-.708-.707a1 1 0 00-1.414 1.414l.707.707zm-1.414 8.486l.707-.707a1 1 0 011.414 1.414l-.707.707a1 1 0 01-1.414-1.414zM4 11a1 1 0 100-2H3a1 1 0 100 2h1z"/></svg>
-                <svg id="theme-icon-moon" class="h-6 w-6 hidden" fill="currentColor" viewBox="0 0 20 20"><path d="M17.293 13.293A8 8 0 016.707 2.707a8.001 8.001 0 1010.586 10.586z"></path></svg>
-            </button>
+                 <svg id="theme-icon-sun" class="h-6 w-6 hidden" fill="currentColor" viewBox="0 0 20 20"><path d="M10 2a1 1 0 011 1v1a1 1 0 11-2 0V3a1 1 0 011-1zm4 8a4 4 0 11-8 0 4 4 0 018 0zm-.464 4.95l.707.707a1 1 0 001.414-1.414l-.707-.707a1 1 0 00-1.414 1.414zm2.12-10.607a1 1 0 010 1.414l-.707.707a1 1 0 11-1.414-1.414l.707-.707a1 1 0 011.414 0zM17 11a1 1 0 100-2h-1a1 1 0 100 2h1zm-7 4a1 1 0 011 1v1a1 1 0 11-2 0v-1a1 1 0 011-1zM5.05 6.464A1 1 0 106.465 5.05l-.708-.707a1 1 0 00-1.414 1.414l.707.707zm-1.414 8.486l.707-.707a1 1 0 011.414 1.414l-.707.707a1 1 0 01-1.414-1.414zM4 11a1 1 0 100-2H3a1 1 0 100 2h1z"/></svg>
+                 <svg id="theme-icon-moon" class="h-6 w-6 hidden" fill="currentColor" viewBox="0 0 20 20"><path d="M17.293 13.293A8 8 0 016.707 2.707a8.001 8.001 0 1010.586 10.586z"></path></svg>
+             </button>
         </div>
         
-        <!-- CORRECCIÓN: Se restaura el logo animado con su botón contenedor -->
         <div class="flex-shrink-0">
              <button id="logo-button" class="h-16 w-16 rounded-full overflow-hidden bg-black shadow-md focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[var(--runa-primary)]">
-                <video autoplay loop muted playsinline class="w-full h-full object-cover" style="transform: scale(1.2) translateY(-8%);">
-                    <source src="https://raw.githubusercontent.com/Yanzsmartwood2025/JUSN38/bb7aff4aaea46c50153b947702807b29dad413cf/LumenFall-book/assets/videos/Logo-cabezal.mp4" type="video/mp4">
-                </video>
-            </button>
+                 <video autoplay loop muted playsinline class="w-full h-full object-cover" style="transform: scale(1.2) translateY(-8%);">
+                     <source src="https://raw.githubusercontent.com/Yanzsmartwood2025/JUSN38/bb7aff4aaea46c50153b947702807b29dad413cf/LumenFall-book/assets/videos/Logo-cabezal.mp4" type="video/mp4">
+                 </video>
+             </button>
         </div>
         
         <div class="flex-1 flex justify-end items-center space-x-2 sm:space-x-4">
@@ -228,7 +228,7 @@
                 <div class="page"></div> <!-- Blank flyleaf -->
                 <div class="page">
                      <div class="content-wrapper flex flex-col justify-center items-center h-full">
-                        <h2 class="text-5xl" style="font-family: 'Merriweather', serif;">LumenFall</h2>
+                         <h2 class="text-5xl" style="font-family: 'Merriweather', serif;">LumenFall</h2>
                     </div>
                 </div>
                 <div class="page">
@@ -240,19 +240,19 @@
                 </div>
                 <div class="page">
                      <div class="content-wrapper flex flex-col justify-end items-center h-full pb-10">
-                        <div class="text-center text-xs copyright-page">
-                            <p>LumenFall © 2025 JUSN38 STUDIO.</p>
-                            <p>Todos los derechos reservados.</p>
-                            <br>
-                            <p>Ninguna parte de esta publicación puede ser reproducida, distribuida o transmitida en cualquier forma o por cualquier medio, sin el permiso previo por escrito del editor.</p>
-                            <br>
-                            <p class="italic mt-8">Para aquellos que encuentran luz en su propia oscuridad.</p>
-                        </div>
+                         <div class="text-center text-xs copyright-page">
+                             <p>LumenFall © 2025 JUSN38 STUDIO.</p>
+                             <p>Todos los derechos reservados.</p>
+                             <br>
+                             <p>Ninguna parte de esta publicación puede ser reproducida, distribuida o transmitida en cualquier forma o por cualquier medio, sin el permiso previo por escrito del editor.</p>
+                             <br>
+                             <p class="italic mt-8">Para aquellos que encuentran luz en su propia oscuridad.</p>
+                         </div>
                     </div>
                 </div>
                 <div class="page video-page">
                      <video class="page-background-video" autoplay loop muted playsinline>
-                        <source src="https://raw.githubusercontent.com/Yanzsmartwood2025/JUSN38/854320f471ce072f148d973f8955d454d2f7cb64/LumenFall-book/assets/videos/video-1.mp4" type="video/mp4">
+                         <source src="https://raw.githubusercontent.com/Yanzsmartwood2025/JUSN38/854320f471ce072f148d973f8955d454d2f7cb64/LumenFall-book/assets/videos/video-1.mp4" type="video/mp4">
                     </video>
                     <div class="page-number">1</div>
                 </div>
@@ -281,9 +281,9 @@
                 </div>
                 <div class="page">
                      <div class="content-wrapper">
-                          <h3>La Luz Dividida</h3>
-                          <p>Pero hay algo que "El Sastre" no sabía. Dentro de mí, entre los escombros de mi mente, quedaba una chispa. Una luz fragmentada, casi extinta, pero desafiante. No era la luz de un ángel ni la de un héroe. Era algo más antiguo, más terrenal. Era la luz de la voluntad, la terca insistencia de un alma que se niega a ser borrada.</p>
-                          <p class="signature mt-4">"Esta es la historia de cómo aprendí a luchar con la oscuridad, usando la mía propia."</p>
+                         <h3>La Luz Dividida</h3>
+                         <p>Pero hay algo que "El Sastre" no sabía. Dentro de mí, entre los escombros de mi mente, quedaba una chispa. Una luz fragmentada, casi extinta, pero desafiante. No era la luz de un ángel ni la de un héroe. Era algo más antiguo, más terrenal. Era la luz de la voluntad, la terca insistencia de un alma que se niega a ser borrada.</p>
+                         <p class="signature mt-4">"Esta es la historia de cómo aprendí a luchar con la oscuridad, usando la mía propia."</p>
                      </div>
                     <div class="page-number">5</div>
                 </div>
@@ -302,27 +302,27 @@
                 </div>
                 <div class="page portal-page">
                     <div class="content-wrapper">
-                          <video class="portal-video" autoplay loop muted playsinline src="https://assets.mixkit.co/videos/preview/mixkit-a-man-in-a-suit-works-with-a-futuristic-interface-42403-large.mp4"></video>
-                          <div class="portal-overlay translucent-panel">
+                         <video class="portal-video" autoplay loop muted playsinline src="https://assets.mixkit.co/videos/preview/mixkit-a-man-in-a-suit-works-with-a-futuristic-interface-42403-large.mp4"></video>
+                         <div class="portal-overlay translucent-panel">
                                <div class="portal-content">
                                    <h2>Conviértete en Tester</h2>
                                    <p>¿Quieres ser de los primeros en explorar Aethel? Inscríbete a nuestra beta cerrada y ayúdanos a forjar el futuro de LumenFall.</p>
                                    <a href="#" class="portal-button">Inscribirse</a>
                                </div>
-                          </div>
+                         </div>
                     </div>
                     <div class="page-number">7</div>
                 </div>
                 <div class="page portal-page">
                      <div class="content-wrapper">
-                          <video class="portal-video" autoplay loop muted playsinline src="https://assets.mixkit.co/videos/preview/mixkit-futuristic-computer-data-processing-screen-4740-large.mp4"></video>
-                          <div class="portal-overlay translucent-panel">
+                         <video class="portal-video" autoplay loop muted playsinline src="https://assets.mixkit.co/videos/preview/mixkit-futuristic-computer-data-processing-screen-4740-large.mp4"></video>
+                         <div class="portal-overlay translucent-panel">
                                <div class="portal-content">
                                    <h2>Jusn38 Tech</h2>
                                    <p>Explora la innovación y el diseño detrás de esta experiencia. Jusn38 Tech, creando el futuro de las interacciones digitales.</p>
                                    <a href="jusn38.html" class="portal-button">Conocer Más</a>
                                </div>
-                          </div>
+                         </div>
                      </div>
                     <div class="page-number">8</div>
                 </div>
@@ -461,8 +461,7 @@
             const percent = ((value - min) / (max - min)) * 100;
             $(slider).css('--value-percent', `${percent}%`);
         }
-
-        // CORRECCIÓN: Lógica robusta para el layout del flipbook
+        
         function updateFlipbookLayout() {
             const container = $('.flipbook-container');
             const windowWidth = $(window).width();
@@ -471,14 +470,14 @@
             if (flipbook.turn('display') !== newDisplay) {
                 flipbook.turn('display', newDisplay);
             }
-
-            // Forzar a turn.js a recalcular su tamaño basándose en el contenedor
+            
             flipbook.turn('size', container.width(), container.height());
         }
 
         // --- Initial Setup and Event Handlers ---
         flipbook.turn({
             display: 'single', 
+            duration: 400, // CORRECCIÓN: Se reduce la duración para una sensación más rápida y sensible.
             elevation: 50, 
             gradients: true, 
             autoCenter: true,
@@ -493,7 +492,6 @@
             }
         });
         
-        // CORRECCIÓN: Se llama al layout en el evento de redimensionar
         $(window).on('resize', updateFlipbookLayout).trigger('resize');
         
         viewport.addClass('ready');
@@ -511,7 +509,6 @@
         }
 
         // --- Final Initializations ---
-        // CORRECCIÓN: Se asegura que el layout se calcule después de que todo cargue
         setTimeout(() => {
             updateFlipbookLayout();
         }, 100);
@@ -525,4 +522,3 @@
 
 </body>
 </html>
-
