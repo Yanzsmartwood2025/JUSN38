@@ -90,9 +90,6 @@
             box-sizing: border-box;
             touch-action: pan-y;
         }
-        .flipbook-viewport.zoom-enabled {
-            touch-action: none;
-        }
         .flipbook-viewport.ready {
             visibility: visible;
             opacity: 1;
@@ -392,8 +389,6 @@
             { id: 'cave-ambience-audio', name: 'Cueva', gifSrc: 'https://raw.githubusercontent.com/Yanzsmartwood2025/JUSN38/main/LumenFall-book/assets/gif/Cave.gif' },
         ];
         
-        let isZoomEnabled = false;
-
         function applyTheme(theme) {
             if (theme === 'dark') {
                 $('html').removeClass('light').addClass('dark');
@@ -523,36 +518,44 @@
         const viewportElement = viewport[0];
         let initialPinchDistance = null;
         let lastScale = 1;
+        let isPinching = false;
 
         viewportElement.addEventListener('touchstart', (e) => {
-            if (!isZoomEnabled || e.touches.length !== 2) return;
-            e.preventDefault();
-            initialPinchDistance = Math.hypot(
-                e.touches[0].pageX - e.touches[1].pageX,
-                e.touches[0].pageY - e.touches[1].pageY
-            );
-            lastScale = currentScale;
-        }, { passive: false });
+            if (e.touches.length === 2) {
+                isPinching = true;
+                flipbook.turn('disable', true); // Disable page turning during pinch
+                initialPinchDistance = Math.hypot(
+                    e.touches[0].pageX - e.touches[1].pageX,
+                    e.touches[0].pageY - e.touches[1].pageY
+                );
+                lastScale = currentScale;
+            }
+        }, { passive: true });
 
         viewportElement.addEventListener('touchmove', (e) => {
-            if (!isZoomEnabled || e.touches.length !== 2) return;
-            e.preventDefault();
-            const newPinchDistance = Math.hypot(
-                e.touches[0].pageX - e.touches[1].pageX,
-                e.touches[0].pageY - e.touches[1].pageY
-            );
-            if (initialPinchDistance) {
-                const scaleRatio = newPinchDistance / initialPinchDistance;
-                applyZoom(lastScale * scaleRatio);
+            if (isPinching && e.touches.length === 2) {
+                e.preventDefault(); // Prevent scroll/other actions only when pinching
+                const newPinchDistance = Math.hypot(
+                    e.touches[0].pageX - e.touches[1].pageX,
+                    e.touches[0].pageY - e.touches[1].pageY
+                );
+                if (initialPinchDistance) {
+                    const scaleRatio = newPinchDistance / initialPinchDistance;
+                    applyZoom(lastScale * scaleRatio);
+                }
             }
         }, { passive: false });
 
-        viewportElement.addEventListener('touchend', () => {
+        viewportElement.addEventListener('touchend', (e) => {
+            if (isPinching) {
+                isPinching = false;
+                flipbook.turn('disable', false); // Re-enable page turning
+            }
             initialPinchDistance = null;
         });
 
         viewportElement.addEventListener('wheel', (e) => {
-            if (!isZoomEnabled) return;
+            if (!$('#view-adjust-panel').is(':visible')) return;
             e.preventDefault();
             const delta = e.deltaY > 0 ? -0.1 : 0.1;
             applyZoom(currentScale + delta);
@@ -587,8 +590,6 @@
             closeAllPanels(); 
             if (!wasOpen) {
                 $('#view-adjust-panel').removeClass('hidden');
-                viewport.addClass('zoom-enabled');
-                isZoomEnabled = true;
             }
         });
         
