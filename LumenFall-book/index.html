@@ -1,4 +1,3 @@
-
 <!doctype html>
 <html lang="es" class="light">
 <head>
@@ -90,6 +89,9 @@
             box-sizing: border-box;
             touch-action: pan-y;
         }
+        .flipbook-viewport.zoom-enabled {
+            touch-action: none;
+        }
         .flipbook-viewport.ready {
             visibility: visible;
             opacity: 1;
@@ -98,7 +100,8 @@
             width: 90vw; 
             height: calc(100vh - var(--header-height) - 1rem);
             max-width: 500px; 
-            max-height: 900px; 
+            /* MODIFICACIÓN: Se aumentó la altura máxima en un 15% */
+            max-height: 1035px; 
             position: relative; 
             transition: transform 0.2s ease-out;
         }
@@ -107,7 +110,8 @@
                 width: 90vw;
                 height: calc(100vh - var(--header-height) - 1rem);
                 max-width: 1400px; 
-                max-height: 1100px; 
+                /* MODIFICACIÓN: Se aumentó la altura máxima en un 15% */
+                max-height: 1265px; 
             }
         }
 
@@ -166,7 +170,7 @@
         #page-turn-hint.visible { opacity: 1; animation: swipe-animation 2.5s ease-in-out infinite; }
         #page-turn-hint i { font-size: 45px; color: rgba(255, 255, 255, 0.7); text-shadow: 0 3px 5px rgba(0,0,0,0.5); }
         @keyframes swipe-animation { 0%, 20% { transform: translate(0, 0); opacity: 0.8; } 60% { transform: translate(-40px, -40px); opacity: 0.8; } 80%, 100% { transform: translate(-40px, -40px); opacity: 0; } }
-    
+        
         .video-page { padding: 0 !important; }
         .video-page .page-background-video { position: absolute; top: 0; left: 0; width: 100%; height: 100%; object-fit: cover; }
 
@@ -389,6 +393,8 @@
             { id: 'cave-ambience-audio', name: 'Cueva', gifSrc: 'https://raw.githubusercontent.com/Yanzsmartwood2025/JUSN38/main/LumenFall-book/assets/gif/Cave.gif' },
         ];
         
+        let isZoomEnabled = false;
+
         function applyTheme(theme) {
             if (theme === 'dark') {
                 $('html').removeClass('light').addClass('dark');
@@ -399,8 +405,13 @@
 
         function closeAllPanels() {
             $('#mixer-panel, #video-skin-panel, #view-adjust-panel').addClass('hidden');
-            viewport.removeClass('zoom-enabled');
-            isZoomEnabled = false;
+            
+            // MODIFICACIÓN: Lógica de zoom y turn.js centralizada aquí
+            if (isZoomEnabled) {
+                viewport.removeClass('zoom-enabled');
+                flipbook.turn('disable', false); // Reactiva el paso de páginas
+                isZoomEnabled = false;
+            }
         }
 
         function initializeMixer() {
@@ -504,7 +515,6 @@
             zoomSlider.val(currentScale);
             updateSliderFill(zoomSlider[0]);
             localStorage.setItem('lumenFallZoom', currentScale);
-            flipbook.turn('resize');
         }
 
         zoomSlider.on('input', function() {
@@ -518,44 +528,36 @@
         const viewportElement = viewport[0];
         let initialPinchDistance = null;
         let lastScale = 1;
-        let isPinching = false;
 
         viewportElement.addEventListener('touchstart', (e) => {
-            if (e.touches.length === 2) {
-                isPinching = true;
-                flipbook.turn('disable', true); // Disable page turning during pinch
-                initialPinchDistance = Math.hypot(
-                    e.touches[0].pageX - e.touches[1].pageX,
-                    e.touches[0].pageY - e.touches[1].pageY
-                );
-                lastScale = currentScale;
-            }
-        }, { passive: true });
+            if (!isZoomEnabled || e.touches.length !== 2) return;
+            e.preventDefault();
+            initialPinchDistance = Math.hypot(
+                e.touches[0].pageX - e.touches[1].pageX,
+                e.touches[0].pageY - e.touches[1].pageY
+            );
+            lastScale = currentScale;
+        }, { passive: false });
 
         viewportElement.addEventListener('touchmove', (e) => {
-            if (isPinching && e.touches.length === 2) {
-                e.preventDefault(); // Prevent scroll/other actions only when pinching
-                const newPinchDistance = Math.hypot(
-                    e.touches[0].pageX - e.touches[1].pageX,
-                    e.touches[0].pageY - e.touches[1].pageY
-                );
-                if (initialPinchDistance) {
-                    const scaleRatio = newPinchDistance / initialPinchDistance;
-                    applyZoom(lastScale * scaleRatio);
-                }
+            if (!isZoomEnabled || e.touches.length !== 2) return;
+            e.preventDefault();
+            const newPinchDistance = Math.hypot(
+                e.touches[0].pageX - e.touches[1].pageX,
+                e.touches[0].pageY - e.touches[1].pageY
+            );
+            if (initialPinchDistance) {
+                const scaleRatio = newPinchDistance / initialPinchDistance;
+                applyZoom(lastScale * scaleRatio);
             }
         }, { passive: false });
 
-        viewportElement.addEventListener('touchend', (e) => {
-            if (isPinching) {
-                isPinching = false;
-                flipbook.turn('disable', false); // Re-enable page turning
-            }
+        viewportElement.addEventListener('touchend', () => {
             initialPinchDistance = null;
         });
 
         viewportElement.addEventListener('wheel', (e) => {
-            if (!$('#view-adjust-panel').is(':visible')) return;
+            if (!isZoomEnabled) return;
             e.preventDefault();
             const delta = e.deltaY > 0 ? -0.1 : 0.1;
             applyZoom(currentScale + delta);
@@ -590,6 +592,10 @@
             closeAllPanels(); 
             if (!wasOpen) {
                 $('#view-adjust-panel').removeClass('hidden');
+                // MODIFICACIÓN: Habilita el modo zoom y deshabilita turn.js
+                viewport.addClass('zoom-enabled');
+                flipbook.turn('disable', true);
+                isZoomEnabled = true;
             }
         });
         
@@ -614,4 +620,3 @@
 
 </body>
 </html>
-
