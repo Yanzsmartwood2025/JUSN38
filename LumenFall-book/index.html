@@ -509,6 +509,7 @@
             zoomSlider.val(currentScale);
             updateSliderFill(zoomSlider[0]);
             localStorage.setItem('lumenFallZoom', currentScale);
+            flipbook.turn('resize');
         }
 
         zoomSlider.on('input', function() {
