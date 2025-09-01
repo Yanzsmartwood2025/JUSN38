@@ -187,6 +187,26 @@
 
         #book-side-title { position: absolute; left: 2vw; top: 50%; transform: translateY(-50%) rotate(180deg); writing-mode: vertical-rl; font-family: 'Poppins', sans-serif; font-size: 4rem; font-weight: 700; letter-spacing: 0.5rem; opacity: 0.4; display: none; pointer-events: none; }
         @media (min-width: 1024px) { #book-side-title { display: block; } }
+
+        /* Responsive adjustments for better text flow on desktop */
+        @media (min-width: 1024px) {
+            .page .content-wrapper {
+                padding: 3rem 4rem; /* Increased padding for better text column */
+            }
+            .page .content-wrapper p, .page .content-wrapper li {
+                font-size: 1.1rem;   /* Slightly larger font */
+                line-height: 1.8;    /* More spacious line height */
+                margin-bottom: 1.2em; /* Adjusted paragraph spacing */
+            }
+             .page .content-wrapper h2.handwriting-title {
+                font-size: 3rem;
+                margin-bottom: 1.5rem;
+            }
+            .page .content-wrapper h3 {
+                font-size: 1.5rem;
+                margin-top: 2rem;
+            }
+        }
         
     </style>
 </head>
