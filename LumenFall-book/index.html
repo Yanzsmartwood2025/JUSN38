@@ -143,6 +143,33 @@
         .portal-button { display: inline-block; padding: 0.75rem 1.5rem; border: 2px solid white; border-radius: 9999px; color: white !important; font-weight: 600; text-decoration: none; transition: background-color 0.2s, color 0.2s; font-size: 1.5rem; }
         .portal-button:hover { background-color: white; color: black !important; }
         
+        /* Estilos para el nuevo menú y el índice de páginas */
+        #page-finder-list { max-height: 40vh; overflow-y: auto; border-top: 1px solid rgba(255,255,255,0.1); margin-top: 1rem; padding-top: 1rem; }
+        .page-finder-item { display: flex; align-items: center; width: 100%; padding: 0.75rem 0.5rem; border-radius: 0.5rem; transition: background-color 0.2s ease; text-align: left; }
+        html:not(.dark) .page-finder-item:hover { background-color: rgba(0,0,0,0.1); }
+        html.dark .page-finder-item:hover { background-color: rgba(255,255,255,0.1); }
+        .page-finder-item .page-number-label { font-weight: 600; margin-right: 1rem; min-width: 60px; }
+        .page-finder-item .page-title { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+        /* --- Controles de navegación invisibles para PC --- */
+        #prev-page-area, #next-page-area {
+            position: absolute;
+            top: 0;
+            width: 25%;
+            height: 100%;
+            z-index: 10;
+            cursor: pointer;
+            display: none;
+        }
+        #prev-page-area { left: 0; }
+        #next-page-area { right: 0; }
+
+        @media (min-width: 1024px) {
+            #prev-page-area, #next-page-area {
+                display: block;
+            }
+        }
+
     </style>
 </head>
 <body>
@@ -155,24 +182,19 @@
 
 <header id="main-header" class="fixed top-0 left-0 right-0 z-40">
     <nav class="container mx-auto px-4 sm:px-6 py-3 flex justify-between items-center h-24">
-        <!-- Controles Izquierda: Tema e Idioma -->
         <div class="flex-1 flex justify-start items-center space-x-4">
-             <!-- CORRECCIÓN: Se agrega w-12 h-12 y p-2 para unificar tamaño -->
-            <button id="theme-toggle" class="w-12 h-12 p-2 rounded-full text-white flex items-center justify-center" aria-label="Cambiar tema de color">
-                <svg id="theme-icon-sun" class="h-8 w-8 hidden" fill="currentColor" viewBox="0 0 20 20"><path d="M10 2a1 1 0 011 1v1a1 1 0 11-2 0V3a1 1 0 011-1zm4 8a4 4 0 11-8 0 4 4 0 018 0zm-.464 4.95l.707.707a1 1 0 001.414-1.414l-.707-.707a1 1 0 00-1.414 1.414zm2.12-10.607a1 1 0 010 1.414l-.707.707a1 1 0 11-1.414-1.414l.707-.707a1 1 0 011.414 0zM17 11a1 1 0 100-2h-1a1 1 0 100 2h1zm-7 4a1 1 0 011 1v1a1 1 0 11-2 0v-1a1 1 0 011-1zM5.05 6.464A1 1 0 106.465 5.05l-.708-.707a1 1 0 00-1.414 1.414l.707.707zm-1.414 8.486l.707-.707a1 1 0 011.414 1.414l-.707.707a1 1 0 01-1.414-1.414zM4 11a1 1 0 100-2H3a1 1 0 100 2h1z"></path></svg>
-                <svg id="theme-icon-moon" class="h-8 w-8 hidden" fill="currentColor" viewBox="0 0 20 20"><path d="M17.293 13.293A8 8 0 016.707 2.707a8.001 8.001 0 1010.586 10.586z"></path></svg>
+            <button id="main-menu-toggle" class="w-12 h-12 p-2 rounded-full text-white flex items-center justify-center" aria-label="Abrir menú principal">
+                <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path></svg>
             </button>
             <button id="language-toggle" class="w-12 h-12 rounded-full text-white overflow-hidden" aria-label="Cambiar idioma">
                 <img src="https://raw.githubusercontent.com/Yanzsmartwood2025/JUSN38/main/LumenFall-book/assets/imagenes/Selector-idiomas.png" alt="Select Language" class="w-full h-full object-cover">
             </button>
         </div>
         
-        <!-- Logo Central -->
         <div class="flex-shrink-0">
             <button class="h-16 w-16 rounded-full overflow-hidden bg-black shadow-md focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[var(--runa-primary)]"><video autoplay loop muted playsinline class="w-full h-full object-cover" style="transform: scale(1.2) translateY(-8%);"><source src="https://raw.githubusercontent.com/Yanzsmartwood2025/JUSN38/bb7aff4aaea46c50153b947702807b29dad413cf/LumenFall-book/assets/videos/Logo-cabezal.mp4" type="video/mp4"></video></button>
         </div>
         
-        <!-- Controles Derecha: Video y Mezclador -->
         <div class="flex-1 flex justify-end items-center space-x-4">
             <button id="video-skin-toggle" class="w-12 h-12 p-2 rounded-full text-white flex items-center justify-center" aria-label="Abrir selector de video">
                 <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z"></path></svg>
@@ -180,15 +202,18 @@
             <button id="mixer-toggle-button" class="w-12 h-12 rounded-full overflow-hidden focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[var(--runa-primary)]" aria-label="Abrir mezclador de ambiente"><video autoplay loop muted playsinline class="w-full h-full object-cover"><source src="https://raw.githubusercontent.com/Yanzsmartwood2025/Runacoffee/5ec8a9f9a44f0f1d347867a8b1293a1f8f5dae5e/public/assets/videos/runa-equalizer-video.mp4" type="video/mp4"></video></button>
         </div>
     </nav>
-    <div id="mixer-panel" class="hidden absolute w-full shadow-lg border-t translucent-panel"><div class="container mx-auto px-6 py-4"><h3 class="font-semibold text-lg mb-4 text-white">Mezclador de Ambiente</h3><div id="sound-controls" class="space-y-4"></div></div></div>
-    <div id="video-skin-panel" class="hidden absolute w-full shadow-lg border-t translucent-panel"><div class="container mx-auto px-6 py-4"><h3 class="font-semibold text-lg mb-4 text-white">Selector de Video de Fondo</h3><div id="video-list" class="space-y-2"></div></div></div>
-    <div id="language-panel" class="hidden absolute w-full shadow-lg border-t translucent-panel"><div class="container mx-auto px-6 py-4"><h3 class="font-semibold text-lg mb-4 text-white">Idioma / Language</h3><div id="language-list" class="space-y-2"></div></div></div>
+    <div id="main-menu-panel" class="hidden absolute w-full shadow-lg border-t translucent-panel"><div class="container mx-auto px-6 py-4"><div id="theme-toggle-container" class="flex justify-between items-center"></div><div id="page-finder-list"></div></div></div>
+    <div id="mixer-panel" class="hidden absolute w-full shadow-lg border-t translucent-panel"><div class="container mx-auto px-6 py-4"><h3 class="font-semibold text-lg mb-4">Mezclador de Ambiente</h3><div id="sound-controls" class="space-y-4"></div></div></div>
+    <div id="video-skin-panel" class="hidden absolute w-full shadow-lg border-t translucent-panel"><div class="container mx-auto px-6 py-4"><h3 class="font-semibold text-lg mb-4">Selector de Video de Fondo</h3><div id="video-list" class="space-y-2"></div></div></div>
+    <div id="language-panel" class="hidden absolute w-full shadow-lg border-t translucent-panel"><div class="container mx-auto px-6 py-4"><h3 class="font-semibold text-lg mb-4">Idioma / Language</h3><div id="language-list" class="space-y-2"></div></div></div>
 </header>
 
 <main>
     <div class="flipbook-viewport">
         <h1 id="book-side-title">LumenFall</h1>
         <div class="flipbook-container">
+            <div id="prev-page-area"></div>
+            <div id="next-page-area"></div>
             <div class="flipbook">
                 <div class="page hard cover-page"></div>
                 <div class="page"></div> <!-- Blank flyleaf -->
@@ -237,7 +262,7 @@
 
                         <p data-lang="es">El primero fue el alacrán. De pequeña, no soportaba esos bichos. En la finca, los niños mayores me agarraban uno vivo y me lo hacían correr por el brazo, riéndose mientras yo lloraba y pataleaba. Sentía sus patas frías y rápidas sobre mi piel, y ese recuerdo se me quedó pegado como una cicatriz invisible.</p>
                         <p data-lang="en">The first was the scorpion. As a child, I couldn’t stand those creatures. On the farm, the older kids would grab a live one and make it crawl up my arm, laughing while I cried and kicked. I could feel its cold, quick legs on my skin, and that memory stuck to me like an invisible scar.</p>
-                        <p data-lang="pt">O primeiro foi o escorpião. Quando pequena, eu não suportava esses bichos. Na fazenda, os meninos mais velhos pegavam um vivo e o faziam correr pelo meu braço, rindo enquanto eu chorava e me debatia. Sentia suas patas frias e rápidas sobre minha pele, e essa lembrança ficou grudada em mim como uma cicatriz invisível.</p>
+                        <p data-lang="pt">O primeiro foi o escorpião. Quando pequena, eu não suportava esses bichos. Na fazenda, os meninos mais velhos pegavam um vivo e o faziam correr pelo meu braço, rindo enquanto eu chorava e me debatia. Sentia suas patas frías e rápidas sobre minha pele, e essa lembrança ficou grudada em mim como uma cicatriz invisível.</p>
                     </div>
                     <div class="page-number">4</div>
                 </div>
@@ -323,7 +348,7 @@
 
                         <p data-lang="es">El jornalero había estado bebiendo desde temprano. Lo vi tambaleándose entre los adultos, riéndose con una voz ronca, con los ojos brillantes y perdidos. No era parte de la familia, pero lo habían invitado por cortesía.</p>
                         <p data-lang="en">The farmhand had been drinking since early. I saw him stumbling among the adults, laughing with a hoarse voice, his eyes shiny and unfocused. He wasn’t family, but they had invited him out of courtesy.</p>
-                        <p data-lang="pt">O trabalhador tinha bebido desde cedo. Eu o vi cambaleando entre os adultos, rindo com uma voz rouca, os olhos brilhando, perdidos. Não era da família, mas o haviam convidado por cortesia.</p>
+                        <p data-lang="pt">O trabalhador tinha bebido desde cedo. Eu o vi cambaleando entre los adultos, rindo com uma voz rouca, os olhos brilhando, perdidos. Não era da família, mas o haviam convidado por cortesia.</p>
                     </div>
                     <div class="page-number">10</div>
                 </div>
@@ -506,7 +531,7 @@
                 <!-- PÁGINAS DEL PORTAL -->
                 <div class="page portal-page"><div class="content-wrapper"><video class="portal-video" autoplay loop muted playsinline src="https://assets.mixkit.co/videos/preview/mixkit-flying-through-a-metaverse-landscape-42846-large.mp4"></video><div class="portal-overlay"><div class="portal-content"><h2 data-lang="es">Comunidad LumenFall</h2><h2 data-lang="en">LumenFall Community</h2><h2 data-lang="pt">Comunidade LumenFall</h2><p data-lang="es">Únete a nuestra comunidad para seguir el desarrollo del juego, compartir tus ideas y conocer a otros guardianes.</p><p data-lang="en">Join our community to follow the game's development, share your ideas, and meet other guardians.</p><p data-lang="pt">Junte-se à nossa comunidade para acompanhar o desenvolvimento do jogo, compartilhar suas ideias e conhecer outros guardiões.</p><a href="#" class="portal-button" data-lang="es">Ir a la Comunidad</a><a href="#" class="portal-button" data-lang="en">Go to Community</a><a href="#" class="portal-button" data-lang="pt">Ir para a Comunidade</a></div></div></div><div class="page-number">24</div></div>
                 <div class="page portal-page"><div class="content-wrapper"><video class="portal-video" autoplay loop muted playsinline src="https://assets.mixkit.co/videos/preview/mixkit-a-man-in-a-suit-works-with-a-futuristic-interface-42403-large.mp4"></video><div class="portal-overlay"><div class="portal-content"><h2 data-lang="es">Conviértete en Tester</h2><h2 data-lang="en">Become a Tester</h2><h2 data-lang="pt">Torne-se um Tester</h2><p data-lang="es">¿Quieres ser de los primeros en explorar Aethel? Inscríbete a nuestra beta cerrada y ayúdanos a forjar el futuro de LumenFall.</p><p data-lang="en">Want to be among the first to explore Aethel? Sign up for our closed beta and help us shape the future of LumenFall.</p><p data-lang="pt">Quer ser um dos primeiros a explorar Aethel? Inscreva-se no nosso beta fechado e ajude-nos a moldar o futuro de LumenFall.</p><a href="#" class="portal-button" data-lang="es">Inscribirse</a><a href="#" class="portal-button" data-lang="en">Sign Up</a><a href="#" class="portal-button" data-lang="pt">Inscrever-se</a></div></div></div><div class="page-number">25</div></div>
-                <div class="page portal-page"><div class="content-wrapper"><video class="portal-video" autoplay loop muted playsinline src="https://assets.mixkit.co/videos/preview/mixkit-futuristic-computer-data-processing-screen-4740-large.mp4"></video><div class="portal-overlay"><div class="portal-content"><h2>Jusn38 Tech</h2><p data-lang="es">Explora la innovación y el diseño detrás de esta experiencia. Jusn38 Tech, creando el futuro de las interacciones digitales.</p><p data-lang="en">Explore the innovation and design behind this experience. Jusn38 Tech, creating the future of digital interactions.</p><p data-lang="pt">Explore a inovação e o design por trás desta experiência. Jusn38 Tech, criando o futuro das interações digitais.</p><a href="jusn38.html" class="portal-button" data-lang="es">Conocer Más</a><a href="jusn38.html" class="portal-button" data-lang="en">Learn More</a><a href="jusn38.html" class="portal-button" data-lang="pt">Saber Mais</a></div></div></div><div class="page-number">26</div></div>
+                <div class="page portal-page"><div class="content-wrapper"><video class="portal-video" autoplay loop muted playsinline src="https://assets.mixkit.co/videos/preview/mixkit-futuristic-computer-data-processing-screen-4740-large.mp4"></video><div class="portal-overlay"><div class="portal-content"><h2 data-lang="es">Fin</h2><h2 data-lang="en">The End</h2><h2 data-lang="pt">Fim</h2><p data-lang="es">Explora la innovación y el diseño detrás de esta experiencia. Jusn38 Tech, creando el futuro de las interacciones digitales.</p><p data-lang="en">Explore the innovation and design behind this experience. Jusn38 Tech, creating the future of digital interactions.</p><p data-lang="pt">Explore a inovação e o design por trás desta experiência. Jusn38 Tech, criando o futuro das interações digitais.</p><a href="jusn38.html" class="portal-button" data-lang="es">Conocer Más</a><a href="jusn38.html" class="portal-button" data-lang="en">Learn More</a><a href="jusn38.html" class="portal-button" data-lang="pt">Saber Mais</a></div></div></div><div class="page-number">26</div></div>
 
                 <div class="page hard back-cover-page"></div>
             </div>
@@ -525,7 +550,6 @@
 <audio id="cave-ambience-audio" loop><source src="https://actions.google.com/sounds/v1/ambiences/cave_ambience.ogg" type="audio/ogg"></audio>
 
 <script type="module">
-// Usamos $(window).on('load', ...) para asegurar que todo esté cargado y evitar errores de paginación.
 $(window).on('load', function() {
     const flipbook = $('.flipbook');
     const viewport = $('.flipbook-viewport');
@@ -537,27 +561,43 @@ $(window).on('load', function() {
     const languages = [{"code":"es","name":"Español","flagUrl":"https://raw.githubusercontent.com/Yanzsmartwood2025/JUSN38/main/LumenFall-book/assets/imagenes/Espanol.png"},{"code":"en","name":"English","flagUrl":"https://raw.githubusercontent.com/Yanzsmartwood2025/JUSN38/main/LumenFall-book/assets/imagenes/ingles.png"},{"code":"pt","name":"Português (BR)","flagUrl":"https://raw.githubusercontent.com/Yanzsmartwood2025/JUSN38/main/LumenFall-book/assets/imagenes/Brasil.png"}];
     let currentLang = 'es';
     
-    function applyTheme(e){"dark"===e?($("html").removeClass("light").addClass("dark"),$("#theme-icon-sun").removeClass("hidden"),$("#theme-icon-moon").addClass("hidden")):($("html").removeClass("dark").addClass("light"),$("#theme-icon-sun").addClass("hidden"),$("#theme-icon-moon").removeClass("hidden"))}
-    function closeAllPanels(){$("#mixer-panel, #video-skin-panel, #language-panel").addClass("hidden")}
+    function applyTheme(e){"dark"===e?($("html").removeClass("light").addClass("dark"),$("#theme-icon-sun-menu").removeClass("hidden"),$("#theme-icon-moon-menu").addClass("hidden")):($("html").removeClass("dark").addClass("light"),$("#theme-icon-sun-menu").addClass("hidden"),$("#theme-icon-moon-menu").removeClass("hidden"))}
+    function closeAllPanels(){$("#main-menu-panel, #mixer-panel, #video-skin-panel, #language-panel").addClass("hidden")}
     function initializeMixer(){const e=$("#sound-controls");e.html(""),ambienceSounds.forEach(t=>{const o=document.getElementById(t.id);if(o){const a=`<div class="flex items-center gap-4 text-sm text-white"><button id="btn-${t.id}" class="mixer-icon-button relative w-10 h-10 rounded-full shadow-md flex-shrink-0 overflow-hidden"><img src="${t.gifSrc}" alt="${t.name}"></button><span class="font-medium w-20 truncate">${t.name}</span><input type="range" id="volume-${t.id}" min="0" max="1" step="0.01" value="0" class="styled-slider" style="--thumb-color: var(--runa-primary); --track-fill-color: var(--slider-track-color);"></div>`;e.append(a);const n=$(`#volume-${t.id}`);n.on("input",function(){const e=parseFloat($(this).val());o.volume=e,$(`#btn-${t.id}`).toggleClass("active",e>0),updateSliderFill(this),e>0&&o.paused?o.play().catch(e=>console.error(`Error playing ${t.id}:`,e)):0===e&&!o.paused&&o.pause()}),$(`#btn-${t.id}`).on("click",function(){const e=parseFloat(n.val());e>0?(n.data("lastValue",e),n.val(0)):n.val(n.data("lastValue")||.5),n.trigger("input")}),updateSliderFill(n[0])}})}
     function setVideoSkin(e){const t=$("#video-background"),o=$("#video-source");t.length&&o.length&&(t.css("opacity",0),setTimeout(()=>{currentVideoIndex=e,o.attr("src",videoSkins[currentVideoIndex].url);const a=t[0];a.load(),$(a).off("canplaythrough.autoplay").on("canplaythrough.autoplay",function(){$(this).off("canplaythrough.autoplay");const e=a.play();void 0!==e&&e.then(()=>{t.css("opacity",1)}).catch(e=>{console.error("Video autoplay was prevented:",e),t.css("opacity",1)})}),localStorage.setItem("lumenFallVideoSkin",currentVideoIndex),updateVideoListUI()},500))}
     function updateVideoListUI(){$("#video-list button").each(function(e){$(this).toggleClass("active",e===currentVideoIndex)})}
     function initializeVideoSelector(){const e=$("#video-list");e.html(""),videoSkins.forEach((t,o)=>{const a=$(`<button class="video-list-button w-full text-left p-2 rounded-lg transition-colors duration-200 text-white">${t.name}</button>`);a.on("click",()=>setVideoSkin(o)),e.append(a)}),updateVideoListUI()}
-    function setLanguage(e){e&&languages.some(t=>t.code===e)&&(currentLang=e,$("html").removeClass("lang-es lang-en lang-pt").addClass(`lang-${e}`),localStorage.setItem("lumenFallLanguage",currentLang),updateLanguageListUI())}
+    function setLanguage(e){e&&languages.some(t=>t.code===e)&&(currentLang=e,$("html").removeClass("lang-es lang-en lang-pt").addClass(`lang-${e}`),localStorage.setItem("lumenFallLanguage",currentLang),updateLanguageListUI(),$("#main-menu-panel").hasClass("hidden")||generatePageFinder())}
     function updateLanguageListUI(){$("#language-list button").each(function(){$(this).toggleClass("active",$(this).data("lang-code")===currentLang)})}
     function initializeLanguageSwitcher(){const e=$("#language-list");e.html(""),languages.forEach(t=>{const o=$(`<button class="language-list-button w-full text-left p-2 rounded-lg transition-colors duration-200 text-white" data-lang-code="${t.code}"><div class="flex items-center gap-x-3"><img src="${t.flagUrl}" class="w-6 h-4 object-cover rounded-sm" alt="${t.name} flag"><span>${t.name}</span></div></button>`);o.on("click",()=>{setLanguage(t.code),closeAllPanels()}),e.append(o)}),updateLanguageListUI()}
     function updateSliderFill(e){const t=$(e).attr("min")||0,o=$(e).attr("max")||100,a=$(e).val(),n=(a-t)/(o-t)*100;$(e).css("--value-percent",`${n}%`)}
     function updateFlipbookLayout(){const e=$(".flipbook-container"),t=$(window).width(),o=t>=1024?"double":"single";flipbook.turn("display")!==o&&flipbook.turn("display",o),flipbook.turn("size",e.width(),e.height())}
     
-    // CORRECCIÓN: Velocidad de paginación (duration: 300)
+    function generatePageFinder(){const e=$("#page-finder-list"),t=$("html").hasClass("dark"),o=flipbook.turn("pages"),a={es:"Índice de Páginas",en:"Page Index",pt:"Índice de Páginas"},n={es:"Pág.",en:"Pg.",pt:"Pág."};e.html(`<h3 class="font-semibold text-lg mb-2">${a[currentLang]}</h3>`);for(let l=1;l<=o;l++){const s=$(".flipbook .page").eq(l-1);let r="Página "+l;1===l?r={es:"Portada",en:"Cover",pt:"Capa"}[currentLang]:s.hasClass("back-cover-page")?r={es:"Contraportada",en:"Back Cover",pt:"Contracapa"}[currentLang]:s.find("h2.handwriting-title[data-lang='"+currentLang+"']").length>0?r=s.find("h2.handwriting-title[data-lang='"+currentLang+"']").text():s.find("h3[data-lang='"+currentLang+"']").length>0?r=s.find("h3[data-lang='"+currentLang+"']").text():s.find(".portal-content h2[data-lang='"+currentLang+"']").length>0&&(r=s.find(".portal-content h2[data-lang='"+currentLang+"']").text());const i=$(`<button class="page-finder-item" data-page="${l}"><span class="page-number-label">${n[currentLang]} ${l}</span><span class="page-title">${r}</span></button>`);i.on("click",function(){flipbook.turn("page",$(this).data("page")),closeAllPanels()}),e.append(i)}}
+
+    function initializeThemeToggle(){const e=$("#theme-toggle-container"),t={es:"Tema",en:"Theme",pt:"Tema"};e.html(`
+        <span class="font-semibold text-lg">${t[currentLang]}</span>
+        <button id="theme-toggle-button" class="p-2 rounded-full">
+            <svg id="theme-icon-sun-menu" class="h-8 w-8" fill="currentColor" viewBox="0 0 20 20"><path d="M10 2a1 1 0 011 1v1a1 1 0 11-2 0V3a1 1 0 011-1zm4 8a4 4 0 11-8 0 4 4 0 018 0zm-.464 4.95l.707.707a1 1 0 001.414-1.414l-.707-.707a1 1 0 00-1.414 1.414zm2.12-10.607a1 1 0 010 1.414l-.707.707a1 1 0 11-1.414-1.414l.707-.707a1 1 0 011.414 0zM17 11a1 1 0 100-2h-1a1 1 0 100 2h1zm-7 4a1 1 0 011 1v1a1 1 0 11-2 0v-1a1 1 0 011-1zM5.05 6.464A1 1 0 106.465 5.05l-.708-.707a1 1 0 00-1.414 1.414l.707.707zm-1.414 8.486l.707-.707a1 1 0 011.414 1.414l-.707.707a1 1 0 01-1.414-1.414zM4 11a1 1 0 100-2H3a1 1 0 100 2h1z"></path></svg>
+            <svg id="theme-icon-moon-menu" class="h-8 w-8" fill="currentColor" viewBox="0 0 20 20"><path d="M17.293 13.293A8 8 0 016.707 2.707a8.001 8.001 0 1010.586 10.586z"></path></svg>
+        </button>`);
+        $("#theme-toggle-button").on("click",()=>{const o=$("html").hasClass("dark")?"light":"dark";localStorage.setItem("lumenFallTheme",o),applyTheme(o)});
+        const o=$("html").hasClass("dark");$("#theme-icon-sun-menu").toggleClass("hidden",!o),$("#theme-icon-moon-menu").toggleClass("hidden",o)
+    }
+
     flipbook.turn({display:"single",duration:300,elevation:50,gradients:!0,autoCenter:!0,when:{turned:(e,t,o)=>{t>1&&(pageFlipSound.currentTime=2.2,pageFlipSound.play().catch(console.error),setTimeout(()=>pageFlipSound.pause(),1e3))}}});
     $(window).on("resize",updateFlipbookLayout).trigger("resize");
     viewport.addClass("ready");
-    $("#theme-toggle").on("click",()=>{const e=$("html").hasClass("dark")?"light":"dark";localStorage.setItem("lumenFallTheme",e),applyTheme(e)});
+    
+    $("#main-menu-toggle").on("click",e=>{e.stopPropagation();const t=!$("#main-menu-panel").hasClass("hidden");closeAllPanels(),t||($("#main-menu-panel").removeClass("hidden"),generatePageFinder(),initializeThemeToggle())});
     $("#mixer-toggle-button").on("click",e=>{e.stopPropagation();const t=!$("#mixer-panel").hasClass("hidden");closeAllPanels(),t||$("#mixer-panel").removeClass("hidden")});
     $("#video-skin-toggle").on("click",e=>{e.stopPropagation();const t=!$("#video-skin-panel").hasClass("hidden");closeAllPanels(),t||$("#video-skin-panel").removeClass("hidden")});
     $("#language-toggle").on("click",e=>{e.stopPropagation();const t=!$("#language-panel").hasClass("hidden");closeAllPanels(),t||$("#language-panel").removeClass("hidden")});
     $(document).on("click",e=>{$(e.target).closest("#main-header").length||closeAllPanels()});
+    
+    $("#prev-page-area").on("click", () => flipbook.turn("previous"));
+    $("#next-page-area").on("click", () => flipbook.turn("next"));
+    
     const pageTurnHint=$("#page-turn-hint");"true"!==localStorage.getItem("lumenFallHintSeen")&&(setTimeout(()=>pageTurnHint.addClass("visible"),1500),flipbook.one("turned",()=>{pageTurnHint.removeClass("visible"),localStorage.setItem("lumenFallHintSeen","true")}));
     
     applyTheme(localStorage.getItem("lumenFallTheme")||"dark");
