@@ -1,1 +1,2 @@
-opentts-serveropentts-client
+quart
+quart-cors
