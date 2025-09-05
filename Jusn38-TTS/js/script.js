@@ -1,114 +1,118 @@
+// js/script.js
+
 document.addEventListener('DOMContentLoaded', () => {
-    // Selectores de los elementos del DOM
-    const textInput = document.getElementById('text-input');
     const voiceSelect = document.getElementById('voice-select');
-    const speakButton = document.getElementById('speak-button');
-    const buttonText = document.getElementById('button-text');
-    const loadingSpinner = document.getElementById('loading-spinner');
-    const audioOutput = document.getElementById('audio-output');
-    const audioPlayer = document.getElementById('audio-player');
+    const textInput = document.getElementById('text-to-convert');
+    const generateBtn = document.getElementById('generate-btn');
+    const audioPlayerContainer = document.getElementById('audio-player-container');
     const errorMessage = document.getElementById('error-message');
 
-    // La URL de nuestra API. Vercel sabe que /api/tts debe ir a app.py
-    const apiUrl = '/api/tts';
+    // --- MICRÓFONO 1: Confirmar que el script se ha cargado ---
+    console.log("El script.js se ha cargado correctamente. ¡El local está abierto!");
 
-    // Función para obtener y poblar la lista de voces
-    const fetchVoices = async () => {
+    // Función para mostrar errores
+    const showError = (message) => {
+        errorMessage.textContent = message;
+        errorMessage.style.display = 'block';
+    };
+
+    // Función para ocultar errores
+    const hideError = () => {
+        errorMessage.style.display = 'none';
+    };
+
+    // Cargar las voces al iniciar
+    const loadVoices = async () => {
+        hideError();
+        voiceSelect.disabled = true;
+        
+        // --- MICRÓFONO 2: Avisar que estamos a punto de llamar a la cocina ---
+        console.log('Intentando llamar a la cocina en /api/tts para obtener las voces...');
+
         try {
-            const response = await fetch(apiUrl);
+            const response = await fetch('/api/tts');
+            
+            // --- MICRÓFONO 3: Confirmar si la cocina contestó el teléfono ---
+            console.log('Respuesta recibida desde la cocina. Estado:', response.status);
+
             if (!response.ok) {
-                throw new Error(`Error del servidor: ${response.statusText}`);
+                throw new Error(`La cocina respondió con un error: ${response.statusText}`);
             }
+
             const voices = await response.json();
+            
+            // --- MICRÓFONO 4: Confirmar que recibimos la lista de voces ---
+            console.log('¡Lista de voces recibida con éxito!', voices);
 
-            voiceSelect.innerHTML = '<option value="">-- Elige una voz --</option>';
-
-            const languages = {};
-            for (const voiceId in voices) {
-                const voice = voices[voiceId];
-                const lang = voice.language;
-                if (!languages[lang]) {
-                    languages[lang] = document.createElement('optgroup');
-                    languages[lang].label = lang.toUpperCase();
+            voiceSelect.innerHTML = '<option value="" disabled>Selecciona una voz...</option>';
+            
+            for (const ttsEngine in voices) {
+                const optgroup = document.createElement('optgroup');
+                optgroup.label = ttsEngine;
+                for (const voice in voices[ttsEngine]) {
+                    const option = document.createElement('option');
+                    option.value = `${ttsEngine}:${voices[ttsEngine][voice].id}`;
+                    option.textContent = `${voices[ttsEngine][voice].name} (${voices[ttsEngine][voice].language})`;
+                    optgroup.appendChild(option);
                 }
-                const option = document.createElement('option');
-                option.value = voiceId;
-                option.textContent = `${voice.name} (${voice.gender})`;
-                languages[lang].appendChild(option);
+                voiceSelect.appendChild(optgroup);
             }
-
-            Object.values(languages).forEach(group => voiceSelect.appendChild(group));
+            voiceSelect.disabled = false;
+            voiceSelect.options[0].selected = true;
 
         } catch (error) {
-            console.error('Error al cargar las voces:', error);
-            showError('No se pudieron cargar las voces desde el servidor.');
+            // --- MICRÓFONO 5 (ALARMA): Algo salió mal durante la llamada ---
+            console.error('ERROR al intentar cargar las voces:', error);
+            showError('No se pudieron cargar las voces. Revisa la consola para más detalles.');
         }
     };
 
-    // Función para generar el audio
-    const speakText = async () => {
+    // Generar el audio
+    generateBtn.addEventListener('click', async () => {
+        const selectedVoice = voiceSelect.value;
         const text = textInput.value.trim();
-        const voiceId = voiceSelect.value;
 
-        if (!text) {
-            showError('Por favor, escribe un texto para generar el audio.');
-            return;
-        }
-        if (!voiceId) {
-            showError('Por favor, selecciona una voz de la lista.');
+        if (!selectedVoice || !text) {
+            showError('Por favor, selecciona una voz y escribe un texto.');
             return;
         }
 
-        setLoading(true);
         hideError();
-        audioOutput.classList.add('hidden');
+        generateBtn.disabled = true;
+        generateBtn.textContent = 'Generando...';
+        audioPlayerContainer.innerHTML = '';
 
         try {
-            const response = await fetch(apiUrl, {
+            const response = await fetch('/api/tts', {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ text: text, voice: voiceId }),
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ voice: selectedVoice, text: text }),
             });
 
             if (!response.ok) {
-                 const errorData = await response.json();
-                throw new Error(errorData.error || 'Error desconocido al generar el audio.');
+                throw new Error(`La cocina tuvo un problema al generar el audio: ${response.statusText}`);
             }
 
             const audioBlob = await response.blob();
             const audioUrl = URL.createObjectURL(audioBlob);
 
+            const audioPlayer = document.createElement('audio');
+            audioPlayer.controls = true;
             audioPlayer.src = audioUrl;
-            audioOutput.classList.remove('hidden');
+            audioPlayerContainer.appendChild(audioPlayer);
 
         } catch (error) {
-            console.error('Error al generar el audio:', error);
-            showError(`Error: ${error.message}`);
+            console.error('ERROR al generar el audio:', error);
+            showError('No se pudo generar el audio. Revisa la consola.');
         } finally {
-            setLoading(false);
+            generateBtn.disabled = false;
+            generateBtn.textContent = 'Generar Audio';
         }
-    };
-    
-    // Funciones de ayuda para la UI
-    const setLoading = (isLoading) => {
-        speakButton.disabled = isLoading;
-        loadingSpinner.classList.toggle('hidden', !isLoading);
-        buttonText.textContent = isLoading ? 'Generando...' : 'Generar Audio';
-    };
+    });
 
-    const showError = (message) => {
-        errorMessage.textContent = message;
-        errorMessage.classList.remove('hidden');
-    };
-    
-    const hideError = () => {
-        errorMessage.classList.add('hidden');
-    };
-
-    // Event Listeners
-    speakButton.addEventListener('click', speakText);
-
-    // Cargar las voces al inicio
-    fetchVoices();
+    // Cargar las voces al iniciar
+    loadVoices();
 });
 
