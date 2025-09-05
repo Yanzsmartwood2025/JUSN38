@@ -1,1 +1,54 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>JUSN38TTS - Fábrica de Voces</title>
+    <!-- Este enlace busca la hoja de estilos DENTRO de la carpeta 'css' -->
+    <link rel="stylesheet" href="css/style.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+</head>
+<body>
+
+    <div class="container">
+        <header>
+            <h1>JUSN38TTS 🚀</h1>
+            <p>Tu Fábrica de Voces Personal</p>
+        </header>
+
+        <main>
+            <div class="card">
+                <label for="text-input">Escribe el texto que quieres convertir a voz:</label>
+                <textarea id="text-input" rows="6" placeholder="Hola mundo, estoy creando voces para mis proyectos..."></textarea>
+
+                <label for="voice-select">Selecciona una voz:</label>
+                <select id="voice-select">
+                    <option value="">Cargando voces...</option>
+                </select>
+
+                <button id="speak-button">
+                    <span id="button-text">Generar Audio</span>
+                    <div id="loading-spinner" class="spinner hidden"></div>
+                </button>
+
+                <div id="audio-output" class="hidden">
+                    <p>¡Audio generado con éxito!</p>
+                    <audio id="audio-player" controls></audio>
+                </div>
+                 <div id="error-message" class="error-box hidden"></div>
+            </div>
+        </main>
+
+        <footer>
+            <p>Creado con OpenTTS. Desplegado en Vercel.</p>
+        </footer>
+    </div>
+
+    <!-- Este script busca el código JavaScript DENTRO de la carpeta 'js' -->
+    <script src="js/script.js"></script>
+</body>
+</html>
+
 
