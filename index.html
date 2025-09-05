@@ -858,7 +858,7 @@
             }
             
             if (isDragging) {
-                const rotationFactor = 0.002;
+                const rotationFactor = 0.001;
                 const newRotation = startRotationY + (deltaX * rotationFactor);
                 velocityY = newRotation - carouselGroup.rotation.y;
                 carouselGroup.rotation.y = newRotation;
