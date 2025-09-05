@@ -1,1 +1,17 @@
+{
+  "version": 2,
+  "builds": [
+    {
+      "src": "app.py",
+      "use": "@vercel/python"
+    }
+  ],
+  "routes": [
+    { "src": "/css/(.*)", "dest": "/css/$1" },
+    { "src": "/js/(.*)", "dest": "/js/$1" },
+    { "src": "/api/tts", "dest": "app.py" },
+    { "src": "/(.*)", "dest": "index.html" }
+  ]
+}
+
 
