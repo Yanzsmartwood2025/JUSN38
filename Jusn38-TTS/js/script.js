@@ -1,48 +1,69 @@
-// js/script.js
+// js/script.js (Versión con Pizarrón de Depuración)
 
 document.addEventListener('DOMContentLoaded', () => {
+    // --- Creación del Pizarrón de Anuncios ---
+    const debugContainer = document.createElement('div');
+    debugContainer.id = 'debug-container';
+    debugContainer.style.position = 'fixed';
+    debugContainer.style.bottom = '10px';
+    debugContainer.style.left = '10px';
+    debugContainer.style.right = '10px';
+    debugContainer.style.backgroundColor = 'rgba(0, 0, 0, 0.8)';
+    debugContainer.style.color = '#00ff00';
+    debugContainer.style.padding = '10px';
+    debugContainer.style.fontFamily = 'monospace';
+    debugContainer.style.fontSize = '12px';
+    debugContainer.style.borderRadius = '8px';
+    debugContainer.style.zIndex = '1000';
+    debugContainer.style.maxHeight = '150px';
+    debugContainer.style.overflowY = 'auto';
+    debugContainer.innerHTML = '<h4>-- Pizarrón de Anuncios (Local) --</h4>';
+    document.body.appendChild(debugContainer);
+
+    const logToScreen = (message) => {
+        console.log(message); // Mantenemos el log de consola por si acaso
+        const p = document.createElement('p');
+        p.textContent = `> ${message}`;
+        p.style.margin = '2px 0';
+        p.style.borderBottom = '1px solid #333';
+        debugContainer.appendChild(p);
+        debugContainer.scrollTop = debugContainer.scrollHeight;
+    };
+    
+    // --- Elementos de la página ---
     const voiceSelect = document.getElementById('voice-select');
     const textInput = document.getElementById('text-to-convert');
     const generateBtn = document.getElementById('generate-btn');
     const audioPlayerContainer = document.getElementById('audio-player-container');
     const errorMessage = document.getElementById('error-message');
 
-    // --- MICRÓFONO 1: Confirmar que el script se ha cargado ---
-    console.log("El script.js se ha cargado correctamente. ¡El local está abierto!");
+    logToScreen("El local está abierto y el pizarrón está listo.");
 
-    // Función para mostrar errores
     const showError = (message) => {
         errorMessage.textContent = message;
         errorMessage.style.display = 'block';
     };
 
-    // Función para ocultar errores
     const hideError = () => {
         errorMessage.style.display = 'none';
     };
 
-    // Cargar las voces al iniciar
     const loadVoices = async () => {
         hideError();
         voiceSelect.disabled = true;
         
-        // --- MICRÓFONO 2: Avisar que estamos a punto de llamar a la cocina ---
-        console.log('Intentando llamar a la cocina en /api/tts para obtener las voces...');
+        logToScreen('Llamando a la cocina en /api/tts para pedir la lista de voces...');
 
         try {
             const response = await fetch('/api/tts');
-            
-            // --- MICRÓFONO 3: Confirmar si la cocina contestó el teléfono ---
-            console.log('Respuesta recibida desde la cocina. Estado:', response.status);
+            logToScreen(`La cocina contestó. Estado: ${response.status} ${response.statusText}`);
 
             if (!response.ok) {
-                throw new Error(`La cocina respondió con un error: ${response.statusText}`);
+                throw new Error(`La cocina respondió con un error.`);
             }
 
             const voices = await response.json();
-            
-            // --- MICRÓFONO 4: Confirmar que recibimos la lista de voces ---
-            console.log('¡Lista de voces recibida con éxito!', voices);
+            logToScreen('¡Lista de voces recibida con éxito!');
 
             voiceSelect.innerHTML = '<option value="" disabled>Selecciona una voz...</option>';
             
@@ -61,13 +82,11 @@ document.addEventListener('DOMContentLoaded', () => {
             voiceSelect.options[0].selected = true;
 
         } catch (error) {
-            // --- MICRÓFONO 5 (ALARMA): Algo salió mal durante la llamada ---
-            console.error('ERROR al intentar cargar las voces:', error);
-            showError('No se pudieron cargar las voces. Revisa la consola para más detalles.');
+            logToScreen(`ALARMA: Falló la comunicación con la cocina. ${error.message}`);
+            showError('No se pudieron cargar las voces. Revisa el pizarrón.');
         }
     };
 
-    // Generar el audio
     generateBtn.addEventListener('click', async () => {
         const selectedVoice = voiceSelect.value;
         const text = textInput.value.trim();
@@ -81,6 +100,7 @@ document.addEventListener('DOMContentLoaded', () => {
         generateBtn.disabled = true;
         generateBtn.textContent = 'Generando...';
         audioPlayerContainer.innerHTML = '';
+        logToScreen(`Enviando texto a la cocina con la voz: ${selectedVoice}`);
 
         try {
             const response = await fetch('/api/tts', {
@@ -91,8 +111,10 @@ document.addEventListener('DOMContentLoaded', () => {
                 body: JSON.stringify({ voice: selectedVoice, text: text }),
             });
 
+            logToScreen(`La cocina respondió a la petición de generar audio. Estado: ${response.status}`);
+
             if (!response.ok) {
-                throw new Error(`La cocina tuvo un problema al generar el audio: ${response.statusText}`);
+                throw new Error(`La cocina tuvo un problema al generar el audio.`);
             }
 
             const audioBlob = await response.blob();
@@ -102,17 +124,17 @@ document.addEventListener('DOMContentLoaded', () => {
             audioPlayer.controls = true;
             audioPlayer.src = audioUrl;
             audioPlayerContainer.appendChild(audioPlayer);
+            logToScreen("¡Audio generado y listo para reproducir!");
 
         } catch (error) {
-            console.error('ERROR al generar el audio:', error);
-            showError('No se pudo generar el audio. Revisa la consola.');
+            logToScreen(`ALARMA: Falló la generación de audio. ${error.message}`);
+            showError('No se pudo generar el audio. Revisa el pizarrón.');
         } finally {
             generateBtn.disabled = false;
             generateBtn.textContent = 'Generar Audio';
         }
     });
 
-    // Cargar las voces al iniciar
     loadVoices();
 });
 
