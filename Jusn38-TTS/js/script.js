@@ -1,4 +1,4 @@
-// js/script.js (Versión con Puter.js)
+// js/script.js (Versión con Pizarrón de Depuración)
 
 document.addEventListener('DOMContentLoaded', () => {
     // --- Creación del Pizarrón de Anuncios ---
@@ -17,11 +17,11 @@ document.addEventListener('DOMContentLoaded', () => {
     debugContainer.style.zIndex = '1000';
     debugContainer.style.maxHeight = '150px';
     debugContainer.style.overflowY = 'auto';
-    debugContainer.innerHTML = '<h4>-- Pizarrón de Anuncios (Puter.js) --</h4>';
+    debugContainer.innerHTML = '<h4>-- Pizarrón de Anuncios (Local) --</h4>';
     document.body.appendChild(debugContainer);
 
     const logToScreen = (message) => {
-        console.log(message);
+        console.log(message); // Mantenemos el log de consola por si acaso
         const p = document.createElement('p');
         p.textContent = `> ${message}`;
         p.style.margin = '2px 0';
@@ -32,128 +32,108 @@ document.addEventListener('DOMContentLoaded', () => {
     
     // --- Elementos de la página ---
     const voiceSelect = document.getElementById('voice-select');
-    const textInput = document.getElementById('text-input');
-    const speakButton = document.getElementById('speak-button');
-    const audioOutput = document.getElementById('audio-output');
-    const audioPlayer = document.getElementById('audio-player');
+    const textInput = document.getElementById('text-to-convert');
+    const generateBtn = document.getElementById('generate-btn');
+    const audioPlayerContainer = document.getElementById('audio-player-container');
     const errorMessage = document.getElementById('error-message');
 
-    logToScreen("Puter.js inicializado. Listo para generar voces.");
+    logToScreen("El local está abierto y el pizarrón está listo.");
 
     const showError = (message) => {
         errorMessage.textContent = message;
-        errorMessage.classList.remove('hidden');
+        errorMessage.style.display = 'block';
     };
 
     const hideError = () => {
-        errorMessage.classList.add('hidden');
+        errorMessage.style.display = 'none';
     };
 
-    const loadLanguages = () => {
-        logToScreen("Cargando lista de idiomas soportados por Puter.js...");
-        const languages = {
-            "ar-AE": "Arabic",
-            "ca-ES": "Catalan",
-            "yue-CN": "Chinese (Cantonese)",
-            "cmn-CN": "Chinese (Mandarin)",
-            "da-DK": "Danish",
-            "nl-BE": "Dutch (Belgian)",
-            "nl-NL": "Dutch",
-            "en-AU": "English (Australian)",
-            "en-GB": "English (British)",
-            "en-IN": "English (Indian)",
-            "en-NZ": "English (New Zealand)",
-            "en-ZA": "English (South African)",
-            "en-US": "English (US)",
-            "en-GB-WLS": "English (Welsh)",
-            "fi-FI": "Finnish",
-            "fr-FR": "French",
-            "fr-BE": "French (Belgian)",
-            "fr-CA": "French (Canadian)",
-            "de-DE": "German",
-            "de-AT": "German (Austrian)",
-            "hi-IN": "Hindi",
-            "is-IS": "Icelandic",
-            "it-IT": "Italian",
-            "ja-JP": "Japanese",
-            "ko-KR": "Korean",
-            "nb-NO": "Norwegian",
-            "pl-PL": "Polish",
-            "pt-BR": "Portuguese (Brazilian)",
-            "pt-PT": "Portuguese (European)",
-            "ro-RO": "Romanian",
-            "ru-RU": "Russian",
-            "es-ES": "Spanish (European)",
-            "es-MX": "Spanish (Mexican)",
-            "es-US": "Spanish (US)",
-            "sv-SE": "Swedish",
-            "tr-TR": "Turkish",
-            "cy-GB": "Welsh"
-        };
+    const loadVoices = async () => {
+        hideError();
+        voiceSelect.disabled = true;
 
-        voiceSelect.innerHTML = '<option value="" disabled selected>Selecciona un idioma...</option>';
+        logToScreen('Llamando a la cocina en /api/tts para pedir la lista de voces...');
 
-        for (const [code, name] of Object.entries(languages)) {
-            const option = document.createElement('option');
-            option.value = code;
-            option.textContent = name;
-            voiceSelect.appendChild(option);
+        try {
+            const response = await fetch('/api/tts');
+            logToScreen(`La cocina contestó. Estado: ${response.status} ${response.statusText}`);
+
+            if (!response.ok) {
+                throw new Error(`La cocina respondió con un error.`);
+            }
+
+            const voices = await response.json();
+            logToScreen('¡Lista de voces recibida con éxito!');
+
+            voiceSelect.innerHTML = '<option value="" disabled>Selecciona una voz...</option>';
+
+            for (const ttsEngine in voices) {
+                const optgroup = document.createElement('optgroup');
+                optgroup.label = ttsEngine;
+                for (const voice in voices[ttsEngine]) {
+                    const option = document.createElement('option');
+                    option.value = `${ttsEngine}:${voices[ttsEngine][voice].id}`;
+                    option.textContent = `${voices[ttsEngine][voice].name} (${voices[ttsEngine][voice].language})`;
+                    optgroup.appendChild(option);
+                }
+                voiceSelect.appendChild(optgroup);
+            }
+            voiceSelect.disabled = false;
+            voiceSelect.options[0].selected = true;
+
+        } catch (error) {
+            logToScreen(`ALARMA: Falló la comunicación con la cocina. ${error.message}`);
+            showError('No se pudieron cargar las voces. Revisa el pizarrón.');
         }
-        logToScreen("¡Idiomas cargados!");
     };
 
-    speakButton.addEventListener('click', async () => {
-        const selectedLanguage = voiceSelect.value;
+    generateBtn.addEventListener('click', async () => {
+        const selectedVoice = voiceSelect.value;
         const text = textInput.value.trim();
 
-        if (!selectedLanguage || !text) {
-            showError('Por favor, selecciona un idioma y escribe un texto.');
+        if (!selectedVoice || !text) {
+            showError('Por favor, selecciona una voz y escribe un texto.');
             return;
         }
 
         hideError();
-        speakButton.disabled = true;
-        document.getElementById('button-text').textContent = 'Generando...';
-        document.getElementById('loading-spinner').classList.remove('hidden');
-        audioOutput.classList.add('hidden');
-
-        logToScreen(`Enviando texto a Puter.js con el idioma: ${selectedLanguage}`);
+        generateBtn.disabled = true;
+        generateBtn.textContent = 'Generando...';
+        audioPlayerContainer.innerHTML = '';
+        logToScreen(`Enviando texto a la cocina con la voz: ${selectedVoice}`);
 
         try {
-            const audio = await puter.ai.txt2speech(text, {
-                language: selectedLanguage
+            const response = await fetch('/api/tts', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ voice: selectedVoice, text: text }),
             });
 
-            logToScreen("¡Audio recibido de Puter.js!");
+            logToScreen(`La cocina respondió a la petición de generar audio. Estado: ${response.status}`);
 
-            audio.addEventListener('error', (e) => {
-                throw new Error('El objeto de audio devolvió un error.');
-            });
-
-            // Puter.js devuelve un <audio> element. Necesitamos obtener su src.
-            // Para hacer eso, esperamos a que los metadatos del audio se carguen.
-            audio.addEventListener('loadedmetadata', () => {
-                audioPlayer.src = audio.src;
-                audioOutput.classList.remove('hidden');
-                audioPlayer.play();
-                logToScreen("Audio listo para reproducir.");
-            });
-
-             // Forzamos la carga de metadatos si no se dispara el evento
-            if (audio.readyState >= 1) {
-               audio.dispatchEvent(new Event('loadedmetadata'));
+            if (!response.ok) {
+                throw new Error(`La cocina tuvo un problema al generar el audio.`);
             }
 
+            const audioBlob = await response.blob();
+            const audioUrl = URL.createObjectURL(audioBlob);
+
+            const audioPlayer = document.createElement('audio');
+            audioPlayer.controls = true;
+            audioPlayer.src = audioUrl;
+            audioPlayerContainer.appendChild(audioPlayer);
+            logToScreen("¡Audio generado y listo para reproducir!");
 
         } catch (error) {
-            logToScreen(`ALARMA: Falló la generación de audio con Puter.js. ${error.message}`);
-            showError(`No se pudo generar el audio: ${error.message}`);
+            logToScreen(`ALARMA: Falló la generación de audio. ${error.message}`);
+            showError('No se pudo generar el audio. Revisa el pizarrón.');
         } finally {
-            speakButton.disabled = false;
-            document.getElementById('button-text').textContent = 'Generar Audio';
-            document.getElementById('loading-spinner').classList.add('hidden');
+            generateBtn.disabled = false;
+            generateBtn.textContent = 'Generar Audio';
         }
     });
 
-    loadLanguages();
+    loadVoices();
 });
