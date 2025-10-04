@@ -32,277 +32,189 @@
             position: relative;
         }
 
-        :root {
-            --header-height: 4rem; /* 64px */
-        }
-
-        /* --- Main Layout --- */
-        #carousel-view { display: block; }
-        #book-view { display: none; }
-
-        /* --- Carousel View --- */
         #book-carousel {
             position: relative;
             width: 90vw;
             height: 80vh;
-            max-width: 1200px; /* Increased size */
-            max-height: 800px; /* Increased size */
+            max-width: 1000px;
+            max-height: 700px;
         }
+
         .book-container {
             position: absolute;
             width: 100%;
             height: 100%;
-            display: none;
-            cursor: pointer; /* Make books clickable */
-            transition: transform 0.3s ease;
+            display: none; /* Use display to robustly hide inactive books */
         }
-        .book-container.active { display: block; }
-        .book-container:not(.active) { transform: scale(0.85); } /* Non-active books are smaller */
 
-        /* --- Book View (Fullscreen) --- */
-        #book-view-header {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: var(--header-height);
-            display: flex;
-            align-items: center;
-            padding: 0 1rem;
-            z-index: 100;
+        .book-container.active {
+            display: block; /* Show the active book */
         }
-        #back-to-carousel {
-            background-color: rgba(0,0,0,0.5);
-            color: white;
-            border: 1px solid rgba(255,255,255,0.3);
-            border-radius: 9999px;
-            padding: 0.5rem 1rem;
-            cursor: pointer;
-        }
-        #fullscreen-book-container {
-            width: 100vw;
-            height: 100vh;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            padding-top: var(--header-height);
-            box-sizing: border-box;
-            position: relative;
-        }
-        #prev-page-area, #next-page-area {
-            position: absolute;
-            top: 0;
-            width: 50%;
-            height: 100%;
-            z-index: 10;
-            cursor: pointer;
-        }
-        #prev-page-area { left: 0; }
-        #next-page-area { right: 0; }
 
-        /* --- General Book Styles --- */
         .flipbook {
             width: 100%;
             height: 100%;
         }
+
         .flipbook .page {
             background-color: #2a2a2a;
             color: #e0e0e0;
             box-shadow: 0 4px 10px rgba(0,0,0,0.3);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            text-align: center;
         }
+
         .flipbook .hard {
             background-color: #101010;
             box-shadow: inset 0 0 5px #000;
         }
+
+        .cover-page .title {
+            font-size: 3rem;
+            font-weight: bold;
+            color: white;
+            text-shadow: 2px 2px 8px rgba(0,0,0,0.7);
+        }
+
+        #carousel-nav {
+            margin-top: 20px;
+            display: flex;
+            align-items: center;
+            gap: 20px;
+        }
+
+        #carousel-nav button {
+            background-color: rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            color: white;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+
+        #carousel-nav button:hover {
+            background-color: rgba(255, 255, 255, 0.2);
+        }
+
+        #carousel-nav button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
         .back-cover-page {
             background-color: #1a1a1a !important;
         }
+
     </style>
 </head>
 <body>
 
 <div id="library-container">
-    <!-- View for the book carousel -->
-    <div id="carousel-view">
-        <div id="book-carousel">
-            <!-- Books will be dynamically managed but are kept here for structure -->
-            <div class="book-container active">
-                <div class="flipbook" id="book1">
-                    <div class="hard cover-page" style="background-image: url('assets/images/Joziels-grimoire.jpg'); background-size: cover; background-position: center;"></div>
-                    <div class="hard"></div>
-                    <div class="page"></div><div class="page"></div><div class="page"></div><div class="page"></div><div class="page"></div><div class="page"></div><div class="page"></div><div class="page"></div><div class="page"></div><div class="page"></div><div class="page"></div><div class="page"></div><div class="page"></div><div class="page"></div><div class="page"></div><div class="page"></div><div class="page"></div><div class="page"></div><div class="page"></div><div class="page"></div><div class="page"></div><div class="page"></div><div class="page"></div><div class="page"></div><div class="page"></div><div class="page"></div><div class="page"></div><div class="page"></div><div class="page"></div><div class="page"></div>
-                    <div class="hard"></div>
-                    <div class="hard back-cover-page"></div>
-                </div>
+    <div id="book-carousel">
+        <!-- Book 1: Joziel's Grimoire -->
+        <div class="book-container active" data-title="">
+            <div class="flipbook" id="book1">
+                <div class="hard cover-page" style="background-image: url('assets/images/Joziels-grimoire.jpg'); background-size: cover; background-position: center;"></div>
+                <div class="hard"></div>
+                <div class="page"></div><div class="page"></div><div class="page"></div><div class="page"></div><div class="page"></div><div class="page"></div><div class="page"></div><div class="page"></div><div class="page"></div><div class="page"></div><div class="page"></div><div class="page"></div><div class="page"></div><div class="page"></div><div class="page"></div><div class="page"></div><div class="page"></div><div class="page"></div><div class="page"></div><div class="page"></div><div class="page"></div><div class="page"></div><div class="page"></div><div class="page"></div><div class="page"></div><div class="page"></div><div class="page"></div><div class="page"></div><div class="page"></div><div class="page"></div>
+                <div class="hard"></div>
+                <div class="hard back-cover-page"></div>
             </div>
-            <div class="book-container">
-                <div class="flipbook" id="book2">
-                    <div class="hard cover-page" style="background-image: url('assets/images/Shadow-files.jpg'); background-size: cover; background-position: center;"></div>
-                    <div class="hard"></div>
-                    <div class="page"></div><div class="page"></div><div class="page"></div><div class="page"></div><div class="page"></div><div class="page"></div><div class="page"></div><div class="page"></div><div class="page"></div><div class="page"></div><div class="page"></div><div class="page"></div><div class="page"></div><div class="page"></div><div class="page"></div><div class="page"></div><div class="page"></div><div class="page"></div><div class="page"></div><div class="page"></div><div class="page"></div><div class="page"></div><div class="page"></div><div class="page"></div><div class="page"></div><div class="page"></div><div class="page"></div><div class="page"></div><div class="page"></div><div class="page"></div>
-                    <div class="hard"></div>
-                    <div class="hard back-cover-page"></div>
-                </div>
+        </div>
+
+        <!-- Book 2: Shadow Files -->
+        <div class="book-container" data-title="">
+            <div class="flipbook" id="book2">
+                <div class="hard cover-page" style="background-image: url('assets/images/Shadow-files.jpg'); background-size: cover; background-position: center;"></div>
+                <div class="hard"></div>
+                <div class="page"></div><div class="page"></div><div class="page"></div><div class="page"></div><div class="page"></div><div class="page"></div><div class="page"></div><div class="page"></div><div class="page"></div><div class="page"></div><div class="page"></div><div class="page"></div><div class="page"></div><div class="page"></div><div class="page"></div><div class="page"></div><div class="page"></div><div class="page"></div><div class="page"></div><div class="page"></div><div class="page"></div><div class="page"></div><div class="page"></div><div class="page"></div><div class="page"></div><div class="page"></div><div class="page"></div><div class="page"></div><div class="page"></div><div class="page"></div>
+                <div class="hard"></div>
+                <div class="hard back-cover-page"></div>
             </div>
-            <div class="book-container">
-                <div class="flipbook" id="book3">
-                    <div class="hard cover-page" style="background-image: url('assets/images/Midnight-Mantras.jpg'); background-size: cover; background-position: center;"></div>
-                    <div class="hard"></div>
-                    <div class="page"></div><div class="page"></div><div class="page"></div><div class="page"></div><div class="page"></div><div class="page"></div><div class="page"></div><div class="page"></div><div class="page"></div><div class="page"></div><div class="page"></div><div class="page"></div><div class="page"></div><div class="page"></div><div class="page"></div><div class="page"></div><div class="page"></div><div class="page"></div><div class="page"></div><div class="page"></div><div class="page"></div><div class="page"></div><div class="page"></div><div class="page"></div><div class="page"></div><div class="page"></div><div class="page"></div><div class="page"></div><div class="page"></div><div class="page"></div>
-                    <div class="hard"></div>
-                    <div class="hard back-cover-page"></div>
-                </div>
+        </div>
+
+        <!-- Book 3: Midnight Mantras -->
+        <div class="book-container" data-title="">
+            <div class="flipbook" id="book3">
+                <div class="hard cover-page" style="background-image: url('assets/images/Midnight-Mantras.jpg'); background-size: cover; background-position: center;"></div>
+                <div class="hard"></div>
+                <div class="page"></div><div class="page"></div><div class="page"></div><div class="page"></div><div class="page"></div><div class="page"></div><div class="page"></div><div class="page"></div><div class="page"></div><div class="page"></div><div class="page"></div><div class="page"></div><div class="page"></div><div class="page"></div><div class="page"></div><div class="page"></div><div class="page"></div><div class="page"></div><div class="page"></div><div class="page"></div><div class="page"></div><div class="page"></div><div class="page"></div><div class="page"></div><div class="page"></div><div class="page"></div><div class="page"></div><div class="page"></div><div class="page"></div><div class="page"></div>
+                <div class="hard"></div>
+                <div class="hard back-cover-page"></div>
             </div>
         </div>
     </div>
 
-    <!-- View for the fullscreen book -->
-    <div id="book-view">
-        <header id="book-view-header">
-            <button id="back-to-carousel">&larr; Back to Library</button>
-        </header>
-        <div id="fullscreen-book-container">
-            <!-- Active book will be moved here by JS -->
-            <div id="prev-page-area"></div>
-            <div id="next-page-area"></div>
-        </div>
+    <div id="carousel-nav">
+        <button id="prev-book">Previous</button>
+        <button id="next-book">Next</button>
     </div>
 </div>
 
 <script type="text/javascript">
-$(function() {
-    const carouselView = $('#carousel-view');
-    const bookView = $('#book-view');
-    const bookCarousel = $('#book-carousel');
-    const fullscreenContainer = $('#fullscreen-book-container');
-    const books = bookCarousel.find('.book-container');
+$(function() { // Use document.ready for faster initialization
+    const books = $('.book-container');
     let currentIndex = 0;
-    let originalParent = null; // To store the book's original container
 
-    function initializeBook(element, options) {
-        const defaultOptions = {
+    function initializeBook(id) {
+        const book = $(id);
+        const container = book.parent().parent();
+        book.turn({
             display: 'double',
             duration: 800,
             elevation: 50,
             gradients: true,
             autoCenter: true,
-        };
-        const settings = $.extend({}, defaultOptions, options);
-
-        // Ensure we have a valid element with a container
-        if (!element.length || !element.parent().length) return;
-
-        // Set size based on container
-        settings.width = element.parent().width();
-        settings.height = element.parent().height();
-
-        // If turn.js is already initialized, destroy it first
-        if (element.turn('is')) {
-            element.turn('destroy');
-        }
-
-        element.turn(settings);
-    }
-
-    function updateCarousel() {
-        books.each(function(index) {
-            $(this).toggleClass('active', index === currentIndex);
+            width: container.width(),
+            height: container.height()
         });
-        // For simplicity, we don't initialize turn.js in the carousel.
-        // It acts as a static cover display.
     }
 
-    function openBookFullscreen(bookElement) {
-        originalParent = bookElement.parent(); // Save the original container
-        const flipbook = bookElement.detach(); // Detach the flipbook itself
+    function showBook(index) {
+        books.removeClass('active');
+        const currentBook = $(books.get(index));
+        currentBook.addClass('active');
 
-        // Move to fullscreen container and show view
-        fullscreenContainer.prepend(flipbook); // Use prepend to place it before the page turn areas
-        carouselView.hide();
-        bookView.show();
+        // Initialize turn.js for the book
+        const flipbook = currentBook.find('.flipbook');
+        initializeBook('#' + flipbook.attr('id'));
 
-        // Initialize for fullscreen
-        const fullscreenOptions = {
-             display: 'double'
-        };
-        initializeBook(flipbook, fullscreenOptions);
-        flipbook.turn('page', 1); // Go to cover
+        // Update nav buttons
+        $('#prev-book').prop('disabled', index === 0);
+        $('#next-book').prop('disabled', index === books.length - 1);
+
+        // When a book is shown, reset it to the first page
+        flipbook.turn('page', 1);
     }
 
-    function closeBookFullscreen() {
-        const flipbook = fullscreenContainer.find('.flipbook');
-        if (!flipbook.length || !originalParent) return;
-
-        const detachedFlipbook = flipbook.detach();
-        originalParent.append(detachedFlipbook); // Move it back
-
-        // Restore view
-        bookView.hide();
-        carouselView.show();
-
-        originalParent = null; // Clear the stored parent
-        updateCarousel(); // Refresh carousel state
-    }
-
-    // --- Event Listeners ---
-
-    // Click to open a book
-    bookCarousel.on('click', '.book-container.active', function() {
-        const flipbook = $(this).find('.flipbook');
-        openBookFullscreen(flipbook);
-    });
-
-    // Button to go back to the carousel
-    $('#back-to-carousel').on('click', function() {
-        closeBookFullscreen();
-    });
-
-    // --- Carousel Swipe Logic ---
-    let touchStartX = 0;
-    bookCarousel.on('touchstart', function(e) {
-        touchStartX = e.originalEvent.touches[0].clientX;
-    });
-
-    bookCarousel.on('touchend', function(e) {
-        let touchEndX = e.originalEvent.changedTouches[0].clientX;
-        let swipeThreshold = 50; // Minimum distance for a swipe
-
-        if (touchStartX - touchEndX > swipeThreshold) {
-            // Swiped left
-            if (currentIndex < books.length - 1) {
-                currentIndex++;
-                updateCarousel();
-            }
-        } else if (touchEndX - touchStartX > swipeThreshold) {
-            // Swiped right
-            if (currentIndex > 0) {
-                currentIndex--;
-                updateCarousel();
-            }
+    $('#next-book').on('click', function() {
+        if (currentIndex < books.length - 1) {
+            currentIndex++;
+            showBook(currentIndex);
         }
     });
 
-    // Page turning in fullscreen view
-    $('#prev-page-area').on('click', function() {
-        fullscreenContainer.find('.flipbook').turn('previous');
-    });
-
-    $('#next-page-area').on('click', function() {
-        fullscreenContainer.find('.flipbook').turn('next');
+    $('#prev-book').on('click', function() {
+        if (currentIndex > 0) {
+            currentIndex--;
+            showBook(currentIndex);
+        }
     });
 
     // Initial setup
-    updateCarousel();
+    showBook(currentIndex);
 
-    // Handle window resize for the active book (fullscreen or carousel)
+    // Handle window resize
     $(window).on('resize', function() {
-        if (bookView.is(':visible')) {
-            const activeFlipbook = fullscreenContainer.find('.flipbook');
-            if (activeFlipbook.turn('is')) {
-                 activeFlipbook.turn('size', fullscreenContainer.width(), fullscreenContainer.height());
-            }
+        // Only resize the currently active flipbook to avoid errors on uninitialized ones
+        const activeFlipbook = $('.book-container.active .flipbook');
+        if (activeFlipbook.length > 0) {
+            const container = activeFlipbook.parent().parent();
+            activeFlipbook.turn('size', container.width(), container.height());
         }
-        // No resize handling needed for carousel view as turn.js is not active there.
     }).trigger('resize');
 });
 </script>
