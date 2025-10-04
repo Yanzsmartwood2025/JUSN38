@@ -104,11 +104,8 @@
             cursor: not-allowed;
         }
 
-        #book-title {
-            font-size: 2rem;
-            font-weight: bold;
-            min-width: 300px; /* Prevent layout shift */
-            text-align: center;
+        .back-cover-page {
+            background-color: #1a1a1a !important;
         }
 
     </style>
@@ -118,51 +115,41 @@
 <div id="library-container">
     <div id="book-carousel">
         <!-- Book 1: Joziel's Grimoire -->
-        <div class="book-container active" data-title="Joziel's Grimoire">
+        <div class="book-container active" data-title="">
             <div class="flipbook" id="book1">
-                <div class="hard cover-page" style="background-image: url('assets/images/Joziels-grimoire.jpg'); background-size: cover; background-position: center;">
-                    <div class="title">Joziel's Grimoire</div>
-                </div>
+                <div class="hard cover-page" style="background-image: url('assets/images/Joziels-grimoire.jpg'); background-size: cover; background-position: center;"></div>
                 <div class="hard"></div>
-                <div class="page"><p>Page 1</p></div>
-                <div class="page"><p>Page 2</p></div>
+                <div class="page"></div><div class="page"></div><div class="page"></div><div class="page"></div><div class="page"></div><div class="page"></div><div class="page"></div><div class="page"></div><div class="page"></div><div class="page"></div><div class="page"></div><div class="page"></div><div class="page"></div><div class="page"></div><div class="page"></div><div class="page"></div><div class="page"></div><div class="page"></div><div class="page"></div><div class="page"></div><div class="page"></div><div class="page"></div><div class="page"></div><div class="page"></div><div class="page"></div><div class="page"></div><div class="page"></div><div class="page"></div><div class="page"></div><div class="page"></div>
                 <div class="hard"></div>
-                <div class="hard"></div>
+                <div class="hard back-cover-page"></div>
             </div>
         </div>
 
         <!-- Book 2: Shadow Files -->
-        <div class="book-container" data-title="Shadow Files">
+        <div class="book-container" data-title="">
             <div class="flipbook" id="book2">
-                <div class="hard cover-page" style="background-image: url('assets/images/Shadow-files.jpg'); background-size: cover; background-position: center;">
-                    <div class="title">Shadow Files</div>
-                </div>
+                <div class="hard cover-page" style="background-image: url('assets/images/Shadow-files.jpg'); background-size: cover; background-position: center;"></div>
                 <div class="hard"></div>
-                <div class="page"><p>Page 1</p></div>
-                <div class="page"><p>Page 2</p></div>
+                <div class="page"></div><div class="page"></div><div class="page"></div><div class="page"></div><div class="page"></div><div class="page"></div><div class="page"></div><div class="page"></div><div class="page"></div><div class="page"></div><div class="page"></div><div class="page"></div><div class="page"></div><div class="page"></div><div class="page"></div><div class="page"></div><div class="page"></div><div class="page"></div><div class="page"></div><div class="page"></div><div class="page"></div><div class="page"></div><div class="page"></div><div class="page"></div><div class="page"></div><div class="page"></div><div class="page"></div><div class="page"></div><div class="page"></div><div class="page"></div>
                 <div class="hard"></div>
-                <div class="hard"></div>
+                <div class="hard back-cover-page"></div>
             </div>
         </div>
 
         <!-- Book 3: Midnight Mantras -->
-        <div class="book-container" data-title="Midnight Mantras">
+        <div class="book-container" data-title="">
             <div class="flipbook" id="book3">
-                <div class="hard cover-page" style="background-image: url('assets/images/Midnight-Mantras.jpg'); background-size: cover; background-position: center;">
-                    <div class="title">Midnight Mantras</div>
-                </div>
+                <div class="hard cover-page" style="background-image: url('assets/images/Midnight-Mantras.jpg'); background-size: cover; background-position: center;"></div>
                 <div class="hard"></div>
-                <div class="page"><p>Page 1</p></div>
-                <div class="page"><p>Page 2</p></div>
+                <div class="page"></div><div class="page"></div><div class="page"></div><div class="page"></div><div class="page"></div><div class="page"></div><div class="page"></div><div class="page"></div><div class="page"></div><div class="page"></div><div class="page"></div><div class="page"></div><div class="page"></div><div class="page"></div><div class="page"></div><div class="page"></div><div class="page"></div><div class="page"></div><div class="page"></div><div class="page"></div><div class="page"></div><div class="page"></div><div class="page"></div><div class="page"></div><div class="page"></div><div class="page"></div><div class="page"></div><div class="page"></div><div class="page"></div><div class="page"></div>
                 <div class="hard"></div>
-                <div class="hard"></div>
+                <div class="hard back-cover-page"></div>
             </div>
         </div>
     </div>
 
     <div id="carousel-nav">
         <button id="prev-book">Previous</button>
-        <h2 id="book-title"></h2>
         <button id="next-book">Next</button>
     </div>
 </div>
@@ -195,9 +182,7 @@ $(function() { // Use document.ready for faster initialization
         const flipbook = currentBook.find('.flipbook');
         initializeBook('#' + flipbook.attr('id'));
 
-        // Update title and nav buttons
-        const title = currentBook.data('title');
-        $('#book-title').text(title);
+        // Update nav buttons
         $('#prev-book').prop('disabled', index === 0);
         $('#next-book').prop('disabled', index === books.length - 1);
 
