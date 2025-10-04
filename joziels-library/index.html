@@ -1,0 +1,238 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Joziel's Library</title>
+
+    <script type="text/javascript" src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/turn.js/3/turn.min.js"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+
+    <style type="text/css">
+        body {
+            background-color: #111;
+            color: #E2E8F0;
+            margin: 0;
+            overflow: hidden;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            font-family: 'Merriweather', serif;
+        }
+
+        #library-container {
+            width: 100%;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            position: relative;
+        }
+
+        #book-carousel {
+            position: relative;
+            width: 90vw;
+            height: 80vh;
+            max-width: 1000px;
+            max-height: 700px;
+        }
+
+        .book-container {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            display: none; /* Use display to robustly hide inactive books */
+        }
+
+        .book-container.active {
+            display: block; /* Show the active book */
+        }
+
+        .flipbook {
+            width: 100%;
+            height: 100%;
+        }
+
+        .flipbook .page {
+            background-color: #2a2a2a;
+            color: #e0e0e0;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.3);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            text-align: center;
+        }
+
+        .flipbook .hard {
+            background-color: #101010;
+            box-shadow: inset 0 0 5px #000;
+        }
+
+        .cover-page .title {
+            font-size: 3rem;
+            font-weight: bold;
+            color: white;
+            text-shadow: 2px 2px 8px rgba(0,0,0,0.7);
+        }
+
+        #carousel-nav {
+            margin-top: 20px;
+            display: flex;
+            align-items: center;
+            gap: 20px;
+        }
+
+        #carousel-nav button {
+            background-color: rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            color: white;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+
+        #carousel-nav button:hover {
+            background-color: rgba(255, 255, 255, 0.2);
+        }
+
+        #carousel-nav button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        #book-title {
+            font-size: 2rem;
+            font-weight: bold;
+            min-width: 300px; /* Prevent layout shift */
+            text-align: center;
+        }
+
+    </style>
+</head>
+<body>
+
+<div id="library-container">
+    <div id="book-carousel">
+        <!-- Book 1: Joziel's Grimoire -->
+        <div class="book-container active" data-title="Joziel's Grimoire">
+            <div class="flipbook" id="book1">
+                <div class="hard cover-page">
+                    <div class="title">Joziel's Grimoire</div>
+                </div>
+                <div class="hard"></div>
+                <div class="page"><p>Page 1</p></div>
+                <div class="page"><p>Page 2</p></div>
+                <div class="hard"></div>
+                <div class="hard"></div>
+            </div>
+        </div>
+
+        <!-- Book 2: Shadow Files -->
+        <div class="book-container" data-title="Shadow Files">
+            <div class="flipbook" id="book2">
+                <div class="hard cover-page">
+                    <div class="title">Shadow Files</div>
+                </div>
+                <div class="hard"></div>
+                <div class="page"><p>Page 1</p></div>
+                <div class="page"><p>Page 2</p></div>
+                <div class="hard"></div>
+                <div class="hard"></div>
+            </div>
+        </div>
+
+        <!-- Book 3: Midnight Mantras -->
+        <div class="book-container" data-title="Midnight Mantras">
+            <div class="flipbook" id="book3">
+                <div class="hard cover-page">
+                    <div class="title">Midnight Mantras</div>
+                </div>
+                <div class="hard"></div>
+                <div class="page"><p>Page 1</p></div>
+                <div class="page"><p>Page 2</p></div>
+                <div class="hard"></div>
+                <div class="hard"></div>
+            </div>
+        </div>
+    </div>
+
+    <div id="carousel-nav">
+        <button id="prev-book">Previous</button>
+        <h2 id="book-title"></h2>
+        <button id="next-book">Next</button>
+    </div>
+</div>
+
+<script type="text/javascript">
+$(function() { // Use document.ready for faster initialization
+    const books = $('.book-container');
+    let currentIndex = 0;
+
+    function initializeBook(id) {
+        const book = $(id);
+        const container = book.parent().parent();
+        book.turn({
+            display: 'double',
+            duration: 800,
+            elevation: 50,
+            gradients: true,
+            autoCenter: true,
+            width: container.width(),
+            height: container.height()
+        });
+    }
+
+    function showBook(index) {
+        books.removeClass('active');
+        const currentBook = $(books.get(index));
+        currentBook.addClass('active');
+
+        // Initialize turn.js for the book
+        const flipbook = currentBook.find('.flipbook');
+        initializeBook('#' + flipbook.attr('id'));
+
+        // Update title and nav buttons
+        const title = currentBook.data('title');
+        $('#book-title').text(title);
+        $('#prev-book').prop('disabled', index === 0);
+        $('#next-book').prop('disabled', index === books.length - 1);
+
+        // When a book is shown, reset it to the first page
+        flipbook.turn('page', 1);
+    }
+
+    $('#next-book').on('click', function() {
+        if (currentIndex < books.length - 1) {
+            currentIndex++;
+            showBook(currentIndex);
+        }
+    });
+
+    $('#prev-book').on('click', function() {
+        if (currentIndex > 0) {
+            currentIndex--;
+            showBook(currentIndex);
+        }
+    });
+
+    // Initial setup
+    showBook(currentIndex);
+
+    // Handle window resize
+    $(window).on('resize', function() {
+        // Only resize the currently active flipbook to avoid errors on uninitialized ones
+        const activeFlipbook = $('.book-container.active .flipbook');
+        if (activeFlipbook.length > 0) {
+            const container = activeFlipbook.parent().parent();
+            activeFlipbook.turn('size', container.width(), container.height());
+        }
+    }).trigger('resize');
+});
+</script>
+
+</body>
+</html>
