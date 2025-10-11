@@ -3,87 +3,71 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Prueba de Webhook n8n con Micrófono</title>
+    <title>Asistente de Voz para n8n</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <style>
-        body {
-            font-family: 'Inter', sans-serif;
-        }
-        .recording-indicator {
-            animation: pulse 1.5s infinite;
-        }
+        body { font-family: 'Inter', sans-serif; }
+        .recording-indicator { animation: pulse 1.5s infinite; }
         @keyframes pulse {
             0% { transform: scale(1); box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.7); }
             70% { transform: scale(1.05); box-shadow: 0 0 0 10px rgba(239, 68, 68, 0); }
             100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(239, 68, 68, 0); }
         }
+        #responseAudioPlayer { margin-top: 1rem; }
     </style>
 </head>
 <body class="bg-gray-100 flex items-center justify-center min-h-screen">
-    <div class="bg-white rounded-2xl shadow-xl p-8 max-w-md w-full m-4">
+    <div class="bg-white rounded-2xl shadow-xl p-8 max-w-lg w-full m-4">
         <div class="text-center">
-            <h1 class="text-2xl font-bold text-gray-800">Prueba de Webhook para n8n</h1>
-            <p class="text-gray-600 mt-2">Graba un audio y envíalo a tu webhook para probar la conexión.</p>
+            <h1 class="text-3xl font-bold text-gray-800">Asistente de Voz IA</h1>
+            <p class="text-gray-600 mt-2">Presiona "Grabar", haz tu pregunta y espera la respuesta de audio.</p>
         </div>
 
         <!-- Controles de grabación -->
         <div class="mt-8 flex justify-center space-x-4">
-            <button id="recordButton" class="px-6 py-3 bg-blue-600 text-white font-semibold rounded-lg shadow-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-opacity-75 transition duration-300 ease-in-out flex items-center">
-                <svg class="w-6 h-6 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z"></path></svg>
-                Grabar
+            <button id="recordButton" class="w-20 h-20 bg-blue-600 text-white font-semibold rounded-full shadow-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-opacity-75 transition duration-300 ease-in-out flex items-center justify-center">
+                <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z"></path></svg>
             </button>
-            <button id="stopButton" class="px-6 py-3 bg-red-600 text-white font-semibold rounded-lg shadow-md hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-opacity-75 transition duration-300 ease-in-out flex items-center" disabled>
-                <svg class="w-6 h-6 mr-2" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8 7a1 1 0 00-1 1v4a1 1 0 001 1h4a1 1 0 001-1V8a1 1 0 00-1-1H8z" clip-rule="evenodd"></path></svg>
-                Detener
+            <button id="stopButton" class="w-20 h-20 bg-red-600 text-white font-semibold rounded-full shadow-lg hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-opacity-75 transition duration-300 ease-in-out flex items-center justify-center" disabled>
+                <svg class="w-8 h-8" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8 7a1 1 0 00-1 1v4a1 1 0 001 1h4a1 1 0 001-1V8a1 1 0 00-1-1H8z" clip-rule="evenodd"></path></svg>
             </button>
         </div>
 
-        <!-- Reproductor de audio y estado -->
-        <div class="mt-6">
-             <div id="status" class="text-center text-gray-700 font-medium p-3 rounded-lg bg-gray-100 min-h-[50px] flex items-center justify-center">
+        <!-- Estado y Audio de Respuesta -->
+        <div class="mt-6 text-center">
+             <div id="status" class="text-lg text-gray-700 font-medium p-3 rounded-lg bg-gray-100 min-h-[50px] flex items-center justify-center">
                 Listo para grabar...
             </div>
-            <audio id="audioPlayer" controls class="w-full mt-4 hidden"></audio>
+            <!-- Este reproductor es para la respuesta de ElevenLabs -->
+            <h2 id="responseTitle" class="text-xl font-semibold text-gray-700 mt-6 hidden">Respuesta del Asistente:</h2>
+            <audio id="responseAudioPlayer" controls class="w-full hidden"></audio>
         </div>
         
-        <!-- Respuesta del Webhook -->
-        <div class="mt-6">
-            <h2 class="text-lg font-semibold text-gray-700">Respuesta del Webhook:</h2>
-            <pre id="response" class="bg-gray-900 text-white text-sm rounded-lg p-4 mt-2 overflow-x-auto min-h-[100px]">Esperando respuesta...</pre>
-        </div>
-
     </div>
 
     <script>
         const recordButton = document.getElementById('recordButton');
         const stopButton = document.getElementById('stopButton');
-        const audioPlayer = document.getElementById('audioPlayer');
         const statusDiv = document.getElementById('status');
-        const responseDiv = document.getElementById('response');
+        const responseTitle = document.getElementById('responseTitle');
+        const responseAudioPlayer = document.getElementById('responseAudioPlayer');
 
-        // URL de tu webhook en n8n
         const webhookUrl = 'https://jusn38.app.n8n.cloud/webhook-test/6b12f0e2-fe95-4794-9aad-ba6ac4ba886e';
 
         let mediaRecorder;
         let audioChunks = [];
 
-        // --- Lógica de Grabación ---
         async function startRecording() {
             try {
                 const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
                 mediaRecorder = new MediaRecorder(stream);
 
-                mediaRecorder.ondataavailable = event => {
-                    audioChunks.push(event.data);
-                };
+                mediaRecorder.ondataavailable = event => { audioChunks.push(event.data); };
 
                 mediaRecorder.onstop = () => {
                     const audioBlob = new Blob(audioChunks, { type: 'audio/webm' });
-                    const audioUrl = URL.createObjectURL(audioBlob);
-                    audioPlayer.src = audioUrl;
-                    audioPlayer.classList.remove('hidden');
-                    audioChunks = []; // Limpiar para la próxima grabación
+                    audioChunks = [];
                     sendAudioToWebhook(audioBlob);
                 };
 
@@ -92,25 +76,22 @@
 
             } catch (err) {
                 console.error("Error al acceder al micrófono:", err);
-                statusDiv.textContent = 'Error: No se pudo acceder al micrófono.';
-                statusDiv.classList.remove('bg-gray-100', 'bg-blue-100', 'bg-green-100');
-                statusDiv.classList.add('bg-red-100', 'text-red-800');
+                updateStatus('Error: No se pudo acceder al micrófono.', 'error');
             }
         }
 
         function stopRecording() {
-            mediaRecorder.stop();
-            updateUIForRecording(false);
+            if (mediaRecorder) {
+                mediaRecorder.stop();
+                updateUIForRecording(false);
+            }
         }
 
-        // --- Lógica de Envío a Webhook ---
         async function sendAudioToWebhook(audioBlob) {
-            statusDiv.textContent = 'Enviando audio al webhook...';
-            statusDiv.className = 'text-center font-medium p-3 rounded-lg bg-blue-100 text-blue-800';
-            responseDiv.textContent = 'Enviando...';
-            
-            // Usamos FormData para enviar el archivo, que es como se envían los archivos en los formularios web.
-            // n8n está preparado para recibir este formato.
+            updateStatus('Transcribiendo y pensando...', 'loading');
+            responseTitle.classList.add('hidden');
+            responseAudioPlayer.classList.add('hidden');
+
             const formData = new FormData();
             formData.append('file', audioBlob, 'grabacion.webm');
 
@@ -118,57 +99,66 @@
                 const response = await fetch(webhookUrl, {
                     method: 'POST',
                     body: formData,
-                    // No establecemos 'Content-Type', el navegador lo hace automáticamente con el boundary correcto para FormData.
                 });
 
-                const resultText = await response.text();
-                
-                if (response.ok) {
-                    statusDiv.textContent = '¡Audio enviado con éxito!';
-                    statusDiv.className = 'text-center font-medium p-3 rounded-lg bg-green-100 text-green-800';
-                    // Intentamos formatear si es JSON, si no, mostramos el texto plano.
-                    try {
-                        const jsonResult = JSON.parse(resultText);
-                        responseDiv.textContent = JSON.stringify(jsonResult, null, 2);
-                    } catch (e) {
-                        responseDiv.textContent = resultText;
-                    }
+                if (!response.ok) {
+                    const errorText = await response.text();
+                    throw new Error(`Error del servidor: ${response.status} ${response.statusText}\n${errorText}`);
+                }
 
+                // Esperamos una respuesta JSON que contenga el audio en base64
+                const result = await response.json();
+
+                if (result.audioBase64) {
+                    updateStatus('Respuesta recibida. ¡Reproduciendo!', 'success');
+                    responseTitle.classList.remove('hidden');
+                    responseAudioPlayer.src = `data:audio/mpeg;base64,${result.audioBase64}`;
+                    responseAudioPlayer.classList.remove('hidden');
+                    responseAudioPlayer.play();
                 } else {
-                    throw new Error(`Error del servidor: ${response.status} ${response.statusText}\n${resultText}`);
+                    throw new Error("La respuesta del webhook no contenía el campo 'audioBase64'.");
                 }
 
             } catch (error) {
-                console.error('Error al enviar el audio:', error);
-                statusDiv.textContent = 'Error al enviar el audio.';
-                statusDiv.className = 'text-center font-medium p-3 rounded-lg bg-red-100 text-red-800';
-                responseDiv.textContent = error.message;
+                console.error('Error al procesar la petición:', error);
+                updateStatus('Hubo un error al procesar la solicitud.', 'error');
+                responseTitle.classList.add('hidden');
+                responseAudioPlayer.classList.add('hidden');
             }
         }
-
-        // --- Actualización de la Interfaz ---
+        
         function updateUIForRecording(isRecording) {
+            recordButton.disabled = isRecording;
+            stopButton.disabled = !isRecording;
             if (isRecording) {
-                recordButton.disabled = true;
-                stopButton.disabled = false;
-                recordButton.classList.remove('recording-indicator'); // Quitar por si acaso
                 stopButton.classList.add('recording-indicator');
-                statusDiv.textContent = 'Grabando...';
-                statusDiv.className = 'text-center font-medium p-3 rounded-lg bg-red-100 text-red-800';
-                audioPlayer.classList.add('hidden');
-                responseDiv.textContent = 'Esperando respuesta...';
+                updateStatus('Grabando... Habla ahora.', 'recording');
             } else {
+                stopButton.classList.remove('recording-indicator');
                 recordButton.disabled = false;
                 stopButton.disabled = true;
-                stopButton.classList.remove('recording-indicator');
-                statusDiv.textContent = 'Procesando y enviando...';
-                statusDiv.className = 'text-center font-medium p-3 rounded-lg bg-yellow-100 text-yellow-800';
             }
         }
 
-        // --- Event Listeners ---
+        function updateStatus(message, type) {
+            statusDiv.textContent = message;
+            let baseClasses = 'text-center text-lg font-medium p-3 rounded-lg';
+            if (type === 'error') {
+                statusDiv.className = `${baseClasses} bg-red-100 text-red-800`;
+            } else if (type === 'success') {
+                statusDiv.className = `${baseClasses} bg-green-100 text-green-800`;
+            } else if (type === 'loading') {
+                statusDiv.className = `${baseClasses} bg-yellow-100 text-yellow-800`;
+            } else if (type === 'recording') {
+                statusDiv.className = `${baseClasses} bg-blue-100 text-blue-800`;
+            } else {
+                statusDiv.className = `${baseClasses} bg-gray-100 text-gray-800`;
+            }
+        }
+
         recordButton.addEventListener('click', startRecording);
         stopButton.addEventListener('click', stopRecording);
     </script>
 </body>
 </html>
+
