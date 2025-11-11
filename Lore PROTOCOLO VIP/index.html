@@ -3,162 +3,224 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Asistente de Voz para n8n</title>
+    <title>PROTOCOLO VIP</title>
+    
+    <!-- Carga de Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    
+    <!-- Meta Tags de PWA (Para "Descargar la App") -->
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="theme-color" content="#000000">
+    <!-- (Productor: Más adelante aquí pondrá su 'manifest.json') -->
+    
     <style>
-        body { font-family: 'Inter', sans-serif; }
-        .recording-indicator { animation: pulse 1.5s infinite; }
-        @keyframes pulse {
-            0% { transform: scale(1); box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.7); }
-            70% { transform: scale(1.05); box-shadow: 0 0 0 10px rgba(239, 68, 68, 0); }
-            100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(239, 68, 68, 0); }
+        /* Estética "Neón Urbano" (El ADN) */
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;700;900&family=Playfair+Display:wght@700&display=swap');
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #0a0a0a; /* Fondo negro "Premium" */
+            color: #f0f0f0;
         }
-        #responseAudioPlayer { margin-top: 1rem; }
+
+        /* Estilo para el Logo "Lore" en el Splash */
+        .lore-title {
+            font-family: 'Playfair Display', serif; /* Fuente elegante como la de su Carátula */
+            font-size: 4rem;
+            color: white;
+            text-shadow: 0 0 15px rgba(255, 255, 255, 0.7), 0 0 5px rgba(255, 255, 255, 0.5);
+            animation: fadeIn 2s ease-in-out;
+        }
+
+        /* La "Máquina de Facturación" - Los Botones de Neón (El "Club") */
+        .btn-neon {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            width: 80%;
+            max-width: 300px;
+            height: 100px; /* Botones grandes, estilo "TikTok Menu" */
+            border: 2px solid;
+            border-radius: 0.75rem; /* rounded-xl */
+            font-size: 1.5rem; /* text-2xl */
+            font-weight: 700; /* font-bold */
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+            transition: all 0.3s ease;
+            cursor: pointer;
+        }
+
+        /* --- Puerta FAN (El "Trueque" de Spotify) --- */
+        .btn-neon-fan {
+            border-color: #00f2ea; /* Cian Neón */
+            color: #00f2ea;
+            box-shadow: 0 0 10px rgba(0, 242, 234, 0.5), 0 0 20px rgba(0, 242, 234, 0.3);
+        }
+        .btn-neon-fan:hover {
+            background-color: #00f2ea;
+            color: #0a0a0a;
+            box-shadow: 0 0 20px rgba(0, 242, 234, 0.8), 0 0 40px rgba(0, 242, 234, 0.5);
+        }
+
+        /* --- Puerta VIP (El "Imperio" Cripto/Grok) --- */
+        .btn-neon-vip {
+            border-color: #f000b8; /* Magenta Neón */
+            color: #f000b8;
+            box-shadow: 0 0 10px rgba(240, 0, 184, 0.5), 0 0 20px rgba(240, 0, 184, 0.3);
+        }
+        .btn-neon-vip:hover {
+            background-color: #f000b8;
+            color: #0a0a0a;
+            box-shadow: 0 0 20px rgba(240, 0, 184, 0.8), 0 0 40px rgba(240, 0, 184, 0.5);
+        }
+        
+        /* Animaciones */
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
     </style>
 </head>
-<body class="bg-gray-100 flex items-center justify-center min-h-screen">
-    <div class="bg-white rounded-2xl shadow-xl p-8 max-w-lg w-full m-4">
-        <div class="text-center">
-            <h1 class="text-3xl font-bold text-gray-800">Asistente de Voz IA</h1>
-            <p class="text-gray-600 mt-2">Presiona "Grabar", haz tu pregunta y espera la respuesta de audio.</p>
-        </div>
+<body class="overflow-hidden">
 
-        <!-- Controles de grabación -->
-        <div class="mt-8 flex justify-center space-x-4">
-            <button id="recordButton" class="w-20 h-20 bg-blue-600 text-white font-semibold rounded-full shadow-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-opacity-75 transition duration-300 ease-in-out flex items-center justify-center">
-                <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z"></path></svg>
-            </button>
-            <button id="stopButton" class="w-20 h-20 bg-red-600 text-white font-semibold rounded-full shadow-lg hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-opacity-75 transition duration-300 ease-in-out flex items-center justify-center" disabled>
-                <svg class="w-8 h-8" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8 7a1 1 0 00-1 1v4a1 1 0 001 1h4a1 1 0 001-1V8a1 1 0 00-1-1H8z" clip-rule="evenodd"></path></svg>
-            </button>
-        </div>
+    <div id="app" class="relative w-full h-screen">
 
-        <!-- Estado y Audio de Respuesta -->
-        <div class="mt-6 text-center">
-             <div id="status" class="text-lg text-gray-700 font-medium p-3 rounded-lg bg-gray-100 min-h-[50px] flex items-center justify-center">
-                Listo para grabar...
+        <!-- ====================================================== -->
+        <!-- PANTALLA 1: "SPLASH SCREEN" (El "Bouncer" de 4s)        -->
+        <!-- ====================================================== -->
+        <div id="splash-screen" class="absolute inset-0 flex flex-col justify-center items-center w-full h-full bg-black z-50">
+            <!-- Productor: Este es el video de 4s que usted hará. -->
+            <!-- Por ahora, es un placeholder negro con el logo "Lore" -->
+            <!-- <video autoplay muted loop class="absolute inset-0 w-full h-full object-cover">
+                <source src="su-video-de-4-segundos.mp4" type="video/mp4">
+            </video> -->
+            <div class="z-10">
+                <h1 class="lore-title">Lore</h1>
             </div>
-            <!-- Este reproductor es para la respuesta de ElevenLabs -->
-            <h2 id="responseTitle" class="text-xl font-semibold text-gray-700 mt-6 hidden">Respuesta del Asistente:</h2>
-            <audio id="responseAudioPlayer" controls class="w-full hidden"></audio>
         </div>
-        
+
+        <!-- ====================================================== -->
+        <!-- PANTALLA 2: "LOBBY" (Las Dos Puertas)                   -->
+        <!-- ====================================================== -->
+        <div id="lobby-screen" class="hidden absolute inset-0 flex flex-col justify-center items-center w-full h-full p-8 space-y-8 animate-fadeIn">
+            <h2 class="text-3xl font-bold text-center text-gray-300">Bienvenido al</h2>
+            <h1 class="text-5xl font-black text-center text-white uppercase tracking-widest">Protocolo VIP</h1>
+            <p class="text-center text-gray-400">Elige tu travesura, mor.</p>
+
+            <div class="w-full h-1px bg-gray-700 my-4"></div>
+
+            <!-- Botón 1: Puerta FAN -->
+            <button id="fan-door-btn" class="btn-neon btn-neon-fan">
+                🎧 Puerta FAN
+            </button>
+            <p class="text-sm text-gray-500 text-center">(Contenido "Trueque" + Spotify)</p>
+
+            <!-- Botón 2: Puerta VIP -->
+            <button id="vip-door-btn" class="btn-neon btn-neon-vip">
+                💎 Puerta VIP
+            </button>
+            <p class="text-sm text-gray-500 text-center">(Grok + Cripto + "Muy Caliente")</p>
+        </div>
+
+        <!-- ====================================================== -->
+        <!-- PANTALLA 3: "PUERTA FAN" (La Máquina de Spotify)       -->
+        <!-- ====================================================== -->
+        <div id="fan-door-screen" class="hidden absolute inset-0 flex flex-col justify-start items-center w-full h-full p-8 overflow-y-auto animate-fadeIn">
+            <button class="absolute top-4 left-4 text-white text-2xl font-bold" onclick="showScreen('lobby')">&lt; Volver</button>
+            <h1 class="text-4xl font-black text-center text-cyan-400 mt-16 mb-4">PUERTA FAN</h1>
+            <p class="text-center text-gray-400 mb-8">Paga tu entrada con 'play'. Desbloquea los 5 Niveles del "Protocolo".</p>
+
+            <!-- Productor: Aquí es donde construiremos el "Sistema de 5 Niveles" (El "Reloj de Contenido") -->
+            <div class="w-full max-w-md space-y-4">
+                <div class="bg-gray-900 p-4 rounded-lg text-center opacity-50">
+                    <h3 class="text-xl font-bold">NIVEL 1: Te Caché (Próximamente)</h3>
+                    <p class="text-sm text-gray-500">(Aquí irá el Player de Spotify + Carrusel 1)</p>
+                </div>
+                <div class="bg-gray-900 p-4 rounded-lg text-center opacity-50">
+                    <h3 class="text-xl font-bold">NIVEL 2: Fiebre Neón (Próximamente)</h3>
+                </div>
+                <!-- ...y así con los 5 niveles... -->
+            </div>
+        </div>
+
+        <!-- ====================================================== -->
+        <!-- PANTALLA 4: "PUERTA VIP" (El Imperio Cripto/Grok)      -->
+        <!-- ====================================================== -->
+        <div id="vip-door-screen" class="hidden absolute inset-0 flex flex-col justify-start items-center w-full h-full p-8 overflow-y-auto animate-fadeIn">
+            <button class="absolute top-4 left-4 text-white text-2xl font-bold" onclick="showScreen('lobby')">&lt; Volver</button>
+            <h1 class="text-4xl font-black text-center text-pink-500 mt-16 mb-4">PUERTA VIP</h1>
+            <p class="text-center text-gray-400 mb-8">El "Imperio". Contenido "muy caliente". 100% Cripto. 100% Grok.</p>
+
+            <!-- Productor: Aquí es donde usted (como Programador) integra la API de Coinbase Commerce -->
+            <div class="w-full max-w-md space-y-4 text-center">
+                <button class="bg-yellow-500 text-black font-bold py-4 px-8 rounded-lg text-xl uppercase animate-pulse">
+                    Pagar con Cripto (Acceso Total)
+                </button>
+                <p class="text-sm text-gray-500">(Aquí irá su API de "Cajero" Cripto)</p>
+                
+                <div class="pt-8 opacity-50">
+                    <h3 class="text-xl font-bold">Chat 1-a-1 con Lore (Grok)</h3>
+                    <p class="text-sm text-gray-500">(Bloqueado hasta el pago)</p>
+                </div>
+            </div>
+        </div>
+
     </div>
 
+    <!-- El Footer (Términos y Condiciones) -->
+    <footer class="absolute bottom-0 w-full text-center p-4 z-10">
+        <p class="text-xs text-gray-600">
+            © 2025 Jusn 38. Todos los derechos reservados. 
+            <a href="#" class="underline">Términos y Condiciones</a>
+        </p>
+    </footer>
+
     <script>
-        const recordButton = document.getElementById('recordButton');
-        const stopButton = document.getElementById('stopButton');
-        const statusDiv = document.getElementById('status');
-        const responseTitle = document.getElementById('responseTitle');
-        const responseAudioPlayer = document.getElementById('responseAudioPlayer');
+        // --- La "Máquina" (El Router JS) ---
 
-        const webhookUrl = 'https://jusn38.app.n8n.cloud/webhook-test/6b12f0e2-fe95-4794-9aad-ba6ac4ba886e';
+        // 1. Obtenemos las "pantallas"
+        const splashScreen = document.getElementById('splash-screen');
+        const lobbyScreen = document.getElementById('lobby-screen');
+        const fanDoorScreen = document.getElementById('fan-door-screen');
+        const vipDoorScreen = document.getElementById('vip-door-screen');
 
-        let mediaRecorder;
-        let audioChunks = [];
+        const screens = {
+            'splash': splashScreen,
+            'lobby': lobbyScreen,
+            'fan-door': fanDoorScreen,
+            'vip-door': vipDoorScreen
+        };
 
-        async function startRecording() {
-            try {
-                const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-                mediaRecorder = new MediaRecorder(stream);
-
-                mediaRecorder.ondataavailable = event => { audioChunks.push(event.data); };
-
-                mediaRecorder.onstop = () => {
-                    const audioBlob = new Blob(audioChunks, { type: 'audio/webm' });
-                    audioChunks = [];
-                    sendAudioToWebhook(audioBlob);
-                };
-
-                mediaRecorder.start();
-                updateUIForRecording(true);
-
-            } catch (err) {
-                console.error("Error al acceder al micrófono:", err);
-                updateStatus('Error: No se pudo acceder al micrófono.', 'error');
-            }
-        }
-
-        function stopRecording() {
-            if (mediaRecorder) {
-                mediaRecorder.stop();
-                updateUIForRecording(false);
-            }
-        }
-
-        async function sendAudioToWebhook(audioBlob) {
-            updateStatus('Transcribiendo y pensando...', 'loading');
-            responseTitle.classList.add('hidden');
-            responseAudioPlayer.classList.add('hidden');
-
-            const formData = new FormData();
-            formData.append('file', audioBlob, 'grabacion.webm');
-
-            try {
-                const response = await fetch(webhookUrl, {
-                    method: 'POST',
-                    body: formData,
-                });
-
-                if (!response.ok) {
-                    const errorText = await response.text();
-                    throw new Error(`Error del servidor: ${response.status} ${response.statusText}\n${errorText}`);
+        // 2. La función "Mágica" que cambia de pantalla
+        function showScreen(screenId) {
+            // Oculta todas
+            for (const id in screens) {
+                if (screens.hasOwnProperty(id)) {
+                    screens[id].classList.add('hidden');
                 }
-
-                // Esperamos una respuesta JSON que contenga el audio en base64
-                const result = await response.json();
-
-                if (result.audioBase64) {
-                    updateStatus('Respuesta recibida. ¡Reproduciendo!', 'success');
-                    responseTitle.classList.remove('hidden');
-                    responseAudioPlayer.src = `data:audio/mpeg;base64,${result.audioBase64}`;
-                    responseAudioPlayer.classList.remove('hidden');
-                    responseAudioPlayer.play();
-                } else {
-                    throw new Error("La respuesta del webhook no contenía el campo 'audioBase64'.");
-                }
-
-            } catch (error) {
-                console.error('Error al procesar la petición:', error);
-                updateStatus('Hubo un error al procesar la solicitud.', 'error');
-                responseTitle.classList.add('hidden');
-                responseAudioPlayer.classList.add('hidden');
+            }
+            // Muestra la correcta
+            if (screens[screenId]) {
+                screens[screenId].classList.remove('hidden');
             }
         }
+
+        // 3. Asignar los "Botones" (El "Cableado")
+        document.getElementById('fan-door-btn').onclick = () => showScreen('fan-door');
+        document.getElementById('vip-door-btn').onclick = () => showScreen('vip-door');
         
-        function updateUIForRecording(isRecording) {
-            recordButton.disabled = isRecording;
-            stopButton.disabled = !isRecording;
-            if (isRecording) {
-                stopButton.classList.add('recording-indicator');
-                updateStatus('Grabando... Habla ahora.', 'recording');
-            } else {
-                stopButton.classList.remove('recording-indicator');
-                recordButton.disabled = false;
-                stopButton.disabled = true;
-            }
-        }
+        // --- El "Arranque" (El "Flywheel") ---
+        
+        // Muestra el Splash al inicio
+        showScreen('splash');
 
-        function updateStatus(message, type) {
-            statusDiv.textContent = message;
-            let baseClasses = 'text-center text-lg font-medium p-3 rounded-lg';
-            if (type === 'error') {
-                statusDiv.className = `${baseClasses} bg-red-100 text-red-800`;
-            } else if (type === 'success') {
-                statusDiv.className = `${baseClasses} bg-green-100 text-green-800`;
-            } else if (type === 'loading') {
-                statusDiv.className = `${baseClasses} bg-yellow-100 text-yellow-800`;
-            } else if (type === 'recording') {
-                statusDiv.className = `${baseClasses} bg-blue-100 text-blue-800`;
-            } else {
-                statusDiv.className = `${baseClasses} bg-gray-100 text-gray-800`;
-            }
-        }
+        // (Productor: 4000ms = 4 segundos)
+        // Esto ejecuta el "Splash Screen" de 4 segundos que usted pidió.
+        setTimeout(() => {
+            showScreen('lobby'); // Muestra el "Lobby" (Las Dos Puertas)
+        }, 4000);
 
-        recordButton.addEventListener('click', startRecording);
-        stopButton.addEventListener('click', stopRecording);
     </script>
 </body>
 </html>
-
