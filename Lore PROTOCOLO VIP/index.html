@@ -5,6 +5,29 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>PROTOCOLO VIP</title>
     
+    <!-- ====================================================== -->
+    <!-- "PROTOCOLO DE MARKETING" (Open Graph Tags)             -->
+    <!-- Este es el "Anzuelo" del Link para TikTok/X/WhatsApp  -->
+    <!-- ====================================================== -->
+    <meta property="og:title" content="PROTOCOLO VIP | El Club de Lore">
+    <meta property="og:description" content="La Jefa del Neón 👑 | ¿Te atreves a entrar a la travesura? (Cosplay/Grok/Música)">
+    
+    <!-- 
+      Productor: ¡ACCIÓN REQUERIDA! 
+      Suba su "Carátula" (Picsart_25-11-08...jpg) a este *nuevo* repo (ej. en /img/cover.jpg)
+      y ponga el link *completo* (ej. https://protocolo-vip-web.vercel.app/img/cover.jpg) aquí.
+    -->
+    <meta property="og:image" content="https://raw.githubusercontent.com/Yanzsmartwood2025/JUSN38/main/Lore%20PROTOCOLO%20VIP/Picsart_25-11-08_11-13-59-676.jpg"> <!-- ¡Hecho! Usé su link de GitHub por ahora -->
+    
+    <meta property="og:type" content="website">
+    
+    <!-- Productor: Ponga el link de Vercel aquí cuando lo tenga -->
+    <meta property="og:url" content="https://protocolo-vip-web.vercel.app"> 
+    
+    <!-- Para X (Twitter) -->
+    <meta name="twitter:card" content="summary_large_image">
+    <!-- ====================================================== -->
+
     <!-- Carga de Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
     
@@ -12,48 +35,43 @@
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="theme-color" content="#000000">
-    <!-- (Productor: Más adelante aquí pondrá su 'manifest.json') -->
+    
+    <!-- Productor: Aquí irá su manifest.json -->
     
     <style>
-        /* Estética "Neón Urbano" (El ADN) */
+        /* (Estilos de Neón... sin cambios) */
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;700;900&family=Playfair+Display:wght@700&display=swap');
 
         body {
             font-family: 'Inter', sans-serif;
-            background-color: #0a0a0a; /* Fondo negro "Premium" */
+            background-color: #0a0a0a;
             color: #f0f0f0;
         }
-
-        /* Estilo para el Logo "Lore" en el Splash */
         .lore-title {
-            font-family: 'Playfair Display', serif; /* Fuente elegante como la de su Carátula */
+            font-family: 'Playfair Display', serif;
             font-size: 4rem;
             color: white;
             text-shadow: 0 0 15px rgba(255, 255, 255, 0.7), 0 0 5px rgba(255, 255, 255, 0.5);
             animation: fadeIn 2s ease-in-out;
         }
-
-        /* La "Máquina de Facturación" - Los Botones de Neón (El "Club") */
         .btn-neon {
             display: flex;
             justify-content: center;
             align-items: center;
             width: 80%;
             max-width: 300px;
-            height: 100px; /* Botones grandes, estilo "TikTok Menu" */
+            height: 100px;
             border: 2px solid;
-            border-radius: 0.75rem; /* rounded-xl */
-            font-size: 1.5rem; /* text-2xl */
-            font-weight: 700; /* font-bold */
+            border-radius: 0.75rem;
+            font-size: 1.5rem;
+            font-weight: 700;
             text-transform: uppercase;
             letter-spacing: 0.1em;
             transition: all 0.3s ease;
             cursor: pointer;
         }
-
-        /* --- Puerta FAN (El "Trueque" de Spotify) --- */
         .btn-neon-fan {
-            border-color: #00f2ea; /* Cian Neón */
+            border-color: #00f2ea;
             color: #00f2ea;
             box-shadow: 0 0 10px rgba(0, 242, 234, 0.5), 0 0 20px rgba(0, 242, 234, 0.3);
         }
@@ -62,10 +80,8 @@
             color: #0a0a0a;
             box-shadow: 0 0 20px rgba(0, 242, 234, 0.8), 0 0 40px rgba(0, 242, 234, 0.5);
         }
-
-        /* --- Puerta VIP (El "Imperio" Cripto/Grok) --- */
         .btn-neon-vip {
-            border-color: #f000b8; /* Magenta Neón */
+            border-color: #f000b8;
             color: #f000b8;
             box-shadow: 0 0 10px rgba(240, 0, 184, 0.5), 0 0 20px rgba(240, 0, 184, 0.3);
         }
@@ -74,8 +90,6 @@
             color: #0a0a0a;
             box-shadow: 0 0 20px rgba(240, 0, 184, 0.8), 0 0 40px rgba(240, 0, 184, 0.5);
         }
-        
-        /* Animaciones */
         @keyframes fadeIn {
             from { opacity: 0; }
             to { opacity: 1; }
@@ -90,11 +104,10 @@
         <!-- PANTALLA 1: "SPLASH SCREEN" (El "Bouncer" de 4s)        -->
         <!-- ====================================================== -->
         <div id="splash-screen" class="absolute inset-0 flex flex-col justify-center items-center w-full h-full bg-black z-50">
-            <!-- Productor: Este es el video de 4s que usted hará. -->
-            <!-- Por ahora, es un placeholder negro con el logo "Lore" -->
-            <!-- <video autoplay muted loop class="absolute inset-0 w-full h-full object-cover">
-                <source src="su-video-de-4-segundos.mp4" type="video/mp4">
-            </video> -->
+            <!-- 
+                Productor: Ponga su "Splash Screen" (Foto 231924.jpg) como un video/imagen aquí.
+                Usaré un placeholder del logo "Lore" por ahora.
+            -->
             <div class="z-10">
                 <h1 class="lore-title">Lore</h1>
             </div>
@@ -102,6 +115,7 @@
 
         <!-- ====================================================== -->
         <!-- PANTALLA 2: "LOBBY" (Las Dos Puertas)                   -->
+        <!-- (Su captura 231738.png se ve perfecta)                -->
         <!-- ====================================================== -->
         <div id="lobby-screen" class="hidden absolute inset-0 flex flex-col justify-center items-center w-full h-full p-8 space-y-8 animate-fadeIn">
             <h2 class="text-3xl font-bold text-center text-gray-300">Bienvenido al</h2>
@@ -131,7 +145,7 @@
             <h1 class="text-4xl font-black text-center text-cyan-400 mt-16 mb-4">PUERTA FAN</h1>
             <p class="text-center text-gray-400 mb-8">Paga tu entrada con 'play'. Desbloquea los 5 Niveles del "Protocolo".</p>
 
-            <!-- Productor: Aquí es donde construiremos el "Sistema de 5 Niveles" (El "Reloj de Contenido") -->
+            <!-- Productor: Aquí construiremos el "Sistema de 5 Niveles" (El "Reloj de Contenido") -->
             <div class="w-full max-w-md space-y-4">
                 <div class="bg-gray-900 p-4 rounded-lg text-center opacity-50">
                     <h3 class="text-xl font-bold">NIVEL 1: Te Caché (Próximamente)</h3>
@@ -140,7 +154,15 @@
                 <div class="bg-gray-900 p-4 rounded-lg text-center opacity-50">
                     <h3 class="text-xl font-bold">NIVEL 2: Fiebre Neón (Próximamente)</h3>
                 </div>
-                <!-- ...y así con los 5 niveles... -->
+                <div class="bg-gray-900 p-4 rounded-lg text-center opacity-50">
+                    <h3 class="text-xl font-bold">NIVEL 3: Segunda Piel (Próximamente)</h3>
+                </div>
+                 <div class="bg-gray-900 p-4 rounded-lg text-center opacity-50">
+                    <h3 class="text-xl font-bold">NIVEL 4: Acceso VIP (Próximamente)</h3>
+                </div>
+                 <div class="bg-gray-900 p-4 rounded-lg text-center opacity-50">
+                    <h3 class="text-xl font-bold">NIVEL 5: El Secreto (Próximamente)</h3>
+                </div>
             </div>
         </div>
 
