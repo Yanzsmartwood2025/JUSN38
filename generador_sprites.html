@@ -12,6 +12,7 @@
             --primary: #3b82f6; --secondary: #1f2937; --background: #111827;
             --text-light: #f3f4f6; --text-dark: #9ca3af; --border-color: #374151;
             --danger: #ef4444;
+            --success: #10b981;
         }
         html, body { 
             background-color: var(--background); 
@@ -89,6 +90,8 @@
         .btn-primary:hover { background-color: #60a5fa; }
         .btn-secondary { background-color: #374151; color: var(--text-light); }
         .btn-secondary:hover { background-color: #4b5563; }
+        .btn-success { background-color: var(--success); color: white; }
+        .btn-success:hover { background-color: #34d399; }
 
         .section-divider {
             border-color: var(--border-color);
@@ -111,6 +114,10 @@
             border-radius: 0.5rem;
             margin-bottom: 1rem;
         }
+
+        /* Markers Style */
+        .marker-btn { font-size: 0.8rem; padding: 0.25rem 0.5rem; }
+        .marker-active { border: 2px solid var(--success); color: var(--success); }
     </style>
 </head>
 <body>
@@ -137,6 +144,23 @@
                             <div class="video-crop-handle sw"></div><div class="video-crop-handle se"></div>
                         </div>
                     </div>
+
+                    <!-- Tracking Markers Controls -->
+                    <div class="bg-gray-800 p-2 text-xs flex justify-between items-center border-b border-gray-700">
+                        <span class="font-bold text-gray-400 uppercase tracking-wider">Interpolación de Movimiento:</span>
+                        <div class="flex gap-2">
+                            <button id="set-start-marker-btn" class="btn btn-secondary marker-btn" title="Fijar posición inicial del recorte (Tiempo y Tamaño)">
+                                <i class="fas fa-map-marker-alt mr-1"></i> Set A (Inicio)
+                            </button>
+                            <button id="set-end-marker-btn" class="btn btn-secondary marker-btn" title="Fijar posición final del recorte (Tiempo y Tamaño)">
+                                <i class="fas fa-flag-checkered mr-1"></i> Set B (Fin)
+                            </button>
+                            <button id="clear-markers-btn" class="btn btn-secondary marker-btn" title="Borrar marcadores">
+                                <i class="fas fa-eraser"></i>
+                            </button>
+                        </div>
+                    </div>
+
                     <div class="timeline-controls">
                         <div class="flex items-center gap-4">
                             <span id="current-time" class="text-sm">0:00.0</span>
@@ -315,8 +339,14 @@
                     <label class="block text-sm font-semibold mb-1">Segundos entre captura:</label>
                     <input type="number" id="ac-interval" value="0.5" step="0.05" min="0.01" class="w-full p-2 rounded bg-gray-800 border border-gray-600">
                 </div>
+
+                <div id="ac-tracking-info" class="hidden p-3 bg-gray-800 rounded border border-gray-600">
+                    <p class="text-xs text-green-400 font-bold mb-1"><i class="fas fa-check-circle mr-1"></i> Interpolación Activada</p>
+                    <p class="text-xs text-gray-300">Se ajustará el recorte dinámicamente entre el punto A y B para mantener la escala del personaje.</p>
+                </div>
+
                 <div class="text-xs text-gray-400 mt-2">
-                    <p><i class="fas fa-info-circle mr-1"></i> Se usarán las dimensiones actuales del cuadro de recorte para todas las capturas.</p>
+                    <p><i class="fas fa-info-circle mr-1"></i> Si no usas los marcadores A/B, se usará el recorte actual fijo.</p>
                 </div>
             </div>
             <div class="flex justify-center gap-4 mt-6">
@@ -359,7 +389,7 @@
         const exportPresetSelect = document.getElementById('export-preset');
         const exportLayoutSelect = document.getElementById('export-layout');
         const exportCountInput = document.getElementById('export-count');
-        const exportCountLabel = document.getElementById('export-count-label');
+        const exportCountLabel = document.getElementById('export-count-label'); // Not actually in DOM in prev version but referenced? Logic check needed.
         const exportPaddingInput = document.getElementById('export-padding');
         const exportFormatSelect = document.getElementById('export-format');
         const exportFilenameInput = document.getElementById('export-filename');
@@ -392,6 +422,12 @@
         const startAcBtn = document.getElementById('start-ac-btn');
         const acCountGroup = document.getElementById('ac-count-input-group');
         const acIntervalGroup = document.getElementById('ac-interval-input-group');
+        const acTrackingInfo = document.getElementById('ac-tracking-info');
+
+        // Marker Buttons
+        const setStartMarkerBtn = document.getElementById('set-start-marker-btn');
+        const setEndMarkerBtn = document.getElementById('set-end-marker-btn');
+        const clearMarkersBtn = document.getElementById('clear-markers-btn');
 
         // --- App State ---
         let capturedFrames = [];
@@ -404,6 +440,10 @@
         let spritesheetCrop = { x: 0, y: 0, width: 0, height: 0 };
         let spritesheetCropAction = { active: false, type: null, startX: 0, startY: 0, initialCrop: {} };
         let fullSheetCanvas = null;
+
+        // Interpolation State
+        let startMarker = null; // { time, crop: {x,y,w,h} }
+        let endMarker = null;   // { time, crop: {x,y,w,h} }
 
         // --- Frame Processing Utility ---
         function processAndAddFrame(canvas) {
@@ -539,6 +579,49 @@
         window.addEventListener('touchmove', dragVideoCrop, { passive: false });
         window.addEventListener('touchend', endVideoCrop);
 
+        // --- Markers Logic ---
+        function updateMarkerUI() {
+            setStartMarkerBtn.classList.toggle('marker-active', !!startMarker);
+            setEndMarkerBtn.classList.toggle('marker-active', !!endMarker);
+
+            if (startMarker && endMarker) {
+                acTrackingInfo.classList.remove('hidden');
+                // Auto-set time in modal if markers exist
+                acStartTimeInput.value = startMarker.time.toFixed(2);
+                acEndTimeInput.value = endMarker.time.toFixed(2);
+            } else {
+                acTrackingInfo.classList.add('hidden');
+            }
+        }
+
+        setStartMarkerBtn.addEventListener('click', () => {
+            startMarker = {
+                time: videoPlayer.currentTime,
+                crop: { ...videoCrop }
+            };
+            // Also enable crop mode to let user see what they captured
+            if (!isVideoCropMode) toggleCropModeBtn.click();
+            updateMarkerUI();
+            alert(`Marcador A fijado en ${formatTime(startMarker.time)}`);
+        });
+
+        setEndMarkerBtn.addEventListener('click', () => {
+            endMarker = {
+                time: videoPlayer.currentTime,
+                crop: { ...videoCrop }
+            };
+             if (!isVideoCropMode) toggleCropModeBtn.click();
+            updateMarkerUI();
+            alert(`Marcador B fijado en ${formatTime(endMarker.time)}`);
+        });
+
+        clearMarkersBtn.addEventListener('click', () => {
+            startMarker = null;
+            endMarker = null;
+            updateMarkerUI();
+        });
+
+
         // --- Chroma Key ---
         eyedropperBtn.addEventListener('click', () => {
             videoContainer.classList.add('eyedropper-active');
@@ -593,19 +676,27 @@
 
         // --- Frame Capturing & Timeline ---
 
-        function captureFrame(cropRect) {
+        // Updated captureFrame to support resizing/scaling from a source Rect to a dest Rect
+        function captureFrame(cropRect, outputSize = null) {
             const { x, y, width, height } = cropRect || videoCrop;
             if (width <= 1 || height <= 1) return;
 
             let canvas = document.createElement('canvas');
-            // Ensure integer dimensions
-            canvas.width = Math.round(width);
-            canvas.height = Math.round(height);
 
-            // Draw using source dimensions
+            // If outputSize is provided, use it. Otherwise match crop size.
+            // outputSize should be { width: w, height: h }
+            const destW = outputSize ? outputSize.width : width;
+            const destH = outputSize ? outputSize.height : height;
+
+            canvas.width = Math.round(destW);
+            canvas.height = Math.round(destH);
+
+            // Draw using source dimensions -> dest dimensions
             const ctx = canvas.getContext('2d');
             ctx.imageSmoothingEnabled = true; // Use high quality smoothing
             ctx.imageSmoothingQuality = 'high';
+
+            // Draw image scaling it to fill the canvas
             ctx.drawImage(videoPlayer, x, y, width, height, 0, 0, canvas.width, canvas.height);
             
             canvas = applyChromaKey(canvas);
@@ -616,8 +707,13 @@
 
         // --- Auto Capture Logic ---
         autoCaptureBtn.addEventListener('click', () => {
-            acStartTimeInput.value = 0;
-            acEndTimeInput.value = videoPlayer.duration.toFixed(2);
+            // If we don't have markers, default to full video or current selection
+            if (!startMarker || !endMarker) {
+                acStartTimeInput.value = 0;
+                acEndTimeInput.value = videoPlayer.duration.toFixed(2);
+            }
+            // If markers exist, the event listeners on the marker buttons already updated the inputs
+
             autoCaptureModal.classList.add('active');
         });
 
@@ -635,11 +731,26 @@
             });
         });
 
+        // Helper for Linear Interpolation
+        function lerp(start, end, t) {
+            return start * (1 - t) + end * t;
+        }
+
         startAcBtn.addEventListener('click', async () => {
             const start = parseFloat(acStartTimeInput.value);
             const end = parseFloat(acEndTimeInput.value);
             const mode = Array.from(acModeRadios).find(r => r.checked).value;
-            const fixedCrop = { ...videoCrop }; // Lock the crop dimensions!
+
+            // Determine crop logic
+            const useInterpolation = (startMarker && endMarker);
+            const fixedCrop = { ...videoCrop };
+
+            // Output size should be constant to ensure "Misma Medida" of frames
+            // If interpolating, use StartMarker size as reference (or EndMarker, usually start is better source of truth)
+            // If fixed, use current crop size.
+            const outputSize = useInterpolation
+                ? { width: startMarker.crop.width, height: startMarker.crop.height }
+                : { width: fixedCrop.width, height: fixedCrop.height };
 
             let times = [];
             if (mode === 'count') {
@@ -660,8 +771,6 @@
             const originalPaused = videoPlayer.paused;
             videoPlayer.pause();
 
-            // Show a simple loading indicator could be good here, but for now we just process
-            // We need to disable buttons to prevent interference
             const allBtns = document.querySelectorAll('button');
             allBtns.forEach(b => b.disabled = true);
             startAcBtn.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i>Capturando...';
@@ -681,7 +790,32 @@
 
                     // Small delay to ensure frame is rendered
                     await new Promise(r => setTimeout(r, 100));
-                    captureFrame(fixedCrop);
+
+                    let frameCrop = fixedCrop;
+
+                    if (useInterpolation) {
+                        // Calculate T (0 to 1) based on Marker Times, not just current capture range
+                        // Actually, it should probably be based on the Markers' range because that's where the geometric data is defined.
+                        // If capture range is outside marker range, we clamp or extrapolate? Clamp is safer.
+
+                        const tTotal = endMarker.time - startMarker.time;
+                        let t = 0;
+                        if (tTotal !== 0) {
+                             t = (time - startMarker.time) / tTotal;
+                        }
+                        // Clamp t to 0-1 if we want to strictly adhere to markers
+                        // or allow extrapolation if user requests range outside markers.
+                        // Let's unclamp for flexibility but usually user sets markers = range.
+
+                        frameCrop = {
+                            x: lerp(startMarker.crop.x, endMarker.crop.x, t),
+                            y: lerp(startMarker.crop.y, endMarker.crop.y, t),
+                            width: lerp(startMarker.crop.width, endMarker.crop.width, t),
+                            height: lerp(startMarker.crop.height, endMarker.crop.height, t)
+                        };
+                    }
+
+                    captureFrame(frameCrop, outputSize);
                 }
             } finally {
                 // Restore state
@@ -886,13 +1020,13 @@
         allExportInputs.forEach(el => el.addEventListener('input', generateSpritesheetPreview));
 
         exportLayoutSelect.addEventListener('input', (e) => {
-            exportCountLabel.textContent = e.target.value === 'columns' ? 'Columnas' : 'Filas';
+            if (exportCountLabel) exportCountLabel.textContent = e.target.value === 'columns' ? 'Columnas' : 'Filas';
             exportPresetSelect.value = 'custom';
         });
 
         exportPresetSelect.addEventListener('input', () => {
             exportLayoutSelect.value = 'columns';
-            exportCountLabel.textContent = 'Columnas';
+            if (exportCountLabel) exportCountLabel.textContent = 'Columnas';
             generateSpritesheetPreview();
         });
 
