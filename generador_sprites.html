@@ -162,8 +162,9 @@
                                 <input type="range" id="chroma-tolerance" min="0" max="200" value="20" class="w-full">
                             </div>
                         </div>
-                        <div class="flex justify-center">
+                        <div class="flex justify-center gap-4">
                             <button id="capture-frame-btn" title="Capturar Frame"><i class="fas fa-plus"></i></button>
+                            <button id="auto-capture-btn" class="w-[60px] h-[60px] rounded-full bg-blue-600 hover:bg-blue-500 text-white text-2xl border-none flex items-center justify-center transition-colors" title="Captura Automática"><i class="fas fa-magic"></i></button>
                         </div>
                         <div></div>
                     </div>
@@ -284,6 +285,46 @@
             </div>
         </div>
     </div>
+
+    <div id="auto-capture-modal" class="modal">
+        <div class="modal-content">
+            <h2 class="text-2xl font-bold text-center mb-4">Captura Automática</h2>
+            <div class="space-y-4">
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-sm font-semibold mb-1">Inicio (seg):</label>
+                        <input type="number" id="ac-start-time" class="w-full p-2 rounded bg-gray-800 border border-gray-600" step="0.1" min="0">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-semibold mb-1">Fin (seg):</label>
+                        <input type="number" id="ac-end-time" class="w-full p-2 rounded bg-gray-800 border border-gray-600" step="0.1" min="0">
+                    </div>
+                </div>
+                <div>
+                    <label class="block text-sm font-semibold mb-1">Modo:</label>
+                    <div class="flex gap-4">
+                        <label class="flex items-center"><input type="radio" name="ac-mode" value="count" checked class="mr-2"> Total de Frames</label>
+                        <label class="flex items-center"><input type="radio" name="ac-mode" value="interval" class="mr-2"> Intervalo de Tiempo</label>
+                    </div>
+                </div>
+                <div id="ac-count-input-group">
+                    <label class="block text-sm font-semibold mb-1">Cantidad de Frames:</label>
+                    <input type="number" id="ac-count" value="10" min="2" class="w-full p-2 rounded bg-gray-800 border border-gray-600">
+                </div>
+                <div id="ac-interval-input-group" class="hidden">
+                    <label class="block text-sm font-semibold mb-1">Segundos entre captura:</label>
+                    <input type="number" id="ac-interval" value="0.5" step="0.05" min="0.01" class="w-full p-2 rounded bg-gray-800 border border-gray-600">
+                </div>
+                <div class="text-xs text-gray-400 mt-2">
+                    <p><i class="fas fa-info-circle mr-1"></i> Se usarán las dimensiones actuales del cuadro de recorte para todas las capturas.</p>
+                </div>
+            </div>
+            <div class="flex justify-center gap-4 mt-6">
+                <button id="cancel-ac-btn" class="btn btn-secondary">Cancelar</button>
+                <button id="start-ac-btn" class="btn btn-primary"><i class="fas fa-play mr-2"></i>Iniciar Captura</button>
+            </div>
+        </div>
+    </div>
     
     <script>
     document.addEventListener('DOMContentLoaded', () => {
@@ -303,6 +344,7 @@
         const prevFrameBtn = document.getElementById('prev-frame-btn');
         const nextFrameBtn = document.getElementById('next-frame-btn');
         const captureFrameBtn = document.getElementById('capture-frame-btn');
+        const autoCaptureBtn = document.getElementById('auto-capture-btn');
         const framesTimeline = document.getElementById('frames-timeline');
         
         const eyedropperBtn = document.getElementById('eyedropper-btn');
@@ -340,6 +382,17 @@
         const cancelEditFrameBtn = document.getElementById('cancel-edit-frame-btn');
         const saveEditFrameBtn = document.getElementById('save-edit-frame-btn');
 
+        const autoCaptureModal = document.getElementById('auto-capture-modal');
+        const acStartTimeInput = document.getElementById('ac-start-time');
+        const acEndTimeInput = document.getElementById('ac-end-time');
+        const acCountInput = document.getElementById('ac-count');
+        const acIntervalInput = document.getElementById('ac-interval');
+        const acModeRadios = document.getElementsByName('ac-mode');
+        const cancelAcBtn = document.getElementById('cancel-ac-btn');
+        const startAcBtn = document.getElementById('start-ac-btn');
+        const acCountGroup = document.getElementById('ac-count-input-group');
+        const acIntervalGroup = document.getElementById('ac-interval-input-group');
+
         // --- App State ---
         let capturedFrames = [];
         const FRAME_STEP = 1 / 60; 
@@ -373,6 +426,9 @@
             timelineSlider.max = videoPlayer.duration;
             videoCrop = { x: 0, y: 0, width: videoPlayer.videoWidth, height: videoPlayer.videoHeight };
         });
+
+        // Ensure crossOrigin is set to anonymous to avoid tainted canvas issues
+        videoPlayer.setAttribute('crossOrigin', 'anonymous');
         videoPlayer.addEventListener('timeupdate', () => {
             timelineSlider.value = videoPlayer.currentTime;
             currentTimeEl.textContent = formatTime(videoPlayer.currentTime);
@@ -536,18 +592,106 @@
         }
 
         // --- Frame Capturing & Timeline ---
-        captureFrameBtn.addEventListener('click', () => {
-            const { x, y, width, height } = videoCrop;
+
+        function captureFrame(cropRect) {
+            const { x, y, width, height } = cropRect || videoCrop;
             if (width <= 1 || height <= 1) return;
+
             let canvas = document.createElement('canvas');
+            // Ensure integer dimensions
             canvas.width = Math.round(width);
             canvas.height = Math.round(height);
-            canvas.getContext('2d').drawImage(videoPlayer, x, y, width, height, 0, 0, width, height);
+
+            // Draw using source dimensions
+            const ctx = canvas.getContext('2d');
+            ctx.imageSmoothingEnabled = true; // Use high quality smoothing
+            ctx.imageSmoothingQuality = 'high';
+            ctx.drawImage(videoPlayer, x, y, width, height, 0, 0, canvas.width, canvas.height);
             
             canvas = applyChromaKey(canvas);
-
             processAndAddFrame(canvas);
+        }
+
+        captureFrameBtn.addEventListener('click', () => captureFrame(videoCrop));
+
+        // --- Auto Capture Logic ---
+        autoCaptureBtn.addEventListener('click', () => {
+            acStartTimeInput.value = 0;
+            acEndTimeInput.value = videoPlayer.duration.toFixed(2);
+            autoCaptureModal.classList.add('active');
         });
+
+        cancelAcBtn.addEventListener('click', () => autoCaptureModal.classList.remove('active'));
+
+        acModeRadios.forEach(radio => {
+            radio.addEventListener('change', (e) => {
+                if (e.target.value === 'count') {
+                    acCountGroup.classList.remove('hidden');
+                    acIntervalGroup.classList.add('hidden');
+                } else {
+                    acCountGroup.classList.add('hidden');
+                    acIntervalGroup.classList.remove('hidden');
+                }
+            });
+        });
+
+        startAcBtn.addEventListener('click', async () => {
+            const start = parseFloat(acStartTimeInput.value);
+            const end = parseFloat(acEndTimeInput.value);
+            const mode = Array.from(acModeRadios).find(r => r.checked).value;
+            const fixedCrop = { ...videoCrop }; // Lock the crop dimensions!
+
+            let times = [];
+            if (mode === 'count') {
+                const count = parseInt(acCountInput.value);
+                if (count < 2) return;
+                const step = (end - start) / (count - 1);
+                for (let i = 0; i < count; i++) times.push(start + i * step);
+            } else {
+                const interval = parseFloat(acIntervalInput.value);
+                if (interval <= 0) return;
+                for (let t = start; t <= end; t += interval) times.push(t);
+            }
+
+            autoCaptureModal.classList.remove('active');
+
+            // Process captures
+            const originalTime = videoPlayer.currentTime;
+            const originalPaused = videoPlayer.paused;
+            videoPlayer.pause();
+
+            // Show a simple loading indicator could be good here, but for now we just process
+            // We need to disable buttons to prevent interference
+            const allBtns = document.querySelectorAll('button');
+            allBtns.forEach(b => b.disabled = true);
+            startAcBtn.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i>Capturando...';
+
+            try {
+                for (const time of times) {
+                    if (time > videoPlayer.duration) break;
+
+                    videoPlayer.currentTime = time;
+                    await new Promise(resolve => {
+                        const onSeek = () => {
+                            videoPlayer.removeEventListener('seeked', onSeek);
+                            resolve();
+                        };
+                        videoPlayer.addEventListener('seeked', onSeek);
+                    });
+
+                    // Small delay to ensure frame is rendered
+                    await new Promise(r => setTimeout(r, 100));
+                    captureFrame(fixedCrop);
+                }
+            } finally {
+                // Restore state
+                videoPlayer.currentTime = originalTime;
+                if (!originalPaused) videoPlayer.play();
+                allBtns.forEach(b => b.disabled = false);
+                startAcBtn.innerHTML = '<i class="fas fa-play mr-2"></i>Iniciar Captura';
+            }
+        });
+
         function renderFramesTimeline() {
             framesTimeline.innerHTML = '';
             capturedFrames.forEach((frameData) => {
