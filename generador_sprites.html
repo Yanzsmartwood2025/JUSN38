@@ -364,6 +364,24 @@
             </div>
         </div>
     </div>
+
+    <!-- Loading Overlay -->
+    <div id="loading-overlay" class="fixed inset-0 z-[100] bg-black/90 hidden flex flex-col items-center justify-center cursor-pointer">
+        <div class="w-3/4 max-w-md pointer-events-none">
+            <div class="flex justify-between text-white mb-2 font-bold">
+                <span id="loading-text">Procesando...</span>
+                <span id="loading-percent">0%</span>
+            </div>
+            <div class="w-full bg-gray-700 rounded-full h-4 overflow-hidden">
+                <div id="loading-bar" class="bg-blue-500 h-full transition-all duration-200" style="width: 0%"></div>
+            </div>
+            <p id="loading-subtext" class="text-gray-400 text-sm mt-2 text-center">Generando frames...</p>
+        </div>
+        <div id="loading-done-msg" class="hidden mt-8 text-center pointer-events-none">
+             <h2 class="text-4xl font-bold text-green-500 mb-4">¡Listo!</h2>
+             <p class="text-white text-lg animate-pulse">Toca en cualquier lugar para continuar</p>
+        </div>
+    </div>
     
     <script>
     document.addEventListener('DOMContentLoaded', () => {
@@ -432,6 +450,14 @@
         const acCountGroup = document.getElementById('ac-count-input-group');
         const acIntervalGroup = document.getElementById('ac-interval-input-group');
         const acTrackingInfo = document.getElementById('ac-tracking-info');
+
+        // Loading Overlay Elements
+        const loadingOverlay = document.getElementById('loading-overlay');
+        const loadingText = document.getElementById('loading-text');
+        const loadingPercent = document.getElementById('loading-percent');
+        const loadingBar = document.getElementById('loading-bar');
+        const loadingSubtext = document.getElementById('loading-subtext');
+        const loadingDoneMsg = document.getElementById('loading-done-msg');
 
         // Marker Buttons
         const setStartMarkerBtn = document.getElementById('set-start-marker-btn');
@@ -752,6 +778,13 @@
             return start * (1 - t) + end * t;
         }
 
+        // Close Loading Overlay on click if done
+        loadingOverlay.addEventListener('click', () => {
+            if (!loadingDoneMsg.classList.contains('hidden')) {
+                loadingOverlay.classList.add('hidden');
+            }
+        });
+
         startAcBtn.addEventListener('click', async () => {
             const start = parseFloat(acStartTimeInput.value);
             const end = parseFloat(acEndTimeInput.value);
@@ -762,8 +795,6 @@
             const fixedCrop = { ...videoCrop };
 
             // Output size should be constant to ensure "Misma Medida" of frames
-            // If interpolating, use StartMarker size as reference (or EndMarker, usually start is better source of truth)
-            // If fixed, use current crop size.
             const scale = parseInt(document.getElementById('capture-scale').value) || 1;
             const baseWidth = useInterpolation ? startMarker.crop.width : fixedCrop.width;
             const baseHeight = useInterpolation ? startMarker.crop.height : fixedCrop.height;
@@ -787,6 +818,14 @@
 
             autoCaptureModal.classList.remove('active');
 
+            // Initialize Loading Overlay
+            loadingOverlay.classList.remove('hidden');
+            loadingDoneMsg.classList.add('hidden');
+            loadingText.textContent = "Procesando...";
+            loadingSubtext.textContent = "Iniciando captura...";
+            loadingBar.style.width = "0%";
+            loadingPercent.textContent = "0%";
+
             // Process captures
             const originalTime = videoPlayer.currentTime;
             const originalPaused = videoPlayer.paused;
@@ -797,7 +836,15 @@
             startAcBtn.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i>Capturando...';
 
             try {
-                for (const time of times) {
+                for (let i = 0; i < times.length; i++) {
+                    const time = times[i];
+
+                    // Update Progress
+                    const pct = Math.round(((i) / times.length) * 100);
+                    loadingBar.style.width = `${pct}%`;
+                    loadingPercent.textContent = `${pct}%`;
+                    loadingSubtext.textContent = `Capturando frame ${i + 1} de ${times.length}...`;
+
                     if (time > videoPlayer.duration) break;
 
                     videoPlayer.currentTime = time;
@@ -815,19 +862,11 @@
                     let frameCrop = fixedCrop;
 
                     if (useInterpolation) {
-                        // Calculate T (0 to 1) based on Marker Times, not just current capture range
-                        // Actually, it should probably be based on the Markers' range because that's where the geometric data is defined.
-                        // If capture range is outside marker range, we clamp or extrapolate? Clamp is safer.
-
                         const tTotal = endMarker.time - startMarker.time;
                         let t = 0;
                         if (tTotal !== 0) {
                              t = (time - startMarker.time) / tTotal;
                         }
-                        // Clamp t to 0-1 if we want to strictly adhere to markers
-                        // or allow extrapolation if user requests range outside markers.
-                        // Let's unclamp for flexibility but usually user sets markers = range.
-
                         frameCrop = {
                             x: lerp(startMarker.crop.x, endMarker.crop.x, t),
                             y: lerp(startMarker.crop.y, endMarker.crop.y, t),
@@ -838,6 +877,21 @@
 
                     captureFrame(frameCrop, outputSize);
                 }
+
+                // Finish Progress
+                loadingBar.style.width = "100%";
+                loadingPercent.textContent = "100%";
+                loadingText.textContent = "Completado";
+                loadingSubtext.textContent = "Generando miniaturas...";
+
+                // Show "Done" message
+                loadingDoneMsg.classList.remove('hidden');
+
+            } catch (err) {
+                console.error(err);
+                loadingText.textContent = "Error";
+                loadingSubtext.textContent = "Ocurrió un error durante la captura.";
+                setTimeout(() => loadingOverlay.classList.add('hidden'), 3000);
             } finally {
                 // Restore state
                 videoPlayer.currentTime = originalTime;
@@ -995,7 +1049,38 @@
             const frameData = capturedFrames.find(f => f.id === frameId);
             if (!frameData) return;
 
-            downloadFramePreview.src = frameData.canvas.toDataURL();
+            // Generate a preview that is safe for display
+            // If canvas is very large, toDataURL can be slow or fail for the src attribute.
+            // However, browsers are usually okay with large data URIs if they fit in memory.
+            // The issue might be simply the image being transparent and hard to see, or specific mobile limit.
+            // Let's ensure we try to render it.
+
+            try {
+                // If extremely large, we might want to scale down for preview,
+                // but usually user wants to see what they got.
+                // We'll trust the browser but add error handling.
+                const dataUrl = frameData.canvas.toDataURL();
+                if (dataUrl === 'data:,') {
+                   throw new Error("Canvas data is empty");
+                }
+                downloadFramePreview.src = dataUrl;
+                downloadFramePreview.style.display = 'block';
+            } catch (e) {
+                console.error("Error generating preview:", e);
+                // Fallback: draw to a smaller temporary canvas for preview
+                try {
+                     const tempC = document.createElement('canvas');
+                     const scale = Math.min(1, 1024 / frameData.canvas.width);
+                     tempC.width = frameData.canvas.width * scale;
+                     tempC.height = frameData.canvas.height * scale;
+                     tempC.getContext('2d').drawImage(frameData.canvas, 0, 0, tempC.width, tempC.height);
+                     downloadFramePreview.src = tempC.toDataURL();
+                } catch (e2) {
+                     downloadFramePreview.style.display = 'none';
+                     alert("Error al mostrar la previsualización. La imagen es demasiado grande, pero aún puede intentar descargarla.");
+                }
+            }
+
             downloadFrameNameInput.value = `frame_${frameData.id.split('-')[1]}`;
             downloadFrameModal.dataset.frameId = frameId;
             downloadFrameModal.classList.add('active');
