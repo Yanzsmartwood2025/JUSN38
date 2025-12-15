@@ -190,7 +190,16 @@
                             <button id="capture-frame-btn" title="Capturar Frame"><i class="fas fa-plus"></i></button>
                             <button id="auto-capture-btn" class="w-[60px] h-[60px] rounded-full bg-blue-600 hover:bg-blue-500 text-white text-2xl border-none flex items-center justify-center transition-colors" title="Captura Automática"><i class="fas fa-magic"></i></button>
                         </div>
-                        <div></div>
+                        <div class="flex flex-col items-center justify-center text-center">
+                            <h3 class="font-bold mb-2">Calidad / Escala</h3>
+                            <select id="capture-scale" class="p-2 rounded bg-gray-800 border border-gray-600 text-white w-32 text-center">
+                                <option value="1">1x (Nativo)</option>
+                                <option value="2">2x (Mejorado)</option>
+                                <option value="3">3x (Alto)</option>
+                                <option value="4">4x (Máximo)</option>
+                            </select>
+                            <p class="text-xs text-gray-400 mt-1">Aumenta la resolución del recorte.</p>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -703,7 +712,14 @@
             processAndAddFrame(canvas);
         }
 
-        captureFrameBtn.addEventListener('click', () => captureFrame(videoCrop));
+        captureFrameBtn.addEventListener('click', () => {
+            const scale = parseInt(document.getElementById('capture-scale').value) || 1;
+            const outputSize = {
+                width: videoCrop.width * scale,
+                height: videoCrop.height * scale
+            };
+            captureFrame(videoCrop, outputSize);
+        });
 
         // --- Auto Capture Logic ---
         autoCaptureBtn.addEventListener('click', () => {
@@ -748,9 +764,14 @@
             // Output size should be constant to ensure "Misma Medida" of frames
             // If interpolating, use StartMarker size as reference (or EndMarker, usually start is better source of truth)
             // If fixed, use current crop size.
-            const outputSize = useInterpolation
-                ? { width: startMarker.crop.width, height: startMarker.crop.height }
-                : { width: fixedCrop.width, height: fixedCrop.height };
+            const scale = parseInt(document.getElementById('capture-scale').value) || 1;
+            const baseWidth = useInterpolation ? startMarker.crop.width : fixedCrop.width;
+            const baseHeight = useInterpolation ? startMarker.crop.height : fixedCrop.height;
+
+            const outputSize = {
+                width: baseWidth * scale,
+                height: baseHeight * scale
+            };
 
             let times = [];
             if (mode === 'count') {
