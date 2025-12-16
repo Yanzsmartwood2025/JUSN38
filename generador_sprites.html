@@ -185,6 +185,10 @@
                                 <label for="chroma-tolerance" class="text-sm">Tolerancia: <span id="tolerance-value">20</span></label>
                                 <input type="range" id="chroma-tolerance" min="0" max="200" value="20" class="w-full">
                             </div>
+                            <div class="w-full max-w-xs px-4 mt-1">
+                                <label for="chroma-smoothing" class="text-sm">Suavizado: <span id="smoothing-value">20</span></label>
+                                <input type="range" id="chroma-smoothing" min="0" max="200" value="20" class="w-full">
+                            </div>
                         </div>
                         <div class="flex justify-center gap-4">
                             <button id="capture-frame-btn" title="Capturar Frame"><i class="fas fa-plus"></i></button>
@@ -398,7 +402,7 @@
     // --- Web Worker Logic (Embedded) ---
     const workerScript = `
     self.onmessage = function(e) {
-        const { id, imageData, chromaColor, tolerance } = e.data;
+        const { id, imageData, chromaColor, tolerance, smoothing } = e.data;
 
         if (!chromaColor) {
             self.postMessage({ id, imageData }, [imageData.data.buffer]);
@@ -406,28 +410,50 @@
         }
 
         const data = imageData.data;
-        const [r, g, b] = chromaColor;
+        const [keyR, keyG, keyB] = chromaColor;
         const tol = tolerance;
+        const smooth = smoothing || 0;
         const len = data.length;
 
         for (let i = 0; i < len; i += 4) {
-            // Simple distance check (Euclidean)
-            // Optimization: Avoid Math.sqrt for performance in tight loops if possible,
-            // but sqrt is robust. Let's keep it but check squared distance to avoid sqrt?
-            // Tolerance is usually small (0-200).
-            // dist < tol  <=>  distSq < tol*tol
+            const r = data[i];
+            const g = data[i+1];
+            const b = data[i+2];
 
-            const rd = data[i] - r;
-            const gd = data[i+1] - g;
-            const bd = data[i+2] - b;
+            // Euclidean distance
+            const rd = r - keyR;
+            const gd = g - keyG;
+            const bd = b - keyB;
+            const dist = Math.sqrt(rd*rd + gd*gd + bd*bd);
 
-            // Using squared distance to avoid expensive Sqrt calls
-            if ((rd*rd + gd*gd + bd*bd) < (tol * tol)) {
-                data[i + 3] = 0; // Transparent
+            if (dist < tol) {
+                // Inside tolerance: Full transparency
+                data[i + 3] = 0;
+            } else if (dist < (tol + smooth)) {
+                // In the transition zone: Partial transparency
+                // alpha 0.0 to 1.0
+                const t = (dist - tol) / smooth;
+                const alpha = t; // Linear ramp
+
+                // Spill Suppression / Color Recovery
+                // Recover Foreground: F = (Original - (1-Alpha)*Key) / Alpha
+                if (alpha > 0.01) {
+                    const invAlpha = 1 - alpha;
+
+                    let newR = (r - keyR * invAlpha) / alpha;
+                    let newG = (g - keyG * invAlpha) / alpha;
+                    let newB = (b - keyB * invAlpha) / alpha;
+
+                    data[i] = Math.max(0, Math.min(255, newR));
+                    data[i+1] = Math.max(0, Math.min(255, newG));
+                    data[i+2] = Math.max(0, Math.min(255, newB));
+                    data[i+3] = Math.floor(alpha * 255);
+                } else {
+                     data[i+3] = 0;
+                }
             }
         }
 
-        // Transfer buffer back to main thread
         self.postMessage({ id, imageData }, [imageData.data.buffer]);
     };
     `;
@@ -453,7 +479,7 @@
             }
         }
 
-        function processFrameInWorker(imageData, chromaColor, tolerance) {
+        function processFrameInWorker(imageData, chromaColor, tolerance, smoothing) {
             return new Promise((resolve) => {
                 const id = Math.random().toString(36).substr(2, 9);
                 workerCallbacks.set(id, resolve);
@@ -461,7 +487,8 @@
                     id,
                     imageData,
                     chromaColor,
-                    tolerance
+                    tolerance,
+                    smoothing
                 }, [imageData.data.buffer]); // Transfer ownership
             });
         }
@@ -489,6 +516,8 @@
         const colorPreview = document.getElementById('color-preview');
         const chromaToleranceSlider = document.getElementById('chroma-tolerance');
         const toleranceValueEl = document.getElementById('tolerance-value');
+        const chromaSmoothingSlider = document.getElementById('chroma-smoothing');
+        const smoothingValueEl = document.getElementById('smoothing-value');
 
         const outputSizeSelect = document.getElementById('output-size');
         const captureScaleSelect = document.getElementById('capture-scale');
@@ -807,6 +836,9 @@
         chromaToleranceSlider.addEventListener('input', (e) => {
             toleranceValueEl.textContent = e.target.value;
         });
+        chromaSmoothingSlider.addEventListener('input', (e) => {
+            smoothingValueEl.textContent = e.target.value;
+        });
 
         // Removed synchronous applyChromaKey in favor of Web Worker
 
@@ -860,9 +892,10 @@
 
             // Send to Worker
             const tolerance = parseInt(chromaToleranceSlider.value);
+            const smoothing = parseInt(chromaSmoothingSlider.value);
             
             try {
-                const processedImageData = await processFrameInWorker(imageData, chromaColor, tolerance);
+                const processedImageData = await processFrameInWorker(imageData, chromaColor, tolerance, smoothing);
                 ctx.putImageData(processedImageData, 0, 0);
                 processAndAddFrame(canvas);
             } catch (err) {
