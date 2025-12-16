@@ -481,8 +481,30 @@
         let endMarker = null;   // { time, crop: {x,y,w,h} }
 
         // --- Frame Processing Utility ---
+        function generateThumbnailDataUrl(sourceCanvas, targetWidth = 150) {
+            // Generar miniatura ligera para la UI
+            const scale = Math.min(1, targetWidth / sourceCanvas.width);
+            const w = Math.floor(sourceCanvas.width * scale);
+            const h = Math.floor(sourceCanvas.height * scale);
+
+            const thumbCanvas = document.createElement('canvas');
+            thumbCanvas.width = w;
+            thumbCanvas.height = h;
+            const ctx = thumbCanvas.getContext('2d');
+            // Image smoothing for better thumbnail quality
+            ctx.imageSmoothingEnabled = true;
+            ctx.imageSmoothingQuality = 'medium';
+            ctx.drawImage(sourceCanvas, 0, 0, w, h);
+            return thumbCanvas.toDataURL();
+        }
+
         function processAndAddFrame(canvas) {
-            capturedFrames.push({ id: `frame-${Date.now()}-${Math.random()}`, canvas: canvas });
+            const thumbData = generateThumbnailDataUrl(canvas);
+            capturedFrames.push({
+                id: `frame-${Date.now()}-${Math.random()}`,
+                canvas: canvas,
+                thumbnail: thumbData
+            });
             renderFramesTimeline();
         }
 
@@ -908,7 +930,7 @@
                 thumb.className = 'frame-thumbnail';
                 
                 const img = document.createElement('img');
-                img.src = frameData.canvas.toDataURL();
+                img.src = frameData.thumbnail; // Usar miniatura ligera
                 thumb.appendChild(img);
 
                 const actions = document.createElement('div');
