@@ -174,7 +174,7 @@
                             <button id="toggle-crop-mode-btn" class="ml-4 text-xl w-12 h-12" title="Activar/Desactivar Recorte"><i class="fas fa-crop-alt"></i></button>
                         </div>
                     </div>
-                    <div class="toolbar grid grid-cols-3 items-center">
+                    <div class="toolbar grid grid-cols-4 items-center gap-2">
                         <div class="flex flex-col items-center justify-center text-center">
                             <h3 class="font-bold mb-2">Quitar Fondo</h3>
                             <div class="flex items-center gap-3">
@@ -191,14 +191,25 @@
                             <button id="auto-capture-btn" class="w-[60px] h-[60px] rounded-full bg-blue-600 hover:bg-blue-500 text-white text-2xl border-none flex items-center justify-center transition-colors" title="Captura Automática"><i class="fas fa-magic"></i></button>
                         </div>
                         <div class="flex flex-col items-center justify-center text-center">
-                            <h3 class="font-bold mb-2">Calidad / Escala</h3>
+                            <h3 class="font-bold mb-2">Tamaño de Salida</h3>
+                            <select id="output-size" class="p-2 rounded bg-gray-800 border border-gray-600 text-white w-full max-w-[250px] text-xs">
+                                <option value="auto">Auto (Ajustar a Ventana)</option>
+                                <option value="64">64 x 64 px -- (Recomendado: Proyectiles, Balas, Partículas pequeñas)</option>
+                                <option value="128">128 x 128 px -- (Recomendado: Personajes Estándar como Joziel, Enemigos Comunes)</option>
+                                <option value="256">256 x 256 px -- (Recomendado: Jefes, Monstruos Grandes, Efectos de Explosión)</option>
+                                <option value="512">512 x 512 px -- (Recomendado: Jefes GIGANTES / Ultra HD / Cinematicas)</option>
+                            </select>
+                            <p class="text-xs text-gray-400 mt-1">Lienzo fijo y centrado.</p>
+                        </div>
+                        <div class="flex flex-col items-center justify-center text-center">
+                            <h3 class="font-bold mb-2">Escala (Auto)</h3>
                             <select id="capture-scale" class="p-2 rounded bg-gray-800 border border-gray-600 text-white w-32 text-center">
                                 <option value="1">1x (Nativo)</option>
                                 <option value="2">2x (Mejorado)</option>
                                 <option value="3">3x (Alto)</option>
                                 <option value="4">4x (Máximo)</option>
                             </select>
-                            <p class="text-xs text-gray-400 mt-1">Aumenta la resolución del recorte.</p>
+                            <p class="text-xs text-gray-400 mt-1">Solo funciona en modo Auto.</p>
                         </div>
                     </div>
                 </div>
@@ -384,7 +395,77 @@
     </div>
     
     <script>
+    // --- Web Worker Logic (Embedded) ---
+    const workerScript = `
+    self.onmessage = function(e) {
+        const { id, imageData, chromaColor, tolerance } = e.data;
+
+        if (!chromaColor) {
+            self.postMessage({ id, imageData }, [imageData.data.buffer]);
+            return;
+        }
+
+        const data = imageData.data;
+        const [r, g, b] = chromaColor;
+        const tol = tolerance;
+        const len = data.length;
+
+        for (let i = 0; i < len; i += 4) {
+            // Simple distance check (Euclidean)
+            // Optimization: Avoid Math.sqrt for performance in tight loops if possible,
+            // but sqrt is robust. Let's keep it but check squared distance to avoid sqrt?
+            // Tolerance is usually small (0-200).
+            // dist < tol  <=>  distSq < tol*tol
+
+            const rd = data[i] - r;
+            const gd = data[i+1] - g;
+            const bd = data[i+2] - b;
+
+            // Using squared distance to avoid expensive Sqrt calls
+            if ((rd*rd + gd*gd + bd*bd) < (tol * tol)) {
+                data[i + 3] = 0; // Transparent
+            }
+        }
+
+        // Transfer buffer back to main thread
+        self.postMessage({ id, imageData }, [imageData.data.buffer]);
+    };
+    `;
+
     document.addEventListener('DOMContentLoaded', () => {
+        // --- Web Worker Initialization ---
+        let frameProcessorWorker = null;
+        function initWorker() {
+            const blob = new Blob([workerScript], { type: 'application/javascript' });
+            frameProcessorWorker = new Worker(URL.createObjectURL(blob));
+            frameProcessorWorker.onmessage = handleWorkerMessage;
+        }
+        initWorker();
+
+        // Worker callback map
+        const workerCallbacks = new Map();
+
+        function handleWorkerMessage(e) {
+            const { id, imageData } = e.data;
+            if (workerCallbacks.has(id)) {
+                workerCallbacks.get(id)(imageData);
+                workerCallbacks.delete(id);
+            }
+        }
+
+        function processFrameInWorker(imageData, chromaColor, tolerance) {
+            return new Promise((resolve) => {
+                const id = Math.random().toString(36).substr(2, 9);
+                workerCallbacks.set(id, resolve);
+                frameProcessorWorker.postMessage({
+                    id,
+                    imageData,
+                    chromaColor,
+                    tolerance
+                }, [imageData.data.buffer]); // Transfer ownership
+            });
+        }
+
         // --- UI Elements ---
         const videoUpload = document.getElementById('video-upload');
         const imageUpload = document.getElementById('image-upload');
@@ -409,6 +490,9 @@
         const chromaToleranceSlider = document.getElementById('chroma-tolerance');
         const toleranceValueEl = document.getElementById('tolerance-value');
 
+        const outputSizeSelect = document.getElementById('output-size');
+        const captureScaleSelect = document.getElementById('capture-scale');
+
         const exportBtn = document.getElementById('export-btn');
         const exportModal = document.getElementById('export-modal');
         const cancelExportBtn = document.getElementById('cancel-export-btn');
@@ -416,7 +500,7 @@
         const exportPresetSelect = document.getElementById('export-preset');
         const exportLayoutSelect = document.getElementById('export-layout');
         const exportCountInput = document.getElementById('export-count');
-        const exportCountLabel = document.getElementById('export-count-label'); // Not actually in DOM in prev version but referenced? Logic check needed.
+        const exportCountLabel = document.getElementById('export-count-label');
         const exportPaddingInput = document.getElementById('export-padding');
         const exportFormatSelect = document.getElementById('export-format');
         const exportFilenameInput = document.getElementById('export-filename');
@@ -479,6 +563,20 @@
         // Interpolation State
         let startMarker = null; // { time, crop: {x,y,w,h} }
         let endMarker = null;   // { time, crop: {x,y,w,h} }
+
+        // --- Output Size UI Logic ---
+        outputSizeSelect.addEventListener('change', () => {
+            const isAuto = outputSizeSelect.value === 'auto';
+            if (isAuto) {
+                captureScaleSelect.disabled = false;
+                captureScaleSelect.style.opacity = '1';
+                captureScaleSelect.style.cursor = 'pointer';
+            } else {
+                captureScaleSelect.disabled = true;
+                captureScaleSelect.style.opacity = '0.5';
+                captureScaleSelect.style.cursor = 'not-allowed';
+            }
+        });
 
         // --- Frame Processing Utility ---
         function generateThumbnailDataUrl(sourceCanvas, targetWidth = 150) {
@@ -710,63 +808,78 @@
             toleranceValueEl.textContent = e.target.value;
         });
 
-        function applyChromaKey(canvas) {
-            if (!chromaColor) return canvas;
-            const tolerance = parseInt(chromaToleranceSlider.value);
-            const ctx = canvas.getContext('2d');
-            const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
-            const data = imageData.data;
-            const [r, g, b] = chromaColor;
-            for (let i = 0; i < data.length; i += 4) {
-                const dist = Math.sqrt(
-                    Math.pow(data[i] - r, 2) +
-                    Math.pow(data[i + 1] - g, 2) +
-                    Math.pow(data[i + 2] - b, 2)
-                );
-                if (dist < tolerance) {
-                    data[i + 3] = 0; // Make transparent
-                }
-            }
-            ctx.putImageData(imageData, 0, 0);
-            return canvas;
-        }
+        // Removed synchronous applyChromaKey in favor of Web Worker
 
         // --- Frame Capturing & Timeline ---
 
-        // Updated captureFrame to support resizing/scaling from a source Rect to a dest Rect
-        function captureFrame(cropRect, outputSize = null) {
+        // Updated captureFrame to support resizing/scaling and Async processing
+        async function captureFrame(cropRect, manualScale = null) {
             const { x, y, width, height } = cropRect || videoCrop;
             if (width <= 1 || height <= 1) return;
 
             let canvas = document.createElement('canvas');
-
-            // If outputSize is provided, use it. Otherwise match crop size.
-            // outputSize should be { width: w, height: h }
-            const destW = outputSize ? outputSize.width : width;
-            const destH = outputSize ? outputSize.height : height;
-
-            canvas.width = Math.round(destW);
-            canvas.height = Math.round(destH);
-
-            // Draw using source dimensions -> dest dimensions
-            const ctx = canvas.getContext('2d');
-            ctx.imageSmoothingEnabled = true; // Use high quality smoothing
+            const ctx = canvas.getContext('2d', { willReadFrequently: true });
+            ctx.imageSmoothingEnabled = true;
             ctx.imageSmoothingQuality = 'high';
 
-            // Draw image scaling it to fill the canvas
-            ctx.drawImage(videoPlayer, x, y, width, height, 0, 0, canvas.width, canvas.height);
+            // Logic for Size Determination
+            const selectedOutputMode = outputSizeSelect.value;
+            let destW, destH;
+
+            if (selectedOutputMode !== 'auto') {
+                // Fixed Size Mode
+                const size = parseInt(selectedOutputMode);
+                destW = size;
+                destH = size;
+                canvas.width = size;
+                canvas.height = size;
+
+                // FIT Logic: Calculate scaling to fit within the box while maintaining aspect ratio
+                const scale = Math.min(size / width, size / height);
+                const drawW = width * scale;
+                const drawH = height * scale;
+                const offsetX = (size - drawW) / 2;
+                const offsetY = (size - drawH) / 2;
+
+                ctx.drawImage(videoPlayer, x, y, width, height, offsetX, offsetY, drawW, drawH);
+
+            } else {
+                // Auto Mode (Original Behavior)
+                const scale = manualScale || (parseInt(captureScaleSelect.value) || 1);
+
+                destW = width * scale;
+                destH = height * scale;
+                canvas.width = Math.round(destW);
+                canvas.height = Math.round(destH);
+
+                ctx.drawImage(videoPlayer, x, y, width, height, 0, 0, canvas.width, canvas.height);
+            }
+
+            // Get Image Data for Worker Processing
+            const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+
+            // Send to Worker
+            const tolerance = parseInt(chromaToleranceSlider.value);
             
-            canvas = applyChromaKey(canvas);
-            processAndAddFrame(canvas);
+            try {
+                const processedImageData = await processFrameInWorker(imageData, chromaColor, tolerance);
+                ctx.putImageData(processedImageData, 0, 0);
+                processAndAddFrame(canvas);
+            } catch (err) {
+                console.error("Error processing frame in worker:", err);
+                // Fallback or alert?
+            }
         }
 
-        captureFrameBtn.addEventListener('click', () => {
-            const scale = parseInt(document.getElementById('capture-scale').value) || 1;
-            const outputSize = {
-                width: videoCrop.width * scale,
-                height: videoCrop.height * scale
-            };
-            captureFrame(videoCrop, outputSize);
+        captureFrameBtn.addEventListener('click', async () => {
+            captureFrameBtn.disabled = true;
+            captureFrameBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
+
+            // For single click, we pass null to manualScale so it reads from UI if in Auto mode
+            await captureFrame(videoCrop, null);
+
+            captureFrameBtn.disabled = false;
+            captureFrameBtn.innerHTML = '<i class="fas fa-plus"></i>';
         });
 
         // --- Auto Capture Logic ---
@@ -816,15 +929,8 @@
             const useInterpolation = (startMarker && endMarker);
             const fixedCrop = { ...videoCrop };
 
-            // Output size should be constant to ensure "Misma Medida" of frames
-            const scale = parseInt(document.getElementById('capture-scale').value) || 1;
-            const baseWidth = useInterpolation ? startMarker.crop.width : fixedCrop.width;
-            const baseHeight = useInterpolation ? startMarker.crop.height : fixedCrop.height;
-
-            const outputSize = {
-                width: baseWidth * scale,
-                height: baseHeight * scale
-            };
+            // We grab the scale here for "Auto" mode, if needed.
+            const manualScale = parseInt(captureScaleSelect.value) || 1;
 
             let times = [];
             if (mode === 'count') {
@@ -897,7 +1003,12 @@
                         };
                     }
 
-                    captureFrame(frameCrop, outputSize);
+                    // We now AWAIT the capture, which includes the worker processing
+                    // This prevents memory pile-up and thread freezing
+                    await captureFrame(frameCrop, manualScale);
+
+                    // Force garbage collection hint (nullify objects if possible, though mostly handled by scope)
+                    frameCrop = null;
                 }
 
                 // Finish Progress
