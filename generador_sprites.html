@@ -137,6 +137,11 @@
                      <p class="text-sm text-gray-400 mt-2">Sube un video para capturar frames.</p>
                 </div>
                 <div id="video-player-controls" class="hidden">
+                    <div class="bg-gray-800 p-2 border-b border-gray-700 flex justify-between items-center mb-2">
+                         <button id="back-from-video-btn" class="btn btn-secondary text-sm"><i class="fas fa-arrow-left mr-2"></i> Regresar</button>
+                         <span class="font-bold text-gray-400">Editor de Video</span>
+                         <div class="w-[100px]"></div>
+                    </div>
                     <div id="video-container">
                         <video id="video-player" muted></video>
                         <div id="video-crop-box">
@@ -224,9 +229,62 @@
             <!-- Image Section -->
             <div id="image-section">
                  <h2 class="section-title">Crear desde Imágenes</h2>
-                 <div class="upload-prompt">
-                    <label for="image-upload" class="btn btn-primary"><i class="fas fa-upload mr-2"></i> Subir Imágenes</label>
-                    <p class="text-sm text-gray-400 mt-2">Selecciona una o varias imágenes para añadirlas a la línea de tiempo.</p>
+                 <div id="image-upload-prompt" class="upload-prompt">
+                    <label for="image-upload" class="btn btn-primary"><i class="fas fa-upload mr-2"></i> Subir Imagen</label>
+                    <p class="text-sm text-gray-400 mt-2">Sube una imagen para editar y añadir.</p>
+                 </div>
+
+                 <!-- Image Editor Interface -->
+                 <div id="image-editor-interface" class="hidden bg-gray-900 rounded-lg overflow-hidden border border-gray-700 mt-4">
+                     <!-- Toolbar Header with Back Button -->
+                     <div class="bg-gray-800 p-2 border-b border-gray-700 flex justify-between items-center">
+                         <button id="back-from-image-btn" class="btn btn-secondary text-sm"><i class="fas fa-arrow-left mr-2"></i> Regresar</button>
+                         <span class="font-bold text-gray-400">Editor de Imagen</span>
+                         <div class="w-[100px]"></div>
+                     </div>
+
+                     <!-- Main Image View -->
+                     <div id="image-editor-container" class="relative bg-black min-h-[300px] flex items-center justify-center cursor-crosshair overflow-hidden p-4">
+                         <img id="editor-image-preview" class="max-w-full max-h-[500px] object-contain shadow-lg border border-gray-800">
+                     </div>
+
+                     <!-- Controls Toolbar -->
+                     <div class="toolbar grid grid-cols-1 md:grid-cols-3 items-center gap-4 p-4 bg-gray-800">
+                        <!-- Chroma Key -->
+                        <div class="flex flex-col items-center justify-center text-center p-2 bg-gray-900 rounded">
+                            <h3 class="font-bold mb-2 text-sm text-blue-400">Quitar Fondo</h3>
+                            <div class="flex items-center gap-3 mb-2">
+                                <button id="img-eyedropper-btn" class="btn btn-secondary text-xl w-10 h-10 flex items-center justify-center" title="Seleccionar color de fondo"><i class="fas fa-eye-dropper"></i></button>
+                                <div id="img-color-preview" class="w-10 h-10 rounded border-2 border-gray-500 bg-gray-700"></div>
+                            </div>
+                            <div class="w-full px-2">
+                                <label class="text-xs block text-left">Tolerancia: <span id="img-tolerance-value">20</span></label>
+                                <input type="range" id="img-chroma-tolerance" min="0" max="200" value="20" class="w-full h-1 bg-gray-600 rounded-lg appearance-none cursor-pointer">
+                            </div>
+                            <div class="w-full px-2 mt-1">
+                                <label class="text-xs block text-left">Suavizado: <span id="img-smoothing-value">20</span></label>
+                                <input type="range" id="img-chroma-smoothing" min="0" max="200" value="20" class="w-full h-1 bg-gray-600 rounded-lg appearance-none cursor-pointer">
+                            </div>
+                        </div>
+
+                        <!-- Output Size -->
+                        <div class="flex flex-col items-center justify-center text-center p-2 bg-gray-900 rounded h-full">
+                            <h3 class="font-bold mb-2 text-sm text-blue-400">Tamaño de Salida</h3>
+                            <select id="img-output-size" class="p-2 rounded bg-gray-800 border border-gray-600 text-white w-full text-xs mb-1">
+                                <option value="auto">Auto (Tamaño Original)</option>
+                                <option value="64">64 x 64 px -- (Recomendado: Proyectiles, Balas)</option>
+                                <option value="128">128 x 128 px -- (Recomendado: Personajes Estándar)</option>
+                                <option value="256">256 x 256 px -- (Recomendado: Jefes, Monstruos Grandes)</option>
+                                <option value="512">512 x 512 px -- (Recomendado: Jefes GIGANTES)</option>
+                            </select>
+                            <p class="text-[10px] text-gray-400">Se redimensionará y centrará la imagen.</p>
+                        </div>
+
+                        <!-- Capture Action -->
+                        <div class="flex flex-col items-center justify-center gap-4 h-full">
+                             <button id="img-capture-btn" class="btn btn-success w-full py-3 text-lg font-bold shadow-lg transform transition hover:scale-105"><i class="fas fa-plus-circle mr-2"></i> Añadir a Línea de Tiempo</button>
+                        </div>
+                    </div>
                  </div>
             </div>
 
@@ -497,9 +555,11 @@
         const videoUpload = document.getElementById('video-upload');
         const imageUpload = document.getElementById('image-upload');
         const videoUploadPrompt = document.getElementById('video-upload-prompt');
+        const imageUploadPrompt = document.getElementById('image-upload-prompt');
         const videoPlayerControls = document.getElementById('video-player-controls');
         const videoContainer = document.getElementById('video-container');
         const videoPlayer = document.getElementById('video-player');
+        const backFromVideoBtn = document.getElementById('back-from-video-btn');
         const videoCropBox = document.getElementById('video-crop-box');
         const toggleCropModeBtn = document.getElementById('toggle-crop-mode-btn');
         const timelineSlider = document.getElementById('timeline-slider');
@@ -551,6 +611,20 @@
         const editFrameAspectCheckbox = document.getElementById('edit-frame-aspect');
         const cancelEditFrameBtn = document.getElementById('cancel-edit-frame-btn');
         const saveEditFrameBtn = document.getElementById('save-edit-frame-btn');
+
+        // Image Editor Elements
+        const imageEditorInterface = document.getElementById('image-editor-interface');
+        const backFromImageBtn = document.getElementById('back-from-image-btn');
+        const editorImagePreview = document.getElementById('editor-image-preview');
+        const imageEditorContainer = document.getElementById('image-editor-container');
+        const imgEyedropperBtn = document.getElementById('img-eyedropper-btn');
+        const imgColorPreview = document.getElementById('img-color-preview');
+        const imgChromaToleranceSlider = document.getElementById('img-chroma-tolerance');
+        const imgToleranceValueEl = document.getElementById('img-tolerance-value');
+        const imgChromaSmoothingSlider = document.getElementById('img-chroma-smoothing');
+        const imgSmoothingValueEl = document.getElementById('img-smoothing-value');
+        const imgOutputSizeSelect = document.getElementById('img-output-size');
+        const imgCaptureBtn = document.getElementById('img-capture-btn');
 
         const autoCaptureModal = document.getElementById('auto-capture-modal');
         const acStartTimeInput = document.getElementById('ac-start-time');
@@ -676,26 +750,168 @@
             return `${min}:${sec.toString().padStart(2, '0')}.${milli}`;
         }
 
-        // --- Image Uploading ---
+        // --- Image Uploading (Updated for Editor) ---
+        let currentEditorImage = null; // Store DataURL or Image object if needed
+
         imageUpload.addEventListener('change', (event) => {
-            const files = event.target.files;
-            for (const file of files) {
-                const reader = new FileReader();
-                reader.onload = (e) => {
-                    const img = new Image();
-                    img.onload = () => {
-                        const canvas = document.createElement('canvas');
-                        canvas.width = img.width;
-                        canvas.height = img.height;
-                        canvas.getContext('2d').drawImage(img, 0, 0);
-                        processAndAddFrame(canvas);
-                    };
-                    img.src = e.target.result;
-                };
-                reader.readAsDataURL(file);
-            }
-            imageUpload.value = ''; // Reset input
+            const file = event.target.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                editorImagePreview.src = e.target.result;
+                // currentEditorImage = e.target.result;
+
+                // Show Editor, Hide Prompts
+                imageUploadPrompt.classList.add('hidden');
+                videoUploadPrompt.classList.add('hidden'); // Hide video prompt too to focus
+                imageEditorInterface.classList.remove('hidden');
+
+                // Reset Image Editor State
+                chromaColor = null;
+                imgColorPreview.style.backgroundColor = 'transparent';
+                imgChromaToleranceSlider.value = 20;
+                imgToleranceValueEl.textContent = '20';
+                imgChromaSmoothingSlider.value = 20;
+                imgSmoothingValueEl.textContent = '20';
+            };
+            reader.readAsDataURL(file);
+
+            imageUpload.value = ''; // Reset input to allow re-uploading same file
         });
+
+        // --- Navigation / Back Buttons ---
+        backFromVideoBtn.addEventListener('click', () => {
+            videoPlayer.pause();
+            videoPlayerControls.classList.add('hidden');
+            videoUploadPrompt.classList.remove('hidden');
+            imageUploadPrompt.classList.remove('hidden');
+            // Reset state if needed, though keeping video loaded is usually fine
+        });
+
+        backFromImageBtn.addEventListener('click', () => {
+             imageEditorInterface.classList.add('hidden');
+             imageUploadPrompt.classList.remove('hidden');
+             videoUploadPrompt.classList.remove('hidden');
+             editorImagePreview.src = '';
+        });
+
+        // --- Image Editor Controls ---
+        imgEyedropperBtn.addEventListener('click', () => {
+             imageEditorContainer.classList.add('eyedropper-active');
+             imgEyedropperBtn.classList.add('ring-2', 'ring-blue-500');
+             imageEditorContainer.style.cursor = 'crosshair';
+        });
+
+        // Eyedropper logic for Image
+        imageEditorContainer.addEventListener('click', (e) => {
+            if (!imgEyedropperBtn.classList.contains('ring-blue-500')) return;
+
+            const rect = editorImagePreview.getBoundingClientRect();
+
+            // Check if click is within the image bounds
+            if (e.clientX < rect.left || e.clientX > rect.right || e.clientY < rect.top || e.clientY > rect.bottom) {
+                 // Clicked outside image in the container
+                 return;
+            }
+
+            const x = e.clientX - rect.left;
+            const y = e.clientY - rect.top;
+
+            // Draw image to temp canvas to pick color
+            // Note: We must use the intrinsic size and map coordinates
+            const scaleX = editorImagePreview.naturalWidth / rect.width;
+            const scaleY = editorImagePreview.naturalHeight / rect.height;
+
+            const pixelX = Math.floor(x * scaleX);
+            const pixelY = Math.floor(y * scaleY);
+
+            const tempCanvas = document.createElement('canvas');
+            tempCanvas.width = 1;
+            tempCanvas.height = 1;
+            const ctx = tempCanvas.getContext('2d');
+
+            // Draw only the pixel we need for performance
+            ctx.drawImage(editorImagePreview, pixelX, pixelY, 1, 1, 0, 0, 1, 1);
+
+            const pixel = ctx.getImageData(0, 0, 1, 1).data;
+            chromaColor = [pixel[0], pixel[1], pixel[2]];
+
+            imgColorPreview.style.backgroundColor = `rgb(${chromaColor[0]}, ${chromaColor[1]}, ${chromaColor[2]})`;
+
+            imgEyedropperBtn.classList.remove('ring-2', 'ring-blue-500');
+            imageEditorContainer.style.cursor = 'default';
+        });
+
+        imgChromaToleranceSlider.addEventListener('input', (e) => imgToleranceValueEl.textContent = e.target.value);
+        imgChromaSmoothingSlider.addEventListener('input', (e) => imgSmoothingValueEl.textContent = e.target.value);
+
+        // --- Image Capture Logic ---
+        imgCaptureBtn.addEventListener('click', async () => {
+             if (!editorImagePreview.src) return;
+
+             imgCaptureBtn.disabled = true;
+             imgCaptureBtn.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i> Procesando...';
+
+             try {
+                const img = editorImagePreview;
+                const naturalW = img.naturalWidth;
+                const naturalH = img.naturalHeight;
+
+                // 1. Determine Output Size
+                let outputW, outputH;
+                let drawX = 0, drawY = 0, drawW = naturalW, drawH = naturalH;
+
+                const selectedSize = imgOutputSizeSelect.value;
+
+                if (selectedSize === 'auto') {
+                    outputW = naturalW;
+                    outputH = naturalH;
+                } else {
+                    const size = parseInt(selectedSize);
+                    outputW = size;
+                    outputH = size;
+
+                    // Fit logic (Contain)
+                    const scale = Math.min(size / naturalW, size / naturalH);
+                    drawW = naturalW * scale;
+                    drawH = naturalH * scale;
+                    drawX = (size - drawW) / 2;
+                    drawY = (size - drawH) / 2;
+                }
+
+                const canvas = document.createElement('canvas');
+                canvas.width = outputW;
+                canvas.height = outputH;
+                const ctx = canvas.getContext('2d');
+                ctx.imageSmoothingEnabled = true;
+                ctx.imageSmoothingQuality = 'high';
+
+                // Draw Base Image
+                ctx.drawImage(img, 0, 0, naturalW, naturalH, drawX, drawY, drawW, drawH);
+
+                // 2. Process Chroma Key (if color selected)
+                // We use the same worker logic
+                const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+                const tolerance = parseInt(imgChromaToleranceSlider.value);
+                const smoothing = parseInt(imgChromaSmoothingSlider.value);
+
+                // Pass to worker
+                const processedData = await processFrameInWorker(imageData, chromaColor, tolerance, smoothing);
+                ctx.putImageData(processedData, 0, 0);
+
+                // 3. Add to Timeline
+                processAndAddFrame(canvas);
+
+             } catch (err) {
+                 console.error("Image capture error:", err);
+                 alert("Error al procesar la imagen.");
+             } finally {
+                 imgCaptureBtn.disabled = false;
+                 imgCaptureBtn.innerHTML = '<i class="fas fa-plus-circle mr-2"></i> Añadir a Línea de Tiempo';
+             }
+        });
+
 
         // --- Video Cropping ---
         toggleCropModeBtn.addEventListener('click', () => {
