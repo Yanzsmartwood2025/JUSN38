@@ -179,7 +179,7 @@
                             <button id="toggle-crop-mode-btn" class="ml-4 text-xl w-12 h-12" title="Activar/Desactivar Recorte"><i class="fas fa-crop-alt"></i></button>
                         </div>
                     </div>
-                    <div class="toolbar grid grid-cols-4 items-center gap-2">
+                    <div class="toolbar grid grid-cols-2 items-center gap-2">
                         <div class="flex flex-col items-center justify-center text-center">
                             <h3 class="font-bold mb-2">Quitar Fondo</h3>
                             <div class="flex items-center gap-3">
@@ -198,27 +198,6 @@
                         <div class="flex justify-center gap-4">
                             <button id="capture-frame-btn" title="Capturar Frame"><i class="fas fa-plus"></i></button>
                             <button id="auto-capture-btn" class="w-[60px] h-[60px] rounded-full bg-blue-600 hover:bg-blue-500 text-white text-2xl border-none flex items-center justify-center transition-colors" title="Captura Automática"><i class="fas fa-magic"></i></button>
-                        </div>
-                        <div class="flex flex-col items-center justify-center text-center">
-                            <h3 class="font-bold mb-2">Tamaño de Salida</h3>
-                            <select id="output-size" class="p-2 rounded bg-gray-800 border border-gray-600 text-white w-full max-w-[250px] text-xs">
-                                <option value="auto">Auto (Ajustar a Ventana)</option>
-                                <option value="64">64 x 64 px -- (Recomendado: Proyectiles, Balas, Partículas pequeñas)</option>
-                                <option value="128">128 x 128 px -- (Recomendado: Personajes Estándar como Joziel, Enemigos Comunes)</option>
-                                <option value="256">256 x 256 px -- (Recomendado: Jefes, Monstruos Grandes, Efectos de Explosión)</option>
-                                <option value="512">512 x 512 px -- (Recomendado: Jefes GIGANTES / Ultra HD / Cinematicas)</option>
-                            </select>
-                            <p class="text-xs text-gray-400 mt-1">Lienzo fijo y centrado.</p>
-                        </div>
-                        <div class="flex flex-col items-center justify-center text-center">
-                            <h3 class="font-bold mb-2">Escala (Auto)</h3>
-                            <select id="capture-scale" class="p-2 rounded bg-gray-800 border border-gray-600 text-white w-32 text-center">
-                                <option value="1">1x (Nativo)</option>
-                                <option value="2">2x (Mejorado)</option>
-                                <option value="3">3x (Alto)</option>
-                                <option value="4">4x (Máximo)</option>
-                            </select>
-                            <p class="text-xs text-gray-400 mt-1">Solo funciona en modo Auto.</p>
                         </div>
                     </div>
                 </div>
@@ -249,7 +228,7 @@
                      </div>
 
                      <!-- Controls Toolbar -->
-                     <div class="toolbar grid grid-cols-1 md:grid-cols-3 items-center gap-4 p-4 bg-gray-800">
+                     <div class="toolbar grid grid-cols-1 md:grid-cols-2 items-center gap-4 p-4 bg-gray-800">
                         <!-- Chroma Key -->
                         <div class="flex flex-col items-center justify-center text-center p-2 bg-gray-900 rounded">
                             <h3 class="font-bold mb-2 text-sm text-blue-400">Quitar Fondo</h3>
@@ -265,19 +244,6 @@
                                 <label class="text-xs block text-left">Suavizado: <span id="img-smoothing-value">20</span></label>
                                 <input type="range" id="img-chroma-smoothing" min="0" max="200" value="20" class="w-full h-1 bg-gray-600 rounded-lg appearance-none cursor-pointer">
                             </div>
-                        </div>
-
-                        <!-- Output Size -->
-                        <div class="flex flex-col items-center justify-center text-center p-2 bg-gray-900 rounded h-full">
-                            <h3 class="font-bold mb-2 text-sm text-blue-400">Tamaño de Salida</h3>
-                            <select id="img-output-size" class="p-2 rounded bg-gray-800 border border-gray-600 text-white w-full text-xs mb-1">
-                                <option value="auto">Auto (Tamaño Original)</option>
-                                <option value="64">64 x 64 px -- (Recomendado: Proyectiles, Balas)</option>
-                                <option value="128">128 x 128 px -- (Recomendado: Personajes Estándar)</option>
-                                <option value="256">256 x 256 px -- (Recomendado: Jefes, Monstruos Grandes)</option>
-                                <option value="512">512 x 512 px -- (Recomendado: Jefes GIGANTES)</option>
-                            </select>
-                            <p class="text-[10px] text-gray-400">Se redimensionará y centrará la imagen.</p>
                         </div>
 
                         <!-- Capture Action -->
@@ -579,9 +545,6 @@
         const chromaSmoothingSlider = document.getElementById('chroma-smoothing');
         const smoothingValueEl = document.getElementById('smoothing-value');
 
-        const outputSizeSelect = document.getElementById('output-size');
-        const captureScaleSelect = document.getElementById('capture-scale');
-
         const exportBtn = document.getElementById('export-btn');
         const exportModal = document.getElementById('export-modal');
         const cancelExportBtn = document.getElementById('cancel-export-btn');
@@ -623,7 +586,6 @@
         const imgToleranceValueEl = document.getElementById('img-tolerance-value');
         const imgChromaSmoothingSlider = document.getElementById('img-chroma-smoothing');
         const imgSmoothingValueEl = document.getElementById('img-smoothing-value');
-        const imgOutputSizeSelect = document.getElementById('img-output-size');
         const imgCaptureBtn = document.getElementById('img-capture-btn');
 
         const autoCaptureModal = document.getElementById('auto-capture-modal');
@@ -667,19 +629,6 @@
         let startMarker = null; // { time, crop: {x,y,w,h} }
         let endMarker = null;   // { time, crop: {x,y,w,h} }
 
-        // --- Output Size UI Logic ---
-        outputSizeSelect.addEventListener('change', () => {
-            const isAuto = outputSizeSelect.value === 'auto';
-            if (isAuto) {
-                captureScaleSelect.disabled = false;
-                captureScaleSelect.style.opacity = '1';
-                captureScaleSelect.style.cursor = 'pointer';
-            } else {
-                captureScaleSelect.disabled = true;
-                captureScaleSelect.style.opacity = '0.5';
-                captureScaleSelect.style.cursor = 'not-allowed';
-            }
-        });
 
         // --- Frame Processing Utility ---
         function generateThumbnailDataUrl(sourceCanvas, targetWidth = 150) {
@@ -858,27 +807,13 @@
                 const naturalW = img.naturalWidth;
                 const naturalH = img.naturalHeight;
 
-                // 1. Determine Output Size
-                let outputW, outputH;
-                let drawX = 0, drawY = 0, drawW = naturalW, drawH = naturalH;
-
-                const selectedSize = imgOutputSizeSelect.value;
-
-                if (selectedSize === 'auto') {
-                    outputW = naturalW;
-                    outputH = naturalH;
-                } else {
-                    const size = parseInt(selectedSize);
-                    outputW = size;
-                    outputH = size;
-
-                    // Fit logic (Contain)
-                    const scale = Math.min(size / naturalW, size / naturalH);
-                    drawW = naturalW * scale;
-                    drawH = naturalH * scale;
-                    drawX = (size - drawW) / 2;
-                    drawY = (size - drawH) / 2;
-                }
+                // 1. Determine Output Size (Always Native)
+                const outputW = naturalW;
+                const outputH = naturalH;
+                const drawW = naturalW;
+                const drawH = naturalH;
+                const drawX = 0;
+                const drawY = 0;
 
                 const canvas = document.createElement('canvas');
                 canvas.width = outputW;
@@ -1061,7 +996,7 @@
         // --- Frame Capturing & Timeline ---
 
         // Updated captureFrame to support resizing/scaling and Async processing
-        async function captureFrame(cropRect, manualScale = null) {
+        async function captureFrame(cropRect) {
             const { x, y, width, height } = cropRect || videoCrop;
             if (width <= 1 || height <= 1) return;
 
@@ -1070,38 +1005,11 @@
             ctx.imageSmoothingEnabled = true;
             ctx.imageSmoothingQuality = 'high';
 
-            // Logic for Size Determination
-            const selectedOutputMode = outputSizeSelect.value;
-            let destW, destH;
+            // Always use native size
+            canvas.width = Math.round(width);
+            canvas.height = Math.round(height);
 
-            if (selectedOutputMode !== 'auto') {
-                // Fixed Size Mode
-                const size = parseInt(selectedOutputMode);
-                destW = size;
-                destH = size;
-                canvas.width = size;
-                canvas.height = size;
-
-                // FIT Logic: Calculate scaling to fit within the box while maintaining aspect ratio
-                const scale = Math.min(size / width, size / height);
-                const drawW = width * scale;
-                const drawH = height * scale;
-                const offsetX = (size - drawW) / 2;
-                const offsetY = (size - drawH) / 2;
-
-                ctx.drawImage(videoPlayer, x, y, width, height, offsetX, offsetY, drawW, drawH);
-
-            } else {
-                // Auto Mode (Original Behavior)
-                const scale = manualScale || (parseInt(captureScaleSelect.value) || 1);
-
-                destW = width * scale;
-                destH = height * scale;
-                canvas.width = Math.round(destW);
-                canvas.height = Math.round(destH);
-
-                ctx.drawImage(videoPlayer, x, y, width, height, 0, 0, canvas.width, canvas.height);
-            }
+            ctx.drawImage(videoPlayer, x, y, width, height, 0, 0, canvas.width, canvas.height);
 
             // Get Image Data for Worker Processing
             const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
@@ -1124,8 +1032,7 @@
             captureFrameBtn.disabled = true;
             captureFrameBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
 
-            // For single click, we pass null to manualScale so it reads from UI if in Auto mode
-            await captureFrame(videoCrop, null);
+            await captureFrame(videoCrop);
 
             captureFrameBtn.disabled = false;
             captureFrameBtn.innerHTML = '<i class="fas fa-plus"></i>';
@@ -1177,9 +1084,6 @@
             // Determine crop logic
             const useInterpolation = (startMarker && endMarker);
             const fixedCrop = { ...videoCrop };
-
-            // We grab the scale here for "Auto" mode, if needed.
-            const manualScale = parseInt(captureScaleSelect.value) || 1;
 
             let times = [];
             if (mode === 'count') {
@@ -1254,7 +1158,7 @@
 
                     // We now AWAIT the capture, which includes the worker processing
                     // This prevents memory pile-up and thread freezing
-                    await captureFrame(frameCrop, manualScale);
+                    await captureFrame(frameCrop);
 
                     // Force garbage collection hint (nullify objects if possible, though mostly handled by scope)
                     frameCrop = null;
