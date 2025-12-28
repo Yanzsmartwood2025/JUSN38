@@ -29,9 +29,9 @@
             </div>
 
             <!-- Bandeja de Selección de Plataforma -->
-            <div class="w-full max-w-md">
+            <div class="w-full max-w-xl">
                 <label class="block text-center font-medium text-gray-400 mb-3 title-font tracking-wider">2. ELIGE LA PLATAFORMA</label>
-                <div id="platform-selector" class="grid grid-cols-3 gap-4">
+                <div id="platform-selector" class="grid grid-cols-2 sm:grid-cols-4 gap-4">
                     <button class="platform-btn p-4 rounded-lg flex flex-col items-center active" data-platform="pwa">
                         <span class="text-4xl">🌐</span>
                         <span class="mt-2 font-semibold">PWA</span>
@@ -44,12 +44,26 @@
                         <span class="text-4xl"></span>
                         <span class="mt-2 font-semibold">iOS</span>
                     </button>
+                    <button class="platform-btn p-4 rounded-lg flex flex-col items-center" data-platform="all">
+                        <span class="text-4xl">🌍</span>
+                        <span class="mt-2 font-semibold">TODOS</span>
+                    </button>
                 </div>
             </div>
 
-            <div class="w-full max-w-sm">
-                <label for="filename-input" class="block text-center font-medium text-gray-400 mb-2 title-font tracking-wider">3. NOMBRE BASE</label>
-                <input type="text" id="filename-input" class="w-full px-4 py-2 rounded-lg text-white input-field focus:outline-none" placeholder="Ej: mi-app-icono" value="icon">
+            <div class="w-full max-w-sm flex flex-col sm:flex-row gap-4">
+                <div class="flex-1">
+                    <label for="format-select" class="block text-center font-medium text-gray-400 mb-2 title-font tracking-wider">FORMATO</label>
+                    <select id="format-select" class="w-full px-4 py-2 rounded-lg text-white input-field focus:outline-none appearance-none text-center cursor-pointer">
+                        <option value="image/png">PNG</option>
+                        <option value="image/jpeg">JPG</option>
+                        <option value="image/webp">WEBP</option>
+                    </select>
+                </div>
+                <div class="flex-[2]">
+                    <label for="filename-input" class="block text-center font-medium text-gray-400 mb-2 title-font tracking-wider">3. NOMBRE BASE</label>
+                    <input type="text" id="filename-input" class="w-full px-4 py-2 rounded-lg text-white input-field focus:outline-none" placeholder="Ej: mi-app-icono" value="icon">
+                </div>
             </div>
 
             <button id="generate-btn" class="w-full sm:w-auto btn-primary text-white font-bold py-3 px-8 rounded-lg disabled:bg-gray-600 disabled:cursor-not-allowed disabled:shadow-none shadow-lg title-font tracking-wider" disabled>
