@@ -8,6 +8,7 @@ const imagePreviewContainer = document.getElementById('image-preview-container')
 const fileLabel = document.getElementById('file-label');
 const filenameInput = document.getElementById('filename-input');
 const platformSelector = document.getElementById('platform-selector');
+const formatSelect = document.getElementById('format-select');
 
 let uploadedFile = null;
 const generatedIcons = [];
@@ -68,9 +69,72 @@ imageUploader.addEventListener('change', (event) => {
     }
 });
 
+// Función de redimensionado de alta calidad (Step-down scaling)
+function resizeImageHighQuality(img, width, height) {
+    // 1. Recorte cuadrado inicial (1:1)
+    const cropSize = Math.min(img.width, img.height);
+    const cropX = (img.width - cropSize) / 2;
+    const cropY = (img.height - cropSize) / 2;
+
+    // Crear canvas inicial con el recorte
+    let currentCanvas = document.createElement('canvas');
+    currentCanvas.width = cropSize;
+    currentCanvas.height = cropSize;
+    let currentCtx = currentCanvas.getContext('2d');
+
+    // Mejorar calidad de imagen
+    currentCtx.imageSmoothingEnabled = true;
+    currentCtx.imageSmoothingQuality = 'high';
+
+    currentCtx.drawImage(img, cropX, cropY, cropSize, cropSize, 0, 0, cropSize, cropSize);
+
+    let curWidth = cropSize;
+    let curHeight = cropSize;
+
+    // 2. Reducción progresiva (Step-down) si la imagen es mucho más grande que el objetivo
+    // Reducimos a la mitad iterativamente hasta estar cerca del tamaño objetivo
+    while (curWidth * 0.5 > width) {
+        const nextWidth = Math.floor(curWidth * 0.5);
+        const nextHeight = Math.floor(curHeight * 0.5);
+
+        const tempCanvas = document.createElement('canvas');
+        tempCanvas.width = nextWidth;
+        tempCanvas.height = nextHeight;
+        const tempCtx = tempCanvas.getContext('2d');
+
+        tempCtx.imageSmoothingEnabled = true;
+        tempCtx.imageSmoothingQuality = 'high';
+
+        tempCtx.drawImage(currentCanvas, 0, 0, curWidth, curHeight, 0, 0, nextWidth, nextHeight);
+
+        currentCanvas = tempCanvas;
+        curWidth = nextWidth;
+        curHeight = nextHeight;
+    }
+
+    // 3. Dibujado final al tamaño exacto
+    const finalCanvas = document.createElement('canvas');
+    finalCanvas.width = width;
+    finalCanvas.height = height;
+    const finalCtx = finalCanvas.getContext('2d');
+
+    finalCtx.imageSmoothingEnabled = true;
+    finalCtx.imageSmoothingQuality = 'high';
+
+    finalCtx.drawImage(currentCanvas, 0, 0, curWidth, curHeight, 0, 0, width, height);
+
+    return finalCanvas;
+}
+
+
 generateBtn.addEventListener('click', () => {
     if (!uploadedFile) return;
     const baseFilename = filenameInput.value.trim() || 'icon';
+    const selectedFormat = formatSelect.value;
+    let fileExtension = 'png';
+    if (selectedFormat === 'image/jpeg') fileExtension = 'jpg';
+    if (selectedFormat === 'image/webp') fileExtension = 'webp';
+
     generateBtn.disabled = true;
     generateBtn.textContent = 'Generando...';
     iconsGrid.innerHTML = '';
@@ -80,22 +144,40 @@ generateBtn.addEventListener('click', () => {
     image.src = URL.createObjectURL(uploadedFile);
 
     image.onload = () => {
-        const sizesToGenerate = iconSets[selectedPlatform]; // Usa el set de iconos seleccionado
+        let sizesToGenerate = [];
+
+        if (selectedPlatform === 'all') {
+            // Unir y deduplicar tamaños
+            const sizeMap = new Map();
+            Object.keys(iconSets).forEach(key => {
+                iconSets[key].forEach(item => {
+                    if (!sizeMap.has(item.size)) {
+                        sizeMap.set(item.size, item.purpose);
+                    } else {
+                        // Concatenar propósitos para saber que sirve para varias cosas
+                        const currentPurpose = sizeMap.get(item.size);
+                        if (!currentPurpose.includes(item.purpose)) {
+                             // Simplemente mantenemos el primero o concatenamos si es corto,
+                             // pero para evitar textos muy largos, dejamos el más genérico o combinamos
+                             // Para simplificar y limpieza, usaremos una combinación simple o el primero encontrado
+                             // El usuario pidió "sin repetir medidas".
+                        }
+                    }
+                });
+            });
+            // Convertir map a array y ordenar descendente
+            sizesToGenerate = Array.from(sizeMap.entries())
+                .map(([size, purpose]) => ({ size, purpose }))
+                .sort((a, b) => b.size - a.size);
+        } else {
+            sizesToGenerate = iconSets[selectedPlatform];
+        }
 
         sizesToGenerate.forEach(item => {
-            const canvas = document.createElement('canvas');
-            canvas.width = item.size;
-            canvas.height = item.size;
-            const ctx = canvas.getContext('2d');
+            const canvas = resizeImageHighQuality(image, item.size, item.size);
 
-            // Recorta la imagen a 1:1 desde el centro
-            const cropSize = Math.min(image.width, image.height);
-            const cropX = (image.width - cropSize) / 2;
-            const cropY = (image.height - cropSize) / 2;
-            ctx.drawImage(image, cropX, cropY, cropSize, cropSize, 0, 0, canvas.width, canvas.height);
-
-            const dataUrl = canvas.toDataURL('image/png');
-            const filename = `${baseFilename}-${item.size}x${item.size}.png`;
+            const dataUrl = canvas.toDataURL(selectedFormat, 0.9); // 0.9 quality for jpg/webp
+            const filename = `${baseFilename}-${item.size}x${item.size}.${fileExtension}`;
             generatedIcons.push({ filename, dataUrl });
 
             const iconCard = document.createElement('a');
@@ -127,6 +209,15 @@ downloadAllBtn.addEventListener('click', () => {
     if (generatedIcons.length === 0) return;
     downloadAllBtn.disabled = true;
     downloadAllBtn.textContent = 'Comprimiendo...';
+
+    const baseFilename = filenameInput.value.trim();
+    let zipName;
+    if (baseFilename) {
+        zipName = `${baseFilename}-icons.zip`;
+    } else {
+        zipName = `${selectedPlatform}-icons.zip`;
+    }
+
     const zip = new JSZip();
     for (const icon of generatedIcons) {
         const base64Data = icon.dataUrl.split(',')[1];
@@ -135,7 +226,7 @@ downloadAllBtn.addEventListener('click', () => {
     zip.generateAsync({ type: "blob" }).then(function(content) {
         const link = document.createElement('a');
         link.href = URL.createObjectURL(content);
-        link.download = `${selectedPlatform}-icons.zip`;
+        link.download = zipName;
         document.body.appendChild(link);
         link.click();
         document.body.removeChild(link);
